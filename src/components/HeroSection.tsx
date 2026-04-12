@@ -1,5 +1,6 @@
 import { Truck, LayoutList } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
+import productsHero from "@/assets/products-hero.jpeg";
 
 const HeroSection = () => {
   return (
@@ -13,12 +14,12 @@ const HeroSection = () => {
           width={1024}
           height={768}
         />
-        <div className="absolute inset-0 bg-background/70" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
       </div>
 
-      <div className="container relative py-16 px-4 space-y-6">
+      <div className="container relative py-14 px-4 space-y-6">
         {/* Badge */}
-        <span className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-heading font-bold text-sm tracking-wider px-5 py-2.5 rounded-md">
+        <span className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-heading font-bold text-sm tracking-wider px-5 py-2.5 rounded-md shadow-lg">
           <Truck className="w-5 h-5" />
           PORTAL DE ATACADO
         </span>
@@ -39,9 +40,24 @@ const HeroSection = () => {
           </p>
         </div>
 
+        {/* Product image showcase */}
+        <div className="relative mx-auto max-w-sm py-4">
+          <div className="absolute inset-0 bg-gradient-to-t from-primary/20 via-transparent to-transparent rounded-2xl blur-2xl" />
+          <img
+            src={productsHero}
+            alt="Mansão Maromba Combo Drinks - Whisky, Vodka, Melancia e Gin"
+            className="relative w-full h-auto rounded-2xl shadow-2xl"
+            width={600}
+            height={400}
+          />
+          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-primary/90 backdrop-blur-sm text-primary-foreground font-heading font-black text-xs tracking-widest px-6 py-2 rounded-full shadow-lg">
+            🔥 COMBO DRINKS — LANÇAMENTO
+          </div>
+        </div>
+
         {/* CTAs */}
-        <div className="flex flex-col gap-3 max-w-md pt-2">
-          <button className="w-full flex items-center justify-center gap-3 bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity">
+        <div className="flex flex-col gap-3 max-w-md pt-4">
+          <button className="w-full flex items-center justify-center gap-3 bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon">
             <LayoutList className="w-5 h-5" />
             VER CATÁLOGO
           </button>

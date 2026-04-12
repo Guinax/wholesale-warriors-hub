@@ -1,5 +1,6 @@
 import productsHero from "@/assets/products-hero.jpeg";
 import { Flame, Star, TrendingUp } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
 
 const highlights = [
   { icon: Flame, label: "MAIS VENDIDO", value: "Whisky Combo" },
@@ -8,6 +9,8 @@ const highlights = [
 ];
 
 const FeaturedProducts = () => {
+  const { addItem } = useCart();
+
   return (
     <section className="py-10">
       <div className="container space-y-6">
@@ -70,7 +73,10 @@ const FeaturedProducts = () => {
                   R$ 8,90<span className="text-sm font-semibold text-muted-foreground">/un</span>
                 </p>
               </div>
-              <button className="bg-primary text-primary-foreground font-heading font-black text-xs tracking-wider px-6 py-3 rounded-lg hover:opacity-90 transition-opacity glow-neon">
+              <button
+                onClick={() => addItem({ name: "COMBO DRINKS PACK", wholesalePrice: "R$ 8,90", qty: 24, minQty: 24 })}
+                className="bg-primary text-primary-foreground font-heading font-black text-xs tracking-wider px-6 py-3 rounded-lg hover:opacity-90 transition-opacity glow-neon"
+              >
                 COMPRAR LOTE
               </button>
             </div>

@@ -1,15 +1,15 @@
 import { ShoppingCart } from "lucide-react";
-import { useState } from "react";
 import logo from "@/assets/logo.png";
+import { useCart } from "@/contexts/CartContext";
 
 const TopNav = () => {
-  const [cartCount] = useState(3);
+  const { totalItems, openCart } = useCart();
 
   return (
     <nav className="sticky top-0 z-50 bg-background/90 backdrop-blur-xl border-b border-border">
       <div className="container flex items-center justify-between h-14">
         <div className="flex items-center gap-2">
-          <img src={logo} alt="Mansão Maromba" className="w-8 h-8 object-contain" width={32} height={32} />
+          <img src={logo} alt="Família Maromba" className="w-8 h-8 object-contain" width={32} height={32} />
           <span className="font-heading font-bold text-xs tracking-wider text-foreground">
             LOJA OFICIAL FAMÍLIA MAROMBA
           </span>
@@ -21,11 +21,11 @@ const TopNav = () => {
           <a href="#" className="hover:text-primary transition-colors">COMMUNITY</a>
         </div>
 
-        <button className="relative p-2">
+        <button className="relative p-2" onClick={openCart}>
           <ShoppingCart className="w-5 h-5 text-foreground" />
-          {cartCount > 0 && (
+          {totalItems > 0 && (
             <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-              {cartCount}
+              {totalItems}
             </span>
           )}
         </button>

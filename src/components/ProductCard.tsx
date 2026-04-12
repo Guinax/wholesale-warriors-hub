@@ -1,5 +1,6 @@
 import { Minus, Plus, ShoppingCart } from "lucide-react";
 import { useState } from "react";
+import { useCart } from "@/contexts/CartContext";
 
 interface ProductCardProps {
   badge?: string;
@@ -12,10 +13,15 @@ interface ProductCardProps {
 
 const ProductCard = ({ badge, badgeColor = "bg-primary", name, unitPrice, wholesalePrice, minQty }: ProductCardProps) => {
   const [qty, setQty] = useState(minQty);
+  const { addItem } = useCart();
+
+  const handleAdd = () => {
+    addItem({ name, wholesalePrice, qty, minQty });
+    setQty(minQty);
+  };
 
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden group hover:border-primary/40 hover:shadow-[0_0_30px_hsl(45_100%_50%/0.08)] transition-all duration-300">
-      {/* Image placeholder with gradient */}
       <div className="relative aspect-square bg-gradient-to-br from-secondary to-surface-elevated flex items-center justify-center overflow-hidden">
         <div className="w-20 h-20 rounded-full bg-muted/30 group-hover:scale-110 transition-transform duration-500" />
         <div className="absolute inset-0 bg-gradient-to-t from-card/50 to-transparent" />
@@ -38,7 +44,6 @@ const ProductCard = ({ badge, badgeColor = "bg-primary", name, unitPrice, wholes
           <span className="font-heading font-black text-xl text-foreground">{wholesalePrice}</span>
         </div>
 
-        {/* Qty controls */}
         <div className="flex items-center gap-3">
           <button
             onClick={() => setQty(Math.max(minQty, qty - 1))}
@@ -57,7 +62,10 @@ const ProductCard = ({ badge, badgeColor = "bg-primary", name, unitPrice, wholes
           </button>
         </div>
 
-        <button className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-heading font-bold text-xs tracking-wider py-3 rounded-lg hover:opacity-90 transition-opacity hover:shadow-[0_0_20px_hsl(45_100%_50%/0.3)]">
+        <button
+          onClick={handleAdd}
+          className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-heading font-bold text-xs tracking-wider py-3 rounded-lg hover:opacity-90 transition-opacity hover:shadow-[0_0_20px_hsl(45_100%_50%/0.3)]"
+        >
           <ShoppingCart className="w-4 h-4" />
           ADICIONAR AO LOTE
         </button>

@@ -1,5 +1,6 @@
-import { ShoppingCart, Zap } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import { useState } from "react";
+import logo from "@/assets/logo.png";
 
 const TopNav = () => {
   const [cartCount] = useState(3);
@@ -8,7 +9,7 @@ const TopNav = () => {
     <nav className="sticky top-0 z-50 bg-background/90 backdrop-blur-xl border-b border-border">
       <div className="container flex items-center justify-between h-14">
         <div className="flex items-center gap-2">
-          <Zap className="w-5 h-5 text-primary fill-primary" />
+          <img src={logo} alt="Mansão Maromba" className="w-8 h-8 object-contain" width={32} height={32} />
           <span className="font-heading font-bold text-sm tracking-wider text-foreground">
             MANSÃO MAROMBA
           </span>

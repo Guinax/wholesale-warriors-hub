@@ -4,6 +4,7 @@ import FeaturedProducts from "@/components/FeaturedProducts";
 import CategoryTabs from "@/components/CategoryTabs";
 import CatalogSection from "@/components/CatalogSection";
 import LogisticsSection from "@/components/LogisticsSection";
+import Footer from "@/components/Footer";
 import BottomNav from "@/components/BottomNav";
 
 const Index = () => {
@@ -15,6 +16,7 @@ const Index = () => {
       <CategoryTabs />
       <CatalogSection />
       <LogisticsSection />
+      <Footer />
       <BottomNav />
     </div>
   );

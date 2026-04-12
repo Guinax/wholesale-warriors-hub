@@ -10,8 +10,8 @@ const TopNav = () => {
       <div className="container flex items-center justify-between h-14">
         <div className="flex items-center gap-2">
           <img src={logo} alt="Mansão Maromba" className="w-8 h-8 object-contain" width={32} height={32} />
-          <span className="font-heading font-bold text-sm tracking-wider text-foreground">
-            MANSÃO MAROMBA
+          <span className="font-heading font-bold text-xs tracking-wider text-foreground">
+            LOJA OFICIAL FAMÍLIA MAROMBA
           </span>
         </div>
 

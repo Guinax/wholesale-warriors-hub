@@ -14,8 +14,8 @@ const Footer = () => {
         {/* Logo & brand */}
         <div className="flex flex-col items-center gap-3">
           <img src={logo} alt="Mansão Maromba" className="w-16 h-16 object-contain" width={64} height={64} />
-          <p className="font-heading font-black text-lg tracking-wider text-foreground">
-            MANSÃO MAROMBA
+          <p className="font-heading font-black text-base tracking-wider text-foreground">
+            LOJA OFICIAL FAMÍLIA MAROMBA
           </p>
           <p className="text-xs text-muted-foreground text-center max-w-xs">
             Portal exclusivo de atacado para revendedores autorizados.

@@ -11,6 +11,7 @@ const highlights = [
 const FeaturedProducts = () => {
   const { addItem } = useCart();
 
+  return (
     <section className="py-10">
       <div className="container space-y-6">
         <div className="text-center space-y-2">

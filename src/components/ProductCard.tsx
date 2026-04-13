@@ -9,9 +9,11 @@ interface ProductCardProps {
   unitPrice: string;
   wholesalePrice: string;
   minQty: number;
+  image?: string;
+  viewMode?: "grid" | "list";
 }
 
-const ProductCard = ({ badge, badgeColor = "bg-primary", name, unitPrice, wholesalePrice, minQty }: ProductCardProps) => {
+const ProductCard = ({ badge, badgeColor = "bg-primary", name, unitPrice, wholesalePrice, minQty, image, viewMode = "grid" }: ProductCardProps) => {
   const [qty, setQty] = useState(minQty);
   const { addItem } = useCart();
 
@@ -20,10 +22,54 @@ const ProductCard = ({ badge, badgeColor = "bg-primary", name, unitPrice, wholes
     setQty(minQty);
   };
 
+  if (viewMode === "list") {
+    return (
+      <div className="bg-card rounded-xl border border-border overflow-hidden flex hover:border-primary/40 transition-all duration-300">
+        <div className="relative w-24 h-24 flex-shrink-0 bg-gradient-to-br from-secondary to-surface-elevated flex items-center justify-center overflow-hidden">
+          {image ? (
+            <img src={image} alt={name} className="w-full h-full object-cover" loading="lazy" />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-muted/30" />
+          )}
+          {badge && (
+            <span className={`absolute top-1 left-1 ${badgeColor} text-primary-foreground text-[8px] font-heading font-bold tracking-wider px-1.5 py-0.5 rounded-md`}>
+              {badge}
+            </span>
+          )}
+        </div>
+        <div className="flex-1 p-3 flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h3 className="font-heading font-bold text-xs tracking-wide text-foreground truncate">{name}</h3>
+            <p className="text-[10px] text-muted-foreground line-through">{unitPrice}</p>
+            <span className="font-heading font-black text-base text-foreground">{wholesalePrice}</span>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-1.5">
+              <button onClick={() => setQty(Math.max(minQty, qty - 1))} className="w-7 h-7 rounded-md bg-secondary flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors">
+                <Minus className="w-3 h-3" />
+              </button>
+              <span className="font-heading font-bold text-xs text-foreground min-w-[2ch] text-center">{qty}</span>
+              <button onClick={() => setQty(qty + 1)} className="w-7 h-7 rounded-md bg-secondary flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors">
+                <Plus className="w-3 h-3" />
+              </button>
+            </div>
+            <button onClick={handleAdd} className="w-9 h-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 transition-opacity">
+              <ShoppingCart className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden group hover:border-primary/40 hover:shadow-[0_0_30px_hsl(45_100%_50%/0.08)] transition-all duration-300">
       <div className="relative aspect-square bg-gradient-to-br from-secondary to-surface-elevated flex items-center justify-center overflow-hidden">
-        <div className="w-20 h-20 rounded-full bg-muted/30 group-hover:scale-110 transition-transform duration-500" />
+        {image ? (
+          <img src={image} alt={name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+        ) : (
+          <div className="w-20 h-20 rounded-full bg-muted/30 group-hover:scale-110 transition-transform duration-500" />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-card/50 to-transparent" />
         {badge && (
           <span className={`absolute top-3 left-3 ${badgeColor} text-primary-foreground text-[10px] font-heading font-bold tracking-wider px-2.5 py-1 rounded-md shadow-md`}>

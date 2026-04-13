@@ -1,5 +1,9 @@
 import { Grid3X3, List } from "lucide-react";
+import { useState } from "react";
 import ProductCard from "./ProductCard";
+import iWantYou from "@/assets/i-want-you.jpeg";
+import comboDrinks from "@/assets/combo-drinks.jpeg";
+import productsHero from "@/assets/products-hero.jpeg";
 
 const products = [
   {
@@ -8,20 +12,37 @@ const products = [
     unitPrice: "R$ 249,00",
     wholesalePrice: "R$ 145,00",
     minQty: 12,
+    image: productsHero,
   },
   {
-    badge: "NEW RELEASE",
+    badge: "LANÇAMENTO",
     badgeColor: "bg-success",
-    name: "PRE-WORKOUT VOLTAGE",
-    unitPrice: "R$ 189,00",
-    wholesalePrice: "R$ 98,00",
+    name: "I WANT YOU THERMOGÊNICO",
+    unitPrice: "R$ 89,00",
+    wholesalePrice: "R$ 49,00",
     minQty: 20,
+    image: iWantYou,
+  },
+  {
+    badge: "MAIS VENDIDO",
+    badgeColor: "bg-destructive",
+    name: "COMBO DRINKS MANSÃO",
+    unitPrice: "R$ 15,90",
+    wholesalePrice: "R$ 8,90",
+    minQty: 24,
+    image: comboDrinks,
   },
   {
     name: "CREATINE PURE 500G",
     unitPrice: "R$ 120,00",
     wholesalePrice: "R$ 65,00",
     minQty: 15,
+  },
+  {
+    name: "PRE-WORKOUT VOLTAGE",
+    unitPrice: "R$ 189,00",
+    wholesalePrice: "R$ 98,00",
+    minQty: 20,
   },
   {
     name: 'OVERSIZED "NO PAIN"',
@@ -32,6 +53,8 @@ const products = [
 ];
 
 const CatalogSection = () => {
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
   return (
     <section className="py-6">
       <div className="container">
@@ -45,18 +68,27 @@ const CatalogSection = () => {
             </p>
           </div>
           <div className="flex items-center gap-1 bg-secondary rounded-lg p-1">
-            <button className="p-1.5 rounded-md bg-muted">
-              <Grid3X3 className="w-4 h-4 text-foreground" />
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`p-1.5 rounded-md ${viewMode === "grid" ? "bg-muted" : ""}`}
+            >
+              <Grid3X3 className={`w-4 h-4 ${viewMode === "grid" ? "text-foreground" : "text-muted-foreground"}`} />
             </button>
-            <button className="p-1.5 rounded-md">
-              <List className="w-4 h-4 text-muted-foreground" />
+            <button
+              onClick={() => setViewMode("list")}
+              className={`p-1.5 rounded-md ${viewMode === "list" ? "bg-muted" : ""}`}
+            >
+              <List className={`w-4 h-4 ${viewMode === "list" ? "text-foreground" : "text-muted-foreground"}`} />
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className={viewMode === "grid"
+          ? "grid grid-cols-2 md:grid-cols-3 gap-3"
+          : "flex flex-col gap-3"
+        }>
           {products.map((product) => (
-            <ProductCard key={product.name} {...product} />
+            <ProductCard key={product.name} {...product} viewMode={viewMode} />
           ))}
         </div>
       </div>

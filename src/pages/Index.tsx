@@ -2,6 +2,7 @@ import TopNav from "@/components/TopNav";
 import HeroSection from "@/components/HeroSection";
 import FeaturedProducts from "@/components/FeaturedProducts";
 import CategoryTabs from "@/components/CategoryTabs";
+import CimedSection from "@/components/CimedSection";
 import CatalogSection from "@/components/CatalogSection";
 import LogisticsSection from "@/components/LogisticsSection";
 import Footer from "@/components/Footer";
@@ -14,6 +15,7 @@ const Index = () => {
       <HeroSection />
       <FeaturedProducts />
       <CategoryTabs />
+      <CimedSection />
       <CatalogSection />
       <LogisticsSection />
       <Footer />

@@ -1,4 +1,4 @@
-import productsHero from "@/assets/products-hero.jpeg";
+import comboDrinks from "@/assets/combo-drinks.jpeg";
 import { Flame, Star, TrendingUp } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 
@@ -26,7 +26,6 @@ const FeaturedProducts = () => {
           </p>
         </div>
 
-        {/* Stats strip */}
         <div className="grid grid-cols-3 gap-2">
           {highlights.map((h) => (
             <div
@@ -42,11 +41,10 @@ const FeaturedProducts = () => {
           ))}
         </div>
 
-        {/* Large product showcase */}
         <div className="relative rounded-2xl overflow-hidden border border-border group">
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent z-10" />
           <img
-            src={productsHero}
+            src={comboDrinks}
             alt="Mansão Maromba Combo Drinks"
             className="w-full h-64 md:h-80 object-cover group-hover:scale-105 transition-transform duration-700"
             loading="lazy"
@@ -55,7 +53,7 @@ const FeaturedProducts = () => {
           />
           <div className="absolute bottom-0 left-0 right-0 z-20 p-5 space-y-3">
             <div className="flex flex-wrap gap-2">
-              {["Whisky Combo", "Vodka Combo", "Melancia Gin", "Whisky Combo Y"].map(
+              {["Whisky Combo", "Vodka Combo", "Melancia Gin", "Tigrinho", "Colors Berry"].map(
                 (flavor) => (
                   <span
                     key={flavor}

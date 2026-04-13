@@ -1,8 +1,10 @@
 import { Truck, LayoutList } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import heroBg from "@/assets/hero-bg.jpg";
 import productsHero from "@/assets/products-hero.jpeg";
 
 const HeroSection = () => {
+  const navigate = useNavigate();
   return (
     <section className="relative overflow-hidden">
       {/* Background image */}
@@ -61,7 +63,7 @@ const HeroSection = () => {
             <LayoutList className="w-5 h-5" />
             VER CATÁLOGO
           </button>
-          <button className="w-full flex items-center justify-center bg-card border border-border text-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:border-primary/50 transition-colors">
+          <button onClick={() => navigate("/cadastro")} className="w-full flex items-center justify-center bg-card border border-border text-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:border-primary/50 transition-colors">
             CADASTRAR CNPJ
           </button>
         </div>

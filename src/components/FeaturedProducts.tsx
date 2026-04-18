@@ -1,11 +1,12 @@
 import comboDrinks from "@/assets/combo-drinks.jpeg";
 import { Flame, Star, TrendingUp } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 
 const highlights = [
-  { icon: Flame, label: "MAIS VENDIDO", value: "Whisky Combo" },
-  { icon: Star, label: "AVALIAÇÃO", value: "4.9 ★★★★★" },
-  { icon: TrendingUp, label: "MARGEM REVENDA", value: "até 68%" },
+  { icon: Flame, label: "MAIS VENDIDO", value: "Whisky Combo", to: "/mais-vendidos" },
+  { icon: Star, label: "AVALIAÇÃO", value: "4.9 ★★★★★", to: "/avaliacoes" },
+  { icon: TrendingUp, label: "MARGEM REVENDA", value: "até 68%", to: "/comissoes" },
 ];
 
 const FeaturedProducts = () => {

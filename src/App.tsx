@@ -7,6 +7,9 @@ import { CartProvider } from "@/contexts/CartContext";
 import CartDrawer from "@/components/CartDrawer";
 import Index from "./pages/Index.tsx";
 import CadastroCNPJ from "./pages/CadastroCNPJ.tsx";
+import MaisVendidos from "./pages/MaisVendidos.tsx";
+import Avaliacoes from "./pages/Avaliacoes.tsx";
+import Comissoes from "./pages/Comissoes.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -22,6 +25,9 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/cadastro" element={<CadastroCNPJ />} />
+            <Route path="/mais-vendidos" element={<MaisVendidos />} />
+            <Route path="/avaliacoes" element={<Avaliacoes />} />
+            <Route path="/comissoes" element={<Comissoes />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

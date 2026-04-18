@@ -1,15 +1,17 @@
 import comboDrinks from "@/assets/combo-drinks.jpeg";
 import { Flame, Star, TrendingUp } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 
 const highlights = [
-  { icon: Flame, label: "MAIS VENDIDO", value: "Whisky Combo" },
-  { icon: Star, label: "AVALIAÇÃO", value: "4.9 ★★★★★" },
-  { icon: TrendingUp, label: "MARGEM REVENDA", value: "até 68%" },
+  { icon: Flame, label: "MAIS VENDIDO", value: "Whisky Combo", to: "/mais-vendidos" },
+  { icon: Star, label: "AVALIAÇÃO", value: "4.9 ★★★★★", to: "/avaliacoes" },
+  { icon: TrendingUp, label: "MARGEM REVENDA", value: "até 68%", to: "/comissoes" },
 ];
 
 const FeaturedProducts = () => {
   const { addItem } = useCart();
+  const navigate = useNavigate();
 
   return (
     <section className="py-10">
@@ -28,16 +30,17 @@ const FeaturedProducts = () => {
 
         <div className="grid grid-cols-3 gap-2">
           {highlights.map((h) => (
-            <div
+            <button
               key={h.label}
-              className="bg-card border border-border rounded-xl p-3 text-center space-y-1.5 hover:border-primary/30 transition-colors"
+              onClick={() => navigate(h.to)}
+              className="bg-card border border-border rounded-xl p-3 space-y-1.5 hover:border-primary/50 hover:shadow-[0_0_20px_hsl(45_100%_50%/0.1)] transition-all"
             >
               <h.icon className="w-5 h-5 text-primary mx-auto" />
-              <p className="text-[9px] font-heading font-semibold tracking-widest text-muted-foreground">
+              <p className="text-[9px] font-heading font-semibold tracking-widest text-muted-foreground text-center">
                 {h.label}
               </p>
-              <p className="font-heading font-bold text-xs text-foreground">{h.value}</p>
-            </div>
+              <p className="font-heading font-bold text-xs text-foreground text-center">{h.value}</p>
+            </button>
           ))}
         </div>
 

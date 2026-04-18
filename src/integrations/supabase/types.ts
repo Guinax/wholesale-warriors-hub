@@ -14,7 +14,105 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bestsellers: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          min_qty: number
+          name: string
+          rank: number
+          unit_price: number | null
+          units_sold: number
+          wholesale_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          min_qty?: number
+          name: string
+          rank: number
+          unit_price?: number | null
+          units_sold?: number
+          wholesale_price: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          min_qty?: number
+          name?: string
+          rank?: number
+          unit_price?: number | null
+          units_sold?: number
+          wholesale_price?: number
+        }
+        Relationships: []
+      }
+      commission_tiers: {
+        Row: {
+          commission_pct: number
+          created_at: string
+          id: string
+          label: string
+          max_order: number | null
+          min_order: number
+          perks: string | null
+          sort_order: number
+        }
+        Insert: {
+          commission_pct: number
+          created_at?: string
+          id?: string
+          label: string
+          max_order?: number | null
+          min_order: number
+          perks?: string | null
+          sort_order?: number
+        }
+        Update: {
+          commission_pct?: number
+          created_at?: string
+          id?: string
+          label?: string
+          max_order?: number | null
+          min_order?: number
+          perks?: string | null
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      reviews: {
+        Row: {
+          city: string
+          comment: string
+          created_at: string
+          id: string
+          product_name: string | null
+          rating: number
+          reseller_name: string
+        }
+        Insert: {
+          city: string
+          comment: string
+          created_at?: string
+          id?: string
+          product_name?: string | null
+          rating: number
+          reseller_name: string
+        }
+        Update: {
+          city?: string
+          comment?: string
+          created_at?: string
+          id?: string
+          product_name?: string | null
+          rating?: number
+          reseller_name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

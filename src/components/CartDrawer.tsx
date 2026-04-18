@@ -1,6 +1,7 @@
 import { Minus, Plus, Trash2, ShoppingCart, X } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useCart } from "@/contexts/CartContext";
+import { sendOrderWhatsApp } from "@/lib/whatsapp";
 
 const CartDrawer = () => {
   const { items, isOpen, closeCart, removeItem, updateQty, totalItems, totalPrice } = useCart();
@@ -99,9 +100,10 @@ const CartDrawer = () => {
               )}
               <button
                 disabled={totalPrice < 2500}
+                onClick={() => sendOrderWhatsApp(items, totalPrice)}
                 className="w-full bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                FINALIZAR PEDIDO
+                FINALIZAR PEDIDO VIA WHATSAPP
               </button>
             </div>
           </>

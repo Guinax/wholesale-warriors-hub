@@ -2,9 +2,13 @@ import { Truck, LayoutList } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import heroBg from "@/assets/hero-bg.jpg";
 import productsHero from "@/assets/products-hero.jpeg";
+import { contactWhatsApp } from "@/lib/whatsapp";
 
 const HeroSection = () => {
   const navigate = useNavigate();
+  const scrollToCatalog = () => {
+    document.getElementById("catalogo")?.scrollIntoView({ behavior: "smooth" });
+  };
   return (
     <section className="relative overflow-hidden">
       {/* Background image */}
@@ -59,9 +63,15 @@ const HeroSection = () => {
 
         {/* CTAs */}
         <div className="flex flex-col gap-3 max-w-md pt-4">
-          <button className="w-full flex items-center justify-center gap-3 bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon">
+          <button onClick={scrollToCatalog} className="w-full flex items-center justify-center gap-3 bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon">
             <LayoutList className="w-5 h-5" />
             VER CATÁLOGO
+          </button>
+          <button
+            onClick={() => contactWhatsApp()}
+            className="w-full flex items-center justify-center bg-secondary border border-border text-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:border-primary/50 transition-colors"
+          >
+            FALAR COM CONSULTOR
           </button>
           <button onClick={() => navigate("/cadastro")} className="w-full flex items-center justify-center bg-card border border-border text-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:border-primary/50 transition-colors">
             CADASTRAR CNPJ

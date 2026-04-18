@@ -56,7 +56,7 @@ const CatalogSection = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   return (
-    <section className="py-6">
+    <section id="catalogo" className="py-6 scroll-mt-20">
       <div className="container">
         <div className="flex items-center justify-between mb-6">
           <div>

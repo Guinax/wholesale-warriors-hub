@@ -1,10 +1,11 @@
-import { Minus, Plus, Trash2, ShoppingCart, X } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingCart } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useCart } from "@/contexts/CartContext";
-import { sendOrderWhatsApp } from "@/lib/whatsapp";
 
 const CartDrawer = () => {
   const { items, isOpen, closeCart, removeItem, updateQty, totalItems, totalPrice } = useCart();
+  const navigate = useNavigate();
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && closeCart()}>
@@ -100,10 +101,13 @@ const CartDrawer = () => {
               )}
               <button
                 disabled={totalPrice < 2500}
-                onClick={() => sendOrderWhatsApp(items, totalPrice)}
+                onClick={() => {
+                  closeCart();
+                  navigate("/pagamento");
+                }}
                 className="w-full bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                FINALIZAR PEDIDO VIA WHATSAPP
+                IR PARA PAGAMENTO
               </button>
             </div>
           </>

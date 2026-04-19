@@ -10,6 +10,8 @@ import CadastroCNPJ from "./pages/CadastroCNPJ.tsx";
 import MaisVendidos from "./pages/MaisVendidos.tsx";
 import Avaliacoes from "./pages/Avaliacoes.tsx";
 import Comissoes from "./pages/Comissoes.tsx";
+import Pagamento from "./pages/Pagamento.tsx";
+import Recibo from "./pages/Recibo.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -17,21 +19,23 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <CartProvider>
-        <Toaster />
-        <Sonner />
-        <CartDrawer />
-        <BrowserRouter>
+      <BrowserRouter>
+        <CartProvider>
+          <Toaster />
+          <Sonner />
+          <CartDrawer />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/cadastro" element={<CadastroCNPJ />} />
             <Route path="/mais-vendidos" element={<MaisVendidos />} />
             <Route path="/avaliacoes" element={<Avaliacoes />} />
             <Route path="/comissoes" element={<Comissoes />} />
+            <Route path="/pagamento" element={<Pagamento />} />
+            <Route path="/recibo/:code" element={<Recibo />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
-      </CartProvider>
+        </CartProvider>
+      </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );

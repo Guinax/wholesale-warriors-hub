@@ -83,6 +83,72 @@ export type Database = {
         }
         Relationships: []
       }
+      orders: {
+        Row: {
+          address_city: string
+          address_complement: string | null
+          address_number: string
+          address_state: string
+          address_street: string
+          address_zip: string
+          created_at: string
+          customer_cnpj: string | null
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          delivery_status: string
+          id: string
+          items: Json
+          order_code: string
+          payment_method: string
+          payment_status: string
+          total_amount: number
+          tracking_code: string
+        }
+        Insert: {
+          address_city: string
+          address_complement?: string | null
+          address_number: string
+          address_state: string
+          address_street: string
+          address_zip: string
+          created_at?: string
+          customer_cnpj?: string | null
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          delivery_status?: string
+          id?: string
+          items: Json
+          order_code: string
+          payment_method: string
+          payment_status?: string
+          total_amount: number
+          tracking_code: string
+        }
+        Update: {
+          address_city?: string
+          address_complement?: string | null
+          address_number?: string
+          address_state?: string
+          address_street?: string
+          address_zip?: string
+          created_at?: string
+          customer_cnpj?: string | null
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string
+          delivery_status?: string
+          id?: string
+          items?: Json
+          order_code?: string
+          payment_method?: string
+          payment_status?: string
+          total_amount?: number
+          tracking_code?: string
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           city: string

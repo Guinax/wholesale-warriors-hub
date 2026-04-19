@@ -4,6 +4,9 @@ import ProductCard from "./ProductCard";
 import iWantYou from "@/assets/i-want-you.jpeg";
 import comboDrinks from "@/assets/combo-drinks.jpeg";
 import productsHero from "@/assets/products-hero.jpeg";
+import whiskyMansao from "@/assets/whisky-mansao.png";
+import vodkaMansao from "@/assets/vodka-mansao.png";
+import ginMansao from "@/assets/gin-mansao.png";
 
 const products = [
   {
@@ -31,6 +34,33 @@ const products = [
     wholesalePrice: "R$ 8,90",
     minQty: 24,
     image: comboDrinks,
+  },
+  {
+    badge: "MANSÃO EDITION",
+    badgeColor: "bg-primary",
+    name: "WHISKY MANSÃO MAROMBA 750ML",
+    unitPrice: "R$ 89,00",
+    wholesalePrice: "R$ 52,00",
+    minQty: 12,
+    image: whiskyMansao,
+  },
+  {
+    badge: "MANSÃO EDITION",
+    badgeColor: "bg-primary",
+    name: "VODKA MANSÃO MAROMBA 750ML",
+    unitPrice: "R$ 79,00",
+    wholesalePrice: "R$ 45,00",
+    minQty: 12,
+    image: vodkaMansao,
+  },
+  {
+    badge: "MANSÃO EDITION",
+    badgeColor: "bg-primary",
+    name: "GIN MANSÃO MAROMBA 750ML",
+    unitPrice: "R$ 99,00",
+    wholesalePrice: "R$ 58,00",
+    minQty: 12,
+    image: ginMansao,
   },
   {
     name: "CREATINE PURE 500G",

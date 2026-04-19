@@ -112,7 +112,7 @@ const Admin = () => {
     field: "delivery_status" | "payment_status",
     value: string
   ) => {
-    const { error } = await supabase.from("orders").update({ [field]: value }).eq("id", id);
+    const { error } = await supabase.from("orders").update({ [field]: value } as any).eq("id", id);
     if (error) {
       toast.error("Erro ao atualizar");
       return;

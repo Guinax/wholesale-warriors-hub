@@ -12,6 +12,8 @@ import Avaliacoes from "./pages/Avaliacoes.tsx";
 import Comissoes from "./pages/Comissoes.tsx";
 import Pagamento from "./pages/Pagamento.tsx";
 import Recibo from "./pages/Recibo.tsx";
+import Auth from "./pages/Auth.tsx";
+import Admin from "./pages/Admin.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -32,6 +34,8 @@ const App = () => (
             <Route path="/comissoes" element={<Comissoes />} />
             <Route path="/pagamento" element={<Pagamento />} />
             <Route path="/recibo/:code" element={<Recibo />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </CartProvider>

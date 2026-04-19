@@ -43,7 +43,7 @@ const Recibo = () => {
     (async () => {
       if (!code) return;
       const { data } = await supabase.from("orders").select("*").eq("order_code", code).maybeSingle();
-      setOrder(data as Order | null);
+      setOrder((data as unknown as Order) ?? null);
       setLoading(false);
     })();
   }, [code]);

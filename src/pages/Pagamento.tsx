@@ -99,7 +99,7 @@ const Pagamento = () => {
       order_code: orderCode,
       tracking_code: trackingCode,
       payment_method: method,
-      payment_status: "confirmado",
+      payment_status: "paid",
       delivery_status: "postado",
       customer_name: customer.name,
       customer_email: customer.email,

@@ -334,12 +334,18 @@ const Admin = () => {
               <section>
                 <h3 className="font-semibold mb-1">Itens</h3>
                 <ul className="space-y-1">
-                  {Array.isArray(selected.items) && selected.items.map((it: any, i: number) => (
-                    <li key={i} className="flex justify-between border-b pb-1">
-                      <span>{it.quantity}× {it.name}</span>
-                      <span>{formatCurrency(Number(it.price) * Number(it.quantity))}</span>
-                    </li>
-                  ))}
+                  {Array.isArray(selected.items) && selected.items.map((it: any, i: number) => {
+                    const qty = Number(it.qty ?? it.quantity ?? 0);
+                    const subtotal = Number(
+                      it.subtotal ?? (Number(it.unit_price ?? it.price ?? 0) * qty)
+                    );
+                    return (
+                      <li key={i} className="flex justify-between border-b pb-1">
+                        <span>{qty}× {it.name}</span>
+                        <span>{formatCurrency(subtotal)}</span>
+                      </li>
+                    );
+                  })}
                 </ul>
                 <p className="text-right font-bold mt-2">
                   Total: {formatCurrency(Number(selected.total_amount))}

@@ -4,6 +4,8 @@ import { useState } from "react";
 import iWantYou from "@/assets/i-want-you.jpeg";
 import comboDrinks from "@/assets/combo-drinks.jpeg";
 import productsHero from "@/assets/products-hero.jpeg";
+import superCimedLinha from "@/assets/super-cimed-linha.jpeg";
+import engovRessaliv from "@/assets/engov-ressaliv.jpeg";
 
 interface CimedProduct {
   name: string;

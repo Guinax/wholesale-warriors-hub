@@ -205,6 +205,36 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_order_by_code: {
+        Args: { _order_code: string }
+        Returns: {
+          address_city: string
+          address_complement: string | null
+          address_number: string
+          address_state: string
+          address_street: string
+          address_zip: string
+          created_at: string
+          customer_cnpj: string | null
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          delivery_status: string
+          id: string
+          items: Json
+          order_code: string
+          payment_method: string
+          payment_status: string
+          total_amount: number
+          tracking_code: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

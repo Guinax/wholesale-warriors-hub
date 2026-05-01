@@ -42,7 +42,8 @@ const Recibo = () => {
   useEffect(() => {
     (async () => {
       if (!code) return;
-      const { data } = await supabase.from("orders").select("*").eq("order_code", code).maybeSingle();
+      const { data: rows } = await supabase.rpc("get_order_by_code", { _order_code: code });
+      const data = Array.isArray(rows) ? rows[0] : rows;
       setOrder((data as unknown as Order) ?? null);
       setLoading(false);
     })();

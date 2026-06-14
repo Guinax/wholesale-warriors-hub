@@ -1,10 +1,11 @@
 import { Pill, Shirt, Dumbbell, Wrench } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const categories = [
-  { id: "01", label: "SUPLEMENTOS", icon: Pill, sub: "bolt" },
-  { id: "02", label: "ROUPAS", icon: Shirt, sub: "apparel" },
-  { id: "03", label: "ACESSÓRIOS", icon: Dumbbell, sub: "fitness_center" },
-  { id: "04", label: "EQUIPAMENTO", icon: Wrench, sub: "handyman" },
+  { id: "01", label: "SUPLEMENTOS", icon: Pill, path: "/suplementos" },
+  { id: "02", label: "ROUPAS", icon: Shirt, path: "/roupas" },
+  { id: "03", label: "ACESSÓRIOS", icon: Dumbbell, path: "/acessorios" },
+  { id: "04", label: "EQUIPAMENTO", icon: Wrench, path: "/equipamento" },
 ];
 
 const CategoryTabs = () => {
@@ -13,8 +14,9 @@ const CategoryTabs = () => {
       <div className="container">
         <div className="grid grid-cols-4 gap-2">
           {categories.map((cat) => (
-            <button
+            <Link
               key={cat.id}
+              to={cat.path}
               className="group flex flex-col items-center gap-2 p-3 rounded-lg bg-secondary hover:bg-secondary/80 border border-border hover:border-glow transition-all"
             >
               <span className="text-[10px] font-heading font-bold text-muted-foreground">
@@ -24,7 +26,7 @@ const CategoryTabs = () => {
               <span className="text-[9px] md:text-xs font-heading font-bold tracking-wider text-foreground">
                 {cat.label}
               </span>
-            </button>
+            </Link>
           ))}
         </div>
       </div>

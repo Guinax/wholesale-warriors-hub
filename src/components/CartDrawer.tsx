@@ -93,19 +93,12 @@ const CartDrawer = () => {
                   R$ {totalPrice.toFixed(2).replace(".", ",")}
                 </span>
               </div>
-              {totalPrice < 2500 && (
-                <p className="text-[10px] text-destructive font-heading font-semibold tracking-wider">
-                  ⚠ PEDIDO MÍNIMO: R$ 2.500,00 — faltam R${" "}
-                  {(2500 - totalPrice).toFixed(2).replace(".", ",")}
-                </p>
-              )}
               <button
-                disabled={totalPrice < 2500}
                 onClick={() => {
                   closeCart();
                   navigate("/pagamento");
                 }}
-                className="w-full bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon"
               >
                 IR PARA PAGAMENTO
               </button>

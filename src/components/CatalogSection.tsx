@@ -14,7 +14,7 @@ const products = [
     name: "MONSTER WHEY 2KG",
     unitPrice: "R$ 249,00",
     wholesalePrice: "R$ 145,00",
-    minQty: 10,
+    minQty: 1,
     image: productsHero,
   },
   {
@@ -23,7 +23,7 @@ const products = [
     name: "I WANT YOU THERMOGÊNICO",
     unitPrice: "R$ 89,00",
     wholesalePrice: "R$ 49,00",
-    minQty: 10,
+    minQty: 1,
     image: iWantYou,
   },
   {
@@ -32,7 +32,7 @@ const products = [
     name: "COMBO DRINKS MANSÃO",
     unitPrice: "R$ 15,90",
     wholesalePrice: "R$ 8,90",
-    minQty: 10,
+    minQty: 1,
     image: comboDrinks,
   },
   {
@@ -41,7 +41,7 @@ const products = [
     name: "WHISKY MANSÃO MAROMBA 750ML",
     unitPrice: "R$ 89,00",
     wholesalePrice: "R$ 52,00",
-    minQty: 10,
+    minQty: 1,
     image: whiskyMansao,
   },
   {
@@ -50,7 +50,7 @@ const products = [
     name: "VODKA MANSÃO MAROMBA 750ML",
     unitPrice: "R$ 79,00",
     wholesalePrice: "R$ 45,00",
-    minQty: 10,
+    minQty: 1,
     image: vodkaMansao,
   },
   {
@@ -59,26 +59,26 @@ const products = [
     name: "GIN MANSÃO MAROMBA 750ML",
     unitPrice: "R$ 99,00",
     wholesalePrice: "R$ 58,00",
-    minQty: 10,
+    minQty: 1,
     image: ginMansao,
   },
   {
     name: "CREATINE PURE 500G",
     unitPrice: "R$ 120,00",
     wholesalePrice: "R$ 65,00",
-    minQty: 10,
+    minQty: 1,
   },
   {
     name: "PRE-WORKOUT VOLTAGE",
     unitPrice: "R$ 189,00",
     wholesalePrice: "R$ 98,00",
-    minQty: 10,
+    minQty: 1,
   },
   {
     name: 'OVERSIZED "NO PAIN"',
     unitPrice: "R$ 139,00",
     wholesalePrice: "R$ 72,00",
-    minQty: 10,
+    minQty: 1,
   },
 ];
 

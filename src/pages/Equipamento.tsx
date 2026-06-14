@@ -5,37 +5,37 @@ const products = [
     name: "KIT HALTERES AJUSTÁVEIS 20KG",
     unitPrice: "R$ 899,00",
     wholesalePrice: "R$ 549,00",
-    minQty: 5,
+    minQty: 1,
   },
   {
     name: "BARRA OLÍMPICA 1.80M",
     unitPrice: "R$ 699,00",
     wholesalePrice: "R$ 429,00",
-    minQty: 5,
+    minQty: 1,
   },
   {
     name: "ANILHAS EMBORRACHADAS 10KG (PAR)",
     unitPrice: "R$ 349,00",
     wholesalePrice: "R$ 189,00",
-    minQty: 10,
+    minQty: 1,
   },
   {
     name: "BANCO SUPINO REGULÁVEL",
     unitPrice: "R$ 1.299,00",
     wholesalePrice: "R$ 789,00",
-    minQty: 3,
+    minQty: 1,
   },
   {
     name: "ELÁSTICO MINI BAND KIT",
     unitPrice: "R$ 89,00",
     wholesalePrice: "R$ 42,00",
-    minQty: 10,
+    minQty: 1,
   },
   {
     name: "CORDA NAVAL 12M",
     unitPrice: "R$ 499,00",
     wholesalePrice: "R$ 279,00",
-    minQty: 5,
+    minQty: 1,
   },
 ];
 

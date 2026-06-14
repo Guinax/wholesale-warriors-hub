@@ -75,7 +75,7 @@ const FeaturedProducts = () => {
                 </p>
               </div>
               <button
-                onClick={() => addItem({ name: "COMBO DRINKS PACK", wholesalePrice: "R$ 8,90", qty: 24, minQty: 24 })}
+                onClick={() => addItem({ name: "COMBO DRINKS PACK", wholesalePrice: "R$ 8,90", qty: 1, minQty: 1 })}
                 className="bg-primary text-primary-foreground font-heading font-black text-xs tracking-wider px-6 py-3 rounded-lg hover:opacity-90 transition-opacity glow-neon"
               >
                 COMPRAR LOTE

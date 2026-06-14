@@ -25,7 +25,7 @@ const cimedProducts: CimedProduct[] = [
     name: "COMBO DRINKS MANSÃO",
     unitPrice: "R$ 15,90",
     wholesalePrice: "R$ 8,90",
-    minQty: 10,
+    minQty: 1,
     image: comboDrinks,
     highlight: true,
   },
@@ -35,7 +35,7 @@ const cimedProducts: CimedProduct[] = [
     name: "SUPER CIMED DESODORANTE 150ML (4 FRAGRÂNCIAS)",
     unitPrice: "R$ 24,90",
     wholesalePrice: "R$ 13,50",
-    minQty: 10,
+    minQty: 1,
     image: superCimedLinha,
   },
   {
@@ -44,7 +44,7 @@ const cimedProducts: CimedProduct[] = [
     name: "GEL DENTAL SUPER 12H 90G (KIT 3 SABORES)",
     unitPrice: "R$ 18,90",
     wholesalePrice: "R$ 9,80",
-    minQty: 10,
+    minQty: 1,
     image: superCimedLinha,
   },
   {
@@ -53,7 +53,7 @@ const cimedProducts: CimedProduct[] = [
     name: "ENGOV AFTER 250ML (CITRUS / TANGERINA)",
     unitPrice: "R$ 14,90",
     wholesalePrice: "R$ 7,90",
-    minQty: 10,
+    minQty: 1,
     image: engovRessaliv,
   },
   {
@@ -62,7 +62,7 @@ const cimedProducts: CimedProduct[] = [
     name: "RESSALIV AFTER 250ML (LIMÃO / LARANJA)",
     unitPrice: "R$ 13,90",
     wholesalePrice: "R$ 7,50",
-    minQty: 10,
+    minQty: 1,
     image: engovRessaliv,
   },
   {
@@ -71,7 +71,7 @@ const cimedProducts: CimedProduct[] = [
     name: "I WANT YOU THERMOGÊNICO 60 CAPS",
     unitPrice: "R$ 89,00",
     wholesalePrice: "R$ 49,00",
-    minQty: 10,
+    minQty: 1,
     image: iWantYou,
   },
   {
@@ -79,26 +79,26 @@ const cimedProducts: CimedProduct[] = [
     name: "MONSTER WHEY 2KG",
     unitPrice: "R$ 249,00",
     wholesalePrice: "R$ 145,00",
-    minQty: 10,
+    minQty: 1,
     image: productsHero,
   },
   {
     name: "CREATINE PURE 500G",
     unitPrice: "R$ 120,00",
     wholesalePrice: "R$ 65,00",
-    minQty: 10,
+    minQty: 1,
   },
   {
     name: "PRE-WORKOUT VOLTAGE",
     unitPrice: "R$ 189,00",
     wholesalePrice: "R$ 98,00",
-    minQty: 10,
+    minQty: 1,
   },
   {
     name: 'OVERSIZED "NO PAIN"',
     unitPrice: "R$ 139,00",
     wholesalePrice: "R$ 72,00",
-    minQty: 10,
+    minQty: 1,
   },
 ];
 

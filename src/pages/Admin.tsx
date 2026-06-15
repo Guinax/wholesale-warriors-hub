@@ -187,6 +187,12 @@ const Admin = () => {
       </header>
 
       <main className="container py-6 space-y-4">
+        <Tabs defaultValue="orders">
+          <TabsList>
+            <TabsTrigger value="orders">Pedidos</TabsTrigger>
+            <TabsTrigger value="products">Produtos</TabsTrigger>
+          </TabsList>
+          <TabsContent value="orders" className="space-y-4 mt-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Card className="p-3">
             <p className="text-xs text-muted-foreground">Total de pedidos</p>

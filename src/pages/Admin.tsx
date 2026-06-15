@@ -313,6 +313,11 @@ const Admin = () => {
             </Card>
           ))}
         </div>
+          </TabsContent>
+          <TabsContent value="products" className="mt-4">
+            <ProductsManager />
+          </TabsContent>
+        </Tabs>
       </main>
 
       <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>

@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { LogOut, Search, Package, RefreshCw, Eye, ShieldAlert } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ProductsManager from "@/components/admin/ProductsManager";
 import { formatCurrency, DELIVERY_STAGES } from "@/lib/orderUtils";
 
 type Order = {

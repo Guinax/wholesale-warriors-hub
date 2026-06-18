@@ -113,7 +113,7 @@ const ProductCard = ({ badge, badgeColor = "bg-primary", name, unitPrice, wholes
           className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-heading font-bold text-xs tracking-wider py-3 rounded-lg hover:opacity-90 transition-opacity hover:shadow-[0_0_20px_hsl(45_100%_50%/0.3)]"
         >
           <ShoppingCart className="w-4 h-4" />
-          ADICIONAR AO LOTE
+          ADICIONAR AO CARRINHO
         </button>
       </div>
     </div>

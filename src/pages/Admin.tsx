@@ -319,6 +319,9 @@ const Admin = () => {
           <TabsContent value="products" className="mt-4">
             <ProductsManager />
           </TabsContent>
+          <TabsContent value="users" className="mt-4">
+            <UsersManager />
+          </TabsContent>
         </Tabs>
       </main>
 

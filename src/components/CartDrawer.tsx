@@ -95,6 +95,13 @@ const CartDrawer = () => {
                 </span>
               </div>
               <button
+                onClick={closeCart}
+                className="w-full flex items-center justify-center gap-2 bg-secondary text-foreground font-heading font-bold text-xs tracking-wider py-3 rounded-lg hover:bg-secondary/70 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                VOLTAR ÀS COMPRAS
+              </button>
+              <button
                 onClick={() => {
                   closeCart();
                   navigate("/pagamento");

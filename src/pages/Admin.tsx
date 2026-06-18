@@ -192,6 +192,7 @@ const Admin = () => {
           <TabsList>
             <TabsTrigger value="orders">Pedidos</TabsTrigger>
             <TabsTrigger value="products">Produtos</TabsTrigger>
+            <TabsTrigger value="users">Usuários</TabsTrigger>
           </TabsList>
           <TabsContent value="orders" className="space-y-4 mt-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { LogOut, Search, Package, RefreshCw, Eye, ShieldAlert } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProductsManager from "@/components/admin/ProductsManager";
+import UsersManager from "@/components/admin/UsersManager";
 import { formatCurrency, DELIVERY_STAGES } from "@/lib/orderUtils";
 
 type Order = {

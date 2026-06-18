@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bitcoin, Copy, CreditCard, QrCode, ShieldCheck, Wallet } from "lucide-react";
+import { ArrowLeft, Copy, CreditCard, QrCode, ShieldCheck, Wallet } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -10,12 +10,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, generateOrderCode, generateTrackingCode } from "@/lib/orderUtils";
 
-type PaymentMethod = "pix" | "cartao" | "cripto";
+type PaymentMethod = "pix" | "cartao";
 
-const CRYPTO_WALLETS = {
-  BTC: "bc1qmaromba0xfamily0xstore0xdemo0wallet0addr",
-  USDT: "0xMAROMBA1234FAMILY5678STORE9012DEMO3456WALLET",
-};
+const PIX_KEY = "wap33000@gmail.com";
+
 
 const Pagamento = () => {
   const { items, totalPrice, clearCart } = useCart() as ReturnType<typeof useCart> & { clearCart?: () => void };

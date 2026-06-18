@@ -21,7 +21,6 @@ const Pagamento = () => {
   const { toast } = useToast();
 
   const [method, setMethod] = useState<PaymentMethod>("pix");
-  const [cryptoCoin, setCryptoCoin] = useState<"BTC" | "USDT">("BTC");
   const [submitting, setSubmitting] = useState(false);
 
   const [customer, setCustomer] = useState({

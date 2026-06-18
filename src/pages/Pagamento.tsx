@@ -133,14 +133,22 @@ const Pagamento = () => {
       <PageHeader
         eyebrow="CHECKOUT SEGURO"
         title="FINALIZAR PAGAMENTO"
-        subtitle="Escolha entre Pix, cartão de crédito ou criptomoedas. Pedido mínimo: R$ 2.500,00."
+        subtitle="Escolha entre Pix ou cartão de crédito. Compra mínima: 1 unidade."
       />
 
-      <main className="container py-6 grid lg:grid-cols-[1fr_380px] gap-6 pb-24">
+      <main className="container px-3 sm:px-4 py-4 sm:py-6 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4 sm:gap-6 pb-24">
+        <div className="lg:hidden">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-xs font-heading font-bold text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="w-4 h-4" /> VOLTAR ÀS COMPRAS
+          </button>
+        </div>
         {/* Form */}
-        <section className="space-y-6">
+        <section className="space-y-4 sm:space-y-6">
           {/* Dados do cliente */}
-          <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+          <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 space-y-4">
             <h2 className="font-heading font-black text-sm tracking-wider text-foreground">
               DADOS DE ENTREGA
             </h2>

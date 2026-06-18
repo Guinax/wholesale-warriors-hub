@@ -6,19 +6,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Lock, Mail, ArrowLeft } from "lucide-react";
+import { Lock, Mail, ArrowLeft, MessageCircle, User, Phone } from "lucide-react";
+import { contactWhatsApp } from "@/lib/whatsapp";
 
 const Auth = () => {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup">("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    document.title = "Acesso Administrativo | Família Maromba";
+    document.title = "Cadastro e Login | Família Maromba";
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate("/admin", { replace: true });
+      if (session) navigate("/", { replace: true });
     });
   }, [navigate]);
 
@@ -30,16 +33,19 @@ const Auth = () => {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/admin` },
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: { full_name: fullName, phone },
+          },
         });
         if (error) throw error;
-        toast.success("Conta criada! Faça login para continuar.");
+        toast.success("Cadastro realizado! Você já pode entrar.");
         setMode("login");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success("Login realizado!");
-        navigate("/admin", { replace: true });
+        navigate("/", { replace: true });
       }
     } catch (err: any) {
       toast.error(err.message || "Erro ao autenticar");
@@ -55,19 +61,51 @@ const Auth = () => {
           onClick={() => navigate("/")}
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="w-4 h-4" /> Voltar à loja
+          <ArrowLeft className="w-4 h-4" /> Ir para a loja
         </button>
         <div className="text-center space-y-1">
           <div className="inline-flex p-3 rounded-full bg-primary/10">
             <Lock className="w-6 h-6 text-primary" />
           </div>
-          <h1 className="text-2xl font-heading font-bold">Área Administrativa</h1>
+          <h1 className="text-2xl font-heading font-bold">Família Maromba</h1>
           <p className="text-sm text-muted-foreground">
-            {mode === "login" ? "Entre com suas credenciais" : "Crie sua conta"}
+            {mode === "login" ? "Entre com suas credenciais" : "Crie sua conta para comprar"}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === "signup" && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="name">Nome completo</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                    className="pl-9"
+                    placeholder="Seu nome"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">WhatsApp</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                    className="pl-9"
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+              </div>
+            </>
+          )}
           <div className="space-y-2">
             <Label htmlFor="email">E-mail</Label>
             <div className="relative">
@@ -102,24 +140,25 @@ const Auth = () => {
 
         <div className="text-center text-sm">
           {mode === "login" ? (
-            <button
-              onClick={() => setMode("signup")}
-              className="text-primary hover:underline"
-            >
+            <button onClick={() => setMode("signup")} className="text-primary hover:underline">
               Não tem conta? Cadastre-se
             </button>
           ) : (
-            <button
-              onClick={() => setMode("login")}
-              className="text-primary hover:underline"
-            >
+            <button onClick={() => setMode("login")} className="text-primary hover:underline">
               Já tem conta? Entrar
             </button>
           )}
         </div>
 
-        <p className="text-xs text-muted-foreground text-center pt-2 border-t">
-          Após cadastrar, peça ao responsável para promover sua conta a administrador.
+        <button
+          onClick={() => contactWhatsApp("Olá! Preciso de suporte com a Loja Família Maromba.")}
+          className="w-full flex items-center justify-center gap-2 bg-[#25D366] text-white font-heading font-bold text-sm py-3 rounded-lg hover:opacity-90 transition-opacity"
+        >
+          <MessageCircle className="w-4 h-4" />
+          SUPORTE VIA WHATSAPP
+        </button>
+        <p className="text-[10px] text-muted-foreground text-center">
+          (19) 97115-1107 — atendimento direto com nossa equipe
         </p>
       </Card>
     </div>

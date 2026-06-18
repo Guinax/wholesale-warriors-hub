@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { LogOut, Search, Package, RefreshCw, Eye, ShieldAlert } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProductsManager from "@/components/admin/ProductsManager";
+import UsersManager from "@/components/admin/UsersManager";
 import { formatCurrency, DELIVERY_STAGES } from "@/lib/orderUtils";
 
 type Order = {
@@ -191,6 +192,7 @@ const Admin = () => {
           <TabsList>
             <TabsTrigger value="orders">Pedidos</TabsTrigger>
             <TabsTrigger value="products">Produtos</TabsTrigger>
+            <TabsTrigger value="users">Usuários</TabsTrigger>
           </TabsList>
           <TabsContent value="orders" className="space-y-4 mt-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -316,6 +318,9 @@ const Admin = () => {
           </TabsContent>
           <TabsContent value="products" className="mt-4">
             <ProductsManager />
+          </TabsContent>
+          <TabsContent value="users" className="mt-4">
+            <UsersManager />
           </TabsContent>
         </Tabs>
       </main>

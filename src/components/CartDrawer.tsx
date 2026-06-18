@@ -1,7 +1,8 @@
-import { Minus, Plus, Trash2, ShoppingCart } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingCart, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useCart } from "@/contexts/CartContext";
+
 
 const CartDrawer = () => {
   const { items, isOpen, closeCart, removeItem, updateQty, totalItems, totalPrice } = useCart();
@@ -93,6 +94,13 @@ const CartDrawer = () => {
                   R$ {totalPrice.toFixed(2).replace(".", ",")}
                 </span>
               </div>
+              <button
+                onClick={closeCart}
+                className="w-full flex items-center justify-center gap-2 bg-secondary text-foreground font-heading font-bold text-xs tracking-wider py-3 rounded-lg hover:bg-secondary/70 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                VOLTAR ÀS COMPRAS
+              </button>
               <button
                 onClick={() => {
                   closeCart();

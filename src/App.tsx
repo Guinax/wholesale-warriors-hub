@@ -13,6 +13,7 @@ import Comissoes from "./pages/Comissoes.tsx";
 import Pagamento from "./pages/Pagamento.tsx";
 import Recibo from "./pages/Recibo.tsx";
 import Auth from "./pages/Auth.tsx";
+import OAuthConsent from "./pages/OAuthConsent.tsx";
 import Admin from "./pages/Admin.tsx";
 import Suplementos from "./pages/Suplementos.tsx";
 import Roupas from "./pages/Roupas.tsx";
@@ -48,6 +49,7 @@ const App = () => (
             <Route path="/roupas" element={<Roupas />} />
             <Route path="/acessorios" element={<Acessorios />} />
             <Route path="/equipamento" element={<Equipamento />} />
+            <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </CartProvider>

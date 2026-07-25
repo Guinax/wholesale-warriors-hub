@@ -1,9 +1,6 @@
 import { useCart } from "@/contexts/CartContext";
 import { ShoppingCart, Minus, Plus } from "lucide-react";
 import { useState } from "react";
-import iWantYou from "@/assets/i-want-you.jpeg";
-import comboDrinks from "@/assets/combo-drinks.jpeg";
-import productsHero from "@/assets/products-hero.jpeg";
 import superCimedLinha from "@/assets/super-cimed-linha.jpeg";
 import engovRessaliv from "@/assets/engov-ressaliv.jpeg";
 
@@ -22,11 +19,11 @@ const cimedProducts: CimedProduct[] = [
   {
     badge: "🔥 MAIS VENDIDO",
     badgeColor: "bg-destructive",
-    name: "COMBO DRINKS MANSÃO",
-    unitPrice: "R$ 15,90",
-    wholesalePrice: "R$ 8,90",
+    name: "ENGOV AFTER 250ML (CITRUS / TANGERINA)",
+    unitPrice: "R$ 14,90",
+    wholesalePrice: "R$ 7,90",
     minQty: 1,
-    image: comboDrinks,
+    image: engovRessaliv,
     highlight: true,
   },
   {
@@ -48,15 +45,6 @@ const cimedProducts: CimedProduct[] = [
     image: superCimedLinha,
   },
   {
-    badge: "RESSACA ZERO",
-    badgeColor: "bg-destructive",
-    name: "ENGOV AFTER 250ML (CITRUS / TANGERINA)",
-    unitPrice: "R$ 14,90",
-    wholesalePrice: "R$ 7,90",
-    minQty: 1,
-    image: engovRessaliv,
-  },
-  {
     badge: "CIMED",
     badgeColor: "bg-success",
     name: "RESSALIV AFTER 250ML (LIMÃO / LARANJA)",
@@ -64,41 +52,6 @@ const cimedProducts: CimedProduct[] = [
     wholesalePrice: "R$ 7,50",
     minQty: 1,
     image: engovRessaliv,
-  },
-  {
-    badge: "LANÇAMENTO",
-    badgeColor: "bg-success",
-    name: "I WANT YOU THERMOGÊNICO 60 CAPS",
-    unitPrice: "R$ 89,00",
-    wholesalePrice: "R$ 49,00",
-    minQty: 1,
-    image: iWantYou,
-  },
-  {
-    badge: "CIMED EDITION",
-    name: "MONSTER WHEY 2KG",
-    unitPrice: "R$ 249,00",
-    wholesalePrice: "R$ 145,00",
-    minQty: 1,
-    image: productsHero,
-  },
-  {
-    name: "CREATINE PURE 500G",
-    unitPrice: "R$ 120,00",
-    wholesalePrice: "R$ 65,00",
-    minQty: 1,
-  },
-  {
-    name: "PRE-WORKOUT VOLTAGE",
-    unitPrice: "R$ 189,00",
-    wholesalePrice: "R$ 98,00",
-    minQty: 1,
-  },
-  {
-    name: 'OVERSIZED "NO PAIN"',
-    unitPrice: "R$ 139,00",
-    wholesalePrice: "R$ 72,00",
-    minQty: 1,
   },
 ];
 

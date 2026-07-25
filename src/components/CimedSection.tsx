@@ -110,6 +110,12 @@ const CimedProductCard = ({ product }: { product: CimedProduct }) => {
 
 const CimedHighlightCard = ({ product }: { product: CimedProduct }) => {
   const { addItem } = useCart();
+  const LOT_QTY = 7;
+  const unitNum = parseFloat(
+    product.wholesalePrice.replace("R$", "").replace(".", "").replace(",", ".").trim()
+  );
+  const totalNum = unitNum * LOT_QTY;
+  const totalStr = `R$ ${totalNum.toFixed(2).replace(".", ",")}`;
 
   return (
     <div className="relative rounded-2xl overflow-hidden border border-border group col-span-2">
@@ -126,13 +132,22 @@ const CimedHighlightCard = ({ product }: { product: CimedProduct }) => {
         <h3 className="font-heading font-black text-base text-foreground">{product.name}</h3>
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-[10px] text-muted-foreground">A partir de</p>
+            <p className="text-[10px] text-muted-foreground">
+              Lote c/ {LOT_QTY} sabores · {product.wholesalePrice}/un
+            </p>
             <p className="font-heading font-black text-xl text-foreground">
-              {product.wholesalePrice}<span className="text-xs font-semibold text-muted-foreground">/un</span>
+              {totalStr}<span className="text-xs font-semibold text-muted-foreground">/lote</span>
             </p>
           </div>
           <button
-            onClick={() => addItem({ name: product.name, wholesalePrice: product.wholesalePrice, qty: product.minQty, minQty: product.minQty })}
+            onClick={() =>
+              addItem({
+                name: `LOTE ${product.name} (${LOT_QTY} SABORES)`,
+                wholesalePrice: totalStr,
+                qty: 1,
+                minQty: 1,
+              })
+            }
             className="bg-primary text-primary-foreground font-heading font-black text-[10px] tracking-wider px-4 py-2.5 rounded-lg hover:opacity-90 transition-opacity glow-neon"
           >
             COMPRAR LOTE

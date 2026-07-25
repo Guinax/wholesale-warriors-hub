@@ -39,14 +39,14 @@ const App = () => (
             <Route path="/mais-vendidos" element={<MaisVendidos />} />
             <Route path="/avaliacoes" element={<Avaliacoes />} />
             <Route path="/comissoes" element={<Comissoes />} />
-            <Route path="/pagamento" element={<Pagamento />} />
-            <Route path="/recibo/:code" element={<Recibo />} />
+            <Route path="/pagamento" element={<ProtectedRoute><Pagamento /></ProtectedRoute>} />
+            <Route path="/recibo/:code" element={<ProtectedRoute><Recibo /></ProtectedRoute>} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/entrar" element={<Auth />} />
             <Route path="/cadastro-login" element={<Auth />} />
             <Route path="/share" element={<Auth />} />
             <Route path="/convite" element={<Auth />} />
-            <Route path="/admin" element={<Admin />} />
+            <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
             <Route path="/suplementos" element={<Suplementos />} />
             <Route path="/roupas" element={<Roupas />} />
             <Route path="/acessorios" element={<Acessorios />} />

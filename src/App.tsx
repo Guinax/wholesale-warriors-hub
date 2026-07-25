@@ -21,6 +21,7 @@ import Acessorios from "./pages/Acessorios.tsx";
 import Equipamento from "./pages/Equipamento.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Compartilhar from "./pages/Compartilhar.tsx";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 

@@ -20,6 +20,7 @@ import Roupas from "./pages/Roupas.tsx";
 import Acessorios from "./pages/Acessorios.tsx";
 import Equipamento from "./pages/Equipamento.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import Compartilhar from "./pages/Compartilhar.tsx";
 
 const queryClient = new QueryClient();
 

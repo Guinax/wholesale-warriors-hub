@@ -9,6 +9,7 @@ import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, generateOrderCode, generateTrackingCode } from "@/lib/orderUtils";
+import { logAudit } from "@/lib/audit";
 
 type PaymentMethod = "pix" | "cartao";
 
@@ -123,6 +124,12 @@ const Pagamento = () => {
       toast({ title: "Erro ao processar pedido", description: error.message, variant: "destructive" });
       return;
     }
+
+    await logAudit("order_created", {
+      entity: "orders",
+      entity_id: orderCode,
+      details: { total: totalPrice, method, items: items.length },
+    });
 
     clearCart?.();
     navigate(`/recibo/${orderCode}`);

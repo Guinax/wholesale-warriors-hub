@@ -46,6 +46,10 @@ export function useAdminAuth() {
   };
 
   const signOut = async () => {
+    try {
+      const { logAudit } = await import("@/lib/audit");
+      await logAudit("logout");
+    } catch {}
     await supabase.auth.signOut();
     setIsAdmin(false);
   };

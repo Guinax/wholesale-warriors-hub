@@ -22,6 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import type { DbProduct, ProductCategory } from "@/hooks/useProducts";
+import { logAudit } from "@/lib/audit";
 
 const CATEGORIES: { value: ProductCategory; label: string }[] = [
   { value: "suplementos", label: "Suplementos" },
@@ -126,6 +127,11 @@ const ProductsManager = () => {
       toast.error("Erro ao salvar: " + error.message);
       return;
     }
+    logAudit(form.id ? "product_updated" : "product_created", {
+      entity: "products",
+      entity_id: form.id,
+      details: { name: form.name, category: form.category },
+    });
     toast.success(form.id ? "Produto atualizado" : "Produto criado");
     setOpen(false);
     load();
@@ -138,6 +144,7 @@ const ProductsManager = () => {
       toast.error("Erro ao excluir");
       return;
     }
+    logAudit("product_deleted", { entity: "products", entity_id: id });
     toast.success("Produto excluído");
     load();
   };

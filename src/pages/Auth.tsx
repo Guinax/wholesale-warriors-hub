@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Lock, Mail, ArrowLeft, MessageCircle, User, Phone } from "lucide-react";
 import { contactWhatsApp } from "@/lib/whatsapp";
+import { logAudit } from "@/lib/audit";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -42,11 +43,13 @@ const Auth = () => {
           },
         });
         if (error) throw error;
+        await logAudit("signup", { details: { email } });
         toast.success("Cadastro realizado! Você já pode entrar.");
         setMode("login");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        await logAudit("login", { details: { email } });
         toast.success("Login realizado!");
         window.location.href = nextPath;
       }

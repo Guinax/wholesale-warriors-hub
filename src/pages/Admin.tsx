@@ -24,7 +24,9 @@ import { LogOut, Search, Package, RefreshCw, Eye, ShieldAlert } from "lucide-rea
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProductsManager from "@/components/admin/ProductsManager";
 import UsersManager from "@/components/admin/UsersManager";
+import AuditLogsManager from "@/components/admin/AuditLogsManager";
 import { formatCurrency, DELIVERY_STAGES } from "@/lib/orderUtils";
+import { logAudit } from "@/lib/audit";
 
 type Order = {
   id: string;
@@ -93,7 +95,10 @@ const Admin = () => {
   }, [loading, user, navigate]);
 
   useEffect(() => {
-    if (isAdmin) loadOrders();
+    if (isAdmin) {
+      loadOrders();
+      logAudit("admin_access");
+    }
   }, [isAdmin]);
 
   const loadOrders = async () => {
@@ -124,6 +129,7 @@ const Admin = () => {
       prev.map((o) => (o.id === id ? { ...o, [field]: value } : o))
     );
     if (selected?.id === id) setSelected({ ...selected, [field]: value } as Order);
+    logAudit("order_updated", { entity: "orders", entity_id: id, details: { [field]: value } });
     toast.success("Pedido atualizado");
   };
 
@@ -193,6 +199,7 @@ const Admin = () => {
             <TabsTrigger value="orders">Pedidos</TabsTrigger>
             <TabsTrigger value="products">Produtos</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
+            <TabsTrigger value="audit">Auditoria</TabsTrigger>
           </TabsList>
           <TabsContent value="orders" className="space-y-4 mt-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -321,6 +328,9 @@ const Admin = () => {
           </TabsContent>
           <TabsContent value="users" className="mt-4">
             <UsersManager />
+          </TabsContent>
+          <TabsContent value="audit" className="mt-4">
+            <AuditLogsManager />
           </TabsContent>
         </Tabs>
       </main>

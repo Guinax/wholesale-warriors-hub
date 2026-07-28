@@ -35,9 +35,11 @@ const TopNav = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-6 text-xs font-heading font-semibold tracking-widest text-muted-foreground">
-          <a href="#" className="hover:text-primary transition-colors">SUPLEMENTOS</a>
-          <a href="#" className="hover:text-primary transition-colors">WHOLESALE</a>
-          <a href="#" className="hover:text-primary transition-colors">COMMUNITY</a>
+          <button onClick={() => navigate("/suplementos")} className="hover:text-primary transition-colors">SUPLEMENTOS</button>
+          <button onClick={() => navigate("/mais-vendidos")} className="hover:text-primary transition-colors">MAIS VENDIDOS</button>
+          <button onClick={() => navigate("/comissoes")} className="hover:text-primary transition-colors">COMISSÕES</button>
+          <button onClick={() => navigate("/avaliacoes")} className="hover:text-primary transition-colors">AVALIAÇÕES</button>
+          <button onClick={() => navigate("/compartilhar")} className="hover:text-primary transition-colors">COMPARTILHAR</button>
         </div>
 
         <div className="flex items-center gap-1">

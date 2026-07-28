@@ -21,7 +21,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: Props) => {
   }
 
   if (!session) {
-    const next = location.pathname + location.search;
+    const next = location.pathname + location.search + location.hash;
     return <Navigate to={`/auth?next=${encodeURIComponent(next)}`} replace />;
   }
 

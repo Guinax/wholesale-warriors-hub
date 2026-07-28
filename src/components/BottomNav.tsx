@@ -1,16 +1,26 @@
 import { Home, Store, Receipt, UserCircle } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
+import { toast } from "sonner";
 
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { openCart } = useCart();
 
+  const openOrderLookup = () => {
+    const code = window.prompt("Digite o código do pedido (ex: FM-XXXXXX):");
+    if (!code) return;
+    const clean = code.trim().toUpperCase();
+    if (!clean) return;
+    toast.info(`Abrindo pedido ${clean}...`);
+    navigate(`/recibo/${clean}`);
+  };
+
   const navItems = [
     { icon: Home, label: "HOME", path: "/", action: () => navigate("/") },
-    { icon: Store, label: "SHOP", path: null, action: openCart },
-    { icon: Receipt, label: "PEDIDOS", path: null, action: () => {} },
+    { icon: Store, label: "SACOLA", path: null, action: openCart },
+    { icon: Receipt, label: "PEDIDOS", path: null, action: openOrderLookup },
     { icon: UserCircle, label: "CADASTRO", path: "/cadastro", action: () => navigate("/cadastro") },
   ];
 

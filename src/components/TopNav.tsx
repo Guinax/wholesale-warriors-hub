@@ -1,9 +1,28 @@
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, LogOut, User as UserIcon } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import logo from "@/assets/logo.png";
 import { useCart } from "@/contexts/CartContext";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const TopNav = () => {
   const { totalItems, openCart } = useCart();
+  const { session, user, isAdmin, signOut } = useAdminAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success("Você saiu da conta");
+    navigate("/auth");
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-background/90 backdrop-blur-xl border-b border-border">
@@ -21,14 +40,37 @@ const TopNav = () => {
           <a href="#" className="hover:text-primary transition-colors">COMMUNITY</a>
         </div>
 
-        <button className="relative p-2" onClick={openCart}>
-          <ShoppingCart className="w-5 h-5 text-foreground" />
-          {totalItems > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-              {totalItems}
-            </span>
+        <div className="flex items-center gap-1">
+          {session && (
+            <DropdownMenu>
+              <DropdownMenuTrigger className="p-2" aria-label="Conta do usuário">
+                <UserIcon className="w-5 h-5 text-foreground" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="truncate">
+                  {user?.email ?? "Minha conta"}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {isAdmin && (
+                  <DropdownMenuItem onClick={() => navigate("/admin")}>
+                    Painel Admin
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
+                  <LogOut className="w-4 h-4 mr-2" /> Sair
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
-        </button>
+          <button className="relative p-2" onClick={openCart} aria-label="Carrinho">
+            <ShoppingCart className="w-5 h-5 text-foreground" />
+            {totalItems > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                {totalItems}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
     </nav>
   );

@@ -13,6 +13,7 @@ import Comissoes from "./pages/Comissoes.tsx";
 import Pagamento from "./pages/Pagamento.tsx";
 import Recibo from "./pages/Recibo.tsx";
 import Auth from "./pages/Auth.tsx";
+import ResetPassword from "./pages/ResetPassword.tsx";
 import OAuthConsent from "./pages/OAuthConsent.tsx";
 import Admin from "./pages/Admin.tsx";
 import Suplementos from "./pages/Suplementos.tsx";
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/pagamento" element={<ProtectedRoute><Pagamento /></ProtectedRoute>} />
             <Route path="/recibo/:code" element={<ProtectedRoute><Recibo /></ProtectedRoute>} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/entrar" element={<Auth />} />
             <Route path="/cadastro-login" element={<Auth />} />
             <Route path="/share" element={<Auth />} />

@@ -34,7 +34,7 @@ const App = () => (
           <Sonner />
           <CartDrawer />
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/cadastro" element={<CadastroCNPJ />} />
             <Route path="/mais-vendidos" element={<MaisVendidos />} />
             <Route path="/avaliacoes" element={<Avaliacoes />} />

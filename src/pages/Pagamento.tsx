@@ -263,11 +263,12 @@ const Pagamento = () => {
               </TabsContent>
 
               <TabsContent value="cartao" className="mt-4 space-y-3">
-                <Field label="Número do cartão" value={card.number} onChange={(v) => setCard({ ...card, number: v })} placeholder="0000 0000 0000 0000" />
+                <Field label="Número do cartão" value={card.number} inputMode="numeric" onChange={(v) => setCard({ ...card, number: maskCard(v) })} placeholder="0000 0000 0000 0000" />
                 <Field label="Nome impresso no cartão" value={card.name} onChange={(v) => setCard({ ...card, name: v.toUpperCase() })} />
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Validade" value={card.expiry} onChange={(v) => setCard({ ...card, expiry: v })} placeholder="MM/AA" />
-                  <Field label="CVV" value={card.cvv} onChange={(v) => setCard({ ...card, cvv: v.replace(/\D/g, "").slice(0, 4) })} />
+                  <Field label="Validade" value={card.expiry} inputMode="numeric" onChange={(v) => setCard({ ...card, expiry: maskExpiry(v) })} placeholder="MM/AA" />
+                  <Field label="CVV" value={card.cvv} inputMode="numeric" placeholder="000" onChange={(v) => setCard({ ...card, cvv: v.replace(/\D/g, "").slice(0, 4) })} />
+
                 </div>
                 <p className="text-[10px] text-muted-foreground flex items-center gap-1.5">
                   <ShieldCheck className="w-3 h-3 text-primary" /> Pagamento criptografado. Em até 12x sem juros no atacado.

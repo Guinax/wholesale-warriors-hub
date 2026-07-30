@@ -1,29 +1,9 @@
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
+import { useContext, useState, useCallback, useEffect, ReactNode } from "react";
+import { CartContext, CartItem } from "./cart-context";
+
+export type { CartItem };
 
 const STORAGE_KEY = "fm_cart_v1";
-
-export interface CartItem {
-  name: string;
-  wholesalePrice: string;
-  priceNum: number;
-  qty: number;
-  minQty: number;
-}
-
-interface CartContextType {
-  items: CartItem[];
-  isOpen: boolean;
-  openCart: () => void;
-  closeCart: () => void;
-  addItem: (item: Omit<CartItem, "priceNum">) => void;
-  removeItem: (name: string) => void;
-  updateQty: (name: string, qty: number) => void;
-  clearCart: () => void;
-  totalItems: number;
-  totalPrice: number;
-}
-
-const CartContext = createContext<CartContextType | null>(null);
 
 function parsePrice(price: string): number {
   return parseFloat(price.replace("R$", "").replace(".", "").replace(",", ".").trim());
@@ -48,7 +28,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       /* storage indisponível */
     }
   }, [items]);
-
 
   const openCart = useCallback(() => setIsOpen(true), []);
   const closeCart = useCallback(() => setIsOpen(false), []);

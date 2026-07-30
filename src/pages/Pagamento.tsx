@@ -214,13 +214,14 @@ const Pagamento = () => {
             </h2>
             <div className="grid sm:grid-cols-2 gap-3">
               <Field label="Nome / Razão Social" value={customer.name} onChange={(v) => setCustomer({ ...customer, name: v })} />
-              <Field label="CNPJ (opcional)" value={customer.cnpj} onChange={(v) => setCustomer({ ...customer, cnpj: v })} />
+              <Field label="CNPJ (opcional)" value={customer.cnpj} inputMode="numeric" placeholder="00.000.000/0000-00" onChange={(v) => setCustomer({ ...customer, cnpj: maskCnpj(v) })} />
               <Field label="E-mail" type="email" value={customer.email} onChange={(v) => setCustomer({ ...customer, email: v })} />
-              <Field label="WhatsApp" value={customer.phone} onChange={(v) => setCustomer({ ...customer, phone: v })} />
+              <Field label="WhatsApp" value={customer.phone} inputMode="tel" placeholder="(00) 00000-0000" onChange={(v) => setCustomer({ ...customer, phone: maskPhone(v) })} />
               <Field label="Rua" value={customer.street} onChange={(v) => setCustomer({ ...customer, street: v })} />
-              <Field label="Número" value={customer.number} onChange={(v) => setCustomer({ ...customer, number: v })} />
+              <Field label="Número" value={customer.number} inputMode="numeric" onChange={(v) => setCustomer({ ...customer, number: v })} />
               <Field label="Complemento" value={customer.complement} onChange={(v) => setCustomer({ ...customer, complement: v })} />
-              <Field label="CEP" value={customer.zip} onChange={(v) => setCustomer({ ...customer, zip: v })} />
+              <Field label="CEP" value={customer.zip} inputMode="numeric" placeholder="00000-000" onChange={(v) => setCustomer({ ...customer, zip: maskCep(v) })} />
+
               <Field label="Cidade" value={customer.city} onChange={(v) => setCustomer({ ...customer, city: v })} />
               <Field label="UF" value={customer.state} onChange={(v) => setCustomer({ ...customer, state: v.toUpperCase().slice(0, 2) })} />
             </div>

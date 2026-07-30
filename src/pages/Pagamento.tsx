@@ -15,6 +15,41 @@ type PaymentMethod = "pix" | "cartao";
 
 const PIX_KEY = "wap33000@gmail.com";
 
+const FIELD_LABELS: Record<string, string> = {
+  name: "Nome / Razão Social",
+  email: "E-mail",
+  phone: "WhatsApp",
+  street: "Rua",
+  number: "Número",
+  city: "Cidade",
+  state: "UF",
+  zip: "CEP",
+};
+
+const onlyDigits = (v: string) => v.replace(/\D/g, "");
+
+const maskPhone = (v: string) => {
+  const d = onlyDigits(v).slice(0, 11);
+  if (d.length <= 10) return d.replace(/(\d{2})(\d{0,4})(\d{0,4})/, (_, a, b, c) => `(${a}) ${b}${c ? "-" + c : ""}`).trim();
+  return d.replace(/(\d{2})(\d{5})(\d{0,4})/, (_, a, b, c) => `(${a}) ${b}${c ? "-" + c : ""}`);
+};
+
+const maskCep = (v: string) => onlyDigits(v).slice(0, 8).replace(/(\d{5})(\d{0,3})/, (_, a, b) => (b ? `${a}-${b}` : a));
+
+const maskCnpj = (v: string) =>
+  onlyDigits(v)
+    .slice(0, 14)
+    .replace(/(\d{2})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2");
+
+const maskCard = (v: string) => onlyDigits(v).slice(0, 16).replace(/(\d{4})(?=\d)/g, "$1 ");
+
+const maskExpiry = (v: string) => onlyDigits(v).slice(0, 4).replace(/(\d{2})(\d{1,2})/, "$1/$2");
+
+
+
 
 const Pagamento = () => {
   const { items, totalPrice, clearCart } = useCart() as ReturnType<typeof useCart> & { clearCart?: () => void };
@@ -62,7 +97,7 @@ const Pagamento = () => {
     const required: (keyof typeof customer)[] = ["name", "email", "phone", "street", "number", "city", "state", "zip"];
     for (const k of required) {
       if (!customer[k].trim()) {
-        toast({ title: "Dados incompletos", description: `Preencha: ${k}`, variant: "destructive" });
+        toast({ title: "Dados incompletos", description: `Preencha: ${FIELD_LABELS[k] ?? k}`, variant: "destructive" });
         return false;
       }
     }
@@ -70,21 +105,39 @@ const Pagamento = () => {
       toast({ title: "E-mail inválido", variant: "destructive" });
       return false;
     }
+    if (onlyDigits(customer.phone).length < 10) {
+      toast({ title: "WhatsApp inválido", description: "Informe DDD + número.", variant: "destructive" });
+      return false;
+    }
+    if (onlyDigits(customer.zip).length !== 8) {
+      toast({ title: "CEP inválido", description: "O CEP deve ter 8 dígitos.", variant: "destructive" });
+      return false;
+    }
+    if (customer.cnpj && onlyDigits(customer.cnpj).length !== 14) {
+      toast({ title: "CNPJ inválido", description: "O CNPJ deve ter 14 dígitos.", variant: "destructive" });
+      return false;
+    }
     return true;
   };
 
   const validateCard = () => {
     if (method !== "cartao") return true;
-    if (card.number.replace(/\s/g, "").length < 13) {
+    if (onlyDigits(card.number).length < 13) {
       toast({ title: "Número de cartão inválido", variant: "destructive" });
       return false;
     }
-    if (!card.name || !card.expiry || card.cvv.length < 3) {
+    if (!card.name.trim() || card.cvv.length < 3) {
       toast({ title: "Dados do cartão incompletos", variant: "destructive" });
+      return false;
+    }
+    const [mm, yy] = card.expiry.split("/");
+    if (!mm || !yy || +mm < 1 || +mm > 12 || yy.length < 2) {
+      toast({ title: "Validade inválida", description: "Use o formato MM/AA.", variant: "destructive" });
       return false;
     }
     return true;
   };
+
 
   const handleConfirm = async () => {
     if (!validateCustomer() || !validateCard()) return;
@@ -161,13 +214,14 @@ const Pagamento = () => {
             </h2>
             <div className="grid sm:grid-cols-2 gap-3">
               <Field label="Nome / Razão Social" value={customer.name} onChange={(v) => setCustomer({ ...customer, name: v })} />
-              <Field label="CNPJ (opcional)" value={customer.cnpj} onChange={(v) => setCustomer({ ...customer, cnpj: v })} />
+              <Field label="CNPJ (opcional)" value={customer.cnpj} inputMode="numeric" placeholder="00.000.000/0000-00" onChange={(v) => setCustomer({ ...customer, cnpj: maskCnpj(v) })} />
               <Field label="E-mail" type="email" value={customer.email} onChange={(v) => setCustomer({ ...customer, email: v })} />
-              <Field label="WhatsApp" value={customer.phone} onChange={(v) => setCustomer({ ...customer, phone: v })} />
+              <Field label="WhatsApp" value={customer.phone} inputMode="tel" placeholder="(00) 00000-0000" onChange={(v) => setCustomer({ ...customer, phone: maskPhone(v) })} />
               <Field label="Rua" value={customer.street} onChange={(v) => setCustomer({ ...customer, street: v })} />
-              <Field label="Número" value={customer.number} onChange={(v) => setCustomer({ ...customer, number: v })} />
+              <Field label="Número" value={customer.number} inputMode="numeric" onChange={(v) => setCustomer({ ...customer, number: v })} />
               <Field label="Complemento" value={customer.complement} onChange={(v) => setCustomer({ ...customer, complement: v })} />
-              <Field label="CEP" value={customer.zip} onChange={(v) => setCustomer({ ...customer, zip: v })} />
+              <Field label="CEP" value={customer.zip} inputMode="numeric" placeholder="00000-000" onChange={(v) => setCustomer({ ...customer, zip: maskCep(v) })} />
+
               <Field label="Cidade" value={customer.city} onChange={(v) => setCustomer({ ...customer, city: v })} />
               <Field label="UF" value={customer.state} onChange={(v) => setCustomer({ ...customer, state: v.toUpperCase().slice(0, 2) })} />
             </div>
@@ -209,11 +263,12 @@ const Pagamento = () => {
               </TabsContent>
 
               <TabsContent value="cartao" className="mt-4 space-y-3">
-                <Field label="Número do cartão" value={card.number} onChange={(v) => setCard({ ...card, number: v })} placeholder="0000 0000 0000 0000" />
+                <Field label="Número do cartão" value={card.number} inputMode="numeric" onChange={(v) => setCard({ ...card, number: maskCard(v) })} placeholder="0000 0000 0000 0000" />
                 <Field label="Nome impresso no cartão" value={card.name} onChange={(v) => setCard({ ...card, name: v.toUpperCase() })} />
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Validade" value={card.expiry} onChange={(v) => setCard({ ...card, expiry: v })} placeholder="MM/AA" />
-                  <Field label="CVV" value={card.cvv} onChange={(v) => setCard({ ...card, cvv: v.replace(/\D/g, "").slice(0, 4) })} />
+                  <Field label="Validade" value={card.expiry} inputMode="numeric" onChange={(v) => setCard({ ...card, expiry: maskExpiry(v) })} placeholder="MM/AA" />
+                  <Field label="CVV" value={card.cvv} inputMode="numeric" placeholder="000" onChange={(v) => setCard({ ...card, cvv: v.replace(/\D/g, "").slice(0, 4) })} />
+
                 </div>
                 <p className="text-[10px] text-muted-foreground flex items-center gap-1.5">
                   <ShieldCheck className="w-3 h-3 text-primary" /> Pagamento criptografado. Em até 12x sem juros no atacado.
@@ -269,12 +324,14 @@ const Field = ({
   onChange,
   type = "text",
   placeholder,
+  inputMode,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
   placeholder?: string;
+  inputMode?: "text" | "numeric" | "tel" | "email" | "decimal";
 }) => (
   <div className="space-y-1.5">
     <Label className="text-[10px] font-heading font-bold tracking-wider text-muted-foreground">
@@ -283,12 +340,14 @@ const Field = ({
     <Input
       type={type}
       value={value}
+      inputMode={inputMode}
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
       className="bg-secondary border-border text-foreground"
     />
   </div>
 );
+
 
 const CopyBox = ({ label, value, onCopy }: { label: string; value: string; onCopy: () => void }) => (
   <div className="space-y-1.5">

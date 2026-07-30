@@ -97,7 +97,7 @@ const Pagamento = () => {
     const required: (keyof typeof customer)[] = ["name", "email", "phone", "street", "number", "city", "state", "zip"];
     for (const k of required) {
       if (!customer[k].trim()) {
-        toast({ title: "Dados incompletos", description: `Preencha: ${k}`, variant: "destructive" });
+        toast({ title: "Dados incompletos", description: `Preencha: ${FIELD_LABELS[k] ?? k}`, variant: "destructive" });
         return false;
       }
     }
@@ -105,21 +105,39 @@ const Pagamento = () => {
       toast({ title: "E-mail inválido", variant: "destructive" });
       return false;
     }
+    if (onlyDigits(customer.phone).length < 10) {
+      toast({ title: "WhatsApp inválido", description: "Informe DDD + número.", variant: "destructive" });
+      return false;
+    }
+    if (onlyDigits(customer.zip).length !== 8) {
+      toast({ title: "CEP inválido", description: "O CEP deve ter 8 dígitos.", variant: "destructive" });
+      return false;
+    }
+    if (customer.cnpj && onlyDigits(customer.cnpj).length !== 14) {
+      toast({ title: "CNPJ inválido", description: "O CNPJ deve ter 14 dígitos.", variant: "destructive" });
+      return false;
+    }
     return true;
   };
 
   const validateCard = () => {
     if (method !== "cartao") return true;
-    if (card.number.replace(/\s/g, "").length < 13) {
+    if (onlyDigits(card.number).length < 13) {
       toast({ title: "Número de cartão inválido", variant: "destructive" });
       return false;
     }
-    if (!card.name || !card.expiry || card.cvv.length < 3) {
+    if (!card.name.trim() || card.cvv.length < 3) {
       toast({ title: "Dados do cartão incompletos", variant: "destructive" });
+      return false;
+    }
+    const [mm, yy] = card.expiry.split("/");
+    if (!mm || !yy || +mm < 1 || +mm > 12 || yy.length < 2) {
+      toast({ title: "Validade inválida", description: "Use o formato MM/AA.", variant: "destructive" });
       return false;
     }
     return true;
   };
+
 
   const handleConfirm = async () => {
     if (!validateCustomer() || !validateCard()) return;

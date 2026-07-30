@@ -15,6 +15,41 @@ type PaymentMethod = "pix" | "cartao";
 
 const PIX_KEY = "wap33000@gmail.com";
 
+const FIELD_LABELS: Record<string, string> = {
+  name: "Nome / Razão Social",
+  email: "E-mail",
+  phone: "WhatsApp",
+  street: "Rua",
+  number: "Número",
+  city: "Cidade",
+  state: "UF",
+  zip: "CEP",
+};
+
+const onlyDigits = (v: string) => v.replace(/\D/g, "");
+
+const maskPhone = (v: string) => {
+  const d = onlyDigits(v).slice(0, 11);
+  if (d.length <= 10) return d.replace(/(\d{2})(\d{0,4})(\d{0,4})/, (_, a, b, c) => `(${a}) ${b}${c ? "-" + c : ""}`).trim();
+  return d.replace(/(\d{2})(\d{5})(\d{0,4})/, (_, a, b, c) => `(${a}) ${b}${c ? "-" + c : ""}`);
+};
+
+const maskCep = (v: string) => onlyDigits(v).slice(0, 8).replace(/(\d{5})(\d{0,3})/, (_, a, b) => (b ? `${a}-${b}` : a));
+
+const maskCnpj = (v: string) =>
+  onlyDigits(v)
+    .slice(0, 14)
+    .replace(/(\d{2})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2");
+
+const maskCard = (v: string) => onlyDigits(v).slice(0, 16).replace(/(\d{4})(?=\d)/g, "$1 ");
+
+const maskExpiry = (v: string) => onlyDigits(v).slice(0, 4).replace(/(\d{2})(\d{1,2})/, "$1/$2");
+
+
+
 
 const Pagamento = () => {
   const { items, totalPrice, clearCart } = useCart() as ReturnType<typeof useCart> & { clearCart?: () => void };

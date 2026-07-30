@@ -323,12 +323,14 @@ const Field = ({
   onChange,
   type = "text",
   placeholder,
+  inputMode,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
   placeholder?: string;
+  inputMode?: "text" | "numeric" | "tel" | "email" | "decimal";
 }) => (
   <div className="space-y-1.5">
     <Label className="text-[10px] font-heading font-bold tracking-wider text-muted-foreground">
@@ -337,12 +339,14 @@ const Field = ({
     <Input
       type={type}
       value={value}
+      inputMode={inputMode}
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
       className="bg-secondary border-border text-foreground"
     />
   </div>
 );
+
 
 const CopyBox = ({ label, value, onCopy }: { label: string; value: string; onCopy: () => void }) => (
   <div className="space-y-1.5">

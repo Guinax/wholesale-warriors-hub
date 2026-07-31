@@ -234,8 +234,15 @@ const Auth = () => {
           </form>
         )}
 
-        <div className="text-center text-sm">
-          {mode === "login" ? (
+        <div className="text-center text-sm space-y-2">
+          {mode === "recovery" ? (
+            <button
+              onClick={() => setMode("login")}
+              className="text-primary hover:underline"
+            >
+              Voltar para o login
+            </button>
+          ) : mode === "login" ? (
             <button onClick={() => setMode("signup")} className="text-primary hover:underline">
               Não tem conta? Cadastre-se
             </button>

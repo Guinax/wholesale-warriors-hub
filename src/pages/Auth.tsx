@@ -62,7 +62,8 @@ const Auth = () => {
     }
   };
 
-  const handleForgotPassword = async () => {
+  const handleForgotPassword = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!email) {
       toast.error("Digite seu e-mail para receber o link de recuperação");
       return;
@@ -73,6 +74,7 @@ const Auth = () => {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
+      setRecoverySent(true);
       toast.success("Enviamos um link de recuperação para seu e-mail.");
     } catch (err: any) {
       toast.error(err.message || "Erro ao enviar e-mail");

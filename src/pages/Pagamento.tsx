@@ -145,12 +145,15 @@ const Pagamento = () => {
 
     const orderCode = generateOrderCode();
     const trackingCode = generateTrackingCode();
+    const dueAt = computeDueAt();
 
     const { error } = await supabase.from("orders").insert({
       order_code: orderCode,
       tracking_code: trackingCode,
       payment_method: method,
-      payment_status: "paid",
+      // Pix aguarda compensação: expira 2h após o vencimento se não for pago
+      payment_status: method === "pix" ? "pending" : "paid",
+      due_at: dueAt.toISOString(),
       delivery_status: "postado",
       customer_name: customer.name,
       customer_email: customer.email,

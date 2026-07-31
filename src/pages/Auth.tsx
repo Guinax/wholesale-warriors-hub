@@ -98,7 +98,11 @@ const Auth = () => {
           </div>
           <h1 className="text-2xl font-heading font-bold">Família Maromba</h1>
           <p className="text-sm text-muted-foreground">
-            {mode === "login" ? "Entre com suas credenciais" : "Crie sua conta para comprar"}
+            {mode === "login"
+              ? "Entre com suas credenciais"
+              : mode === "recovery"
+              ? "Recupere sua senha"
+              : "Crie sua conta para comprar"}
           </p>
         </div>
 

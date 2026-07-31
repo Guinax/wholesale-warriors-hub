@@ -9,16 +9,35 @@ function parsePrice(price: string): number {
   return parseFloat(price.replace("R$", "").replace(".", "").replace(",", ".").trim());
 }
 
+function normalize(raw: unknown): CartItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((i): i is Record<string, unknown> => !!i && typeof i === "object")
+    .map((i) => {
+      const name = String(i.name ?? "");
+      const wholesalePrice = String(i.wholesalePrice ?? "R$ 0,00");
+      const priceNum =
+        typeof i.priceNum === "number" && Number.isFinite(i.priceNum)
+          ? i.priceNum
+          : parsePrice(wholesalePrice);
+      const minQty = Number.isFinite(Number(i.minQty)) ? Math.max(1, Number(i.minQty)) : 1;
+      const qty = Number.isFinite(Number(i.qty)) ? Math.max(minQty, Number(i.qty)) : minQty;
+      return { name, wholesalePrice, priceNum: Number.isFinite(priceNum) ? priceNum : 0, qty, minQty };
+    })
+    .filter((i) => i.name.length > 0);
+}
+
+function readStorage(): CartItem[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return normalize(raw ? JSON.parse(raw) : null);
+  } catch {
+    return [];
+  }
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      const parsed = raw ? JSON.parse(raw) : null;
-      return Array.isArray(parsed) ? (parsed as CartItem[]) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [items, setItems] = useState<CartItem[]>(readStorage);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -28,6 +47,32 @@ export function CartProvider({ children }: { children: ReactNode }) {
       /* storage indisponível */
     }
   }, [items]);
+
+  // Mantém o carrinho em sincronia entre abas/janelas e após voltar do bfcache
+  useEffect(() => {
+    const sync = () => {
+      const stored = readStorage();
+      setItems((prev) =>
+        JSON.stringify(prev) === JSON.stringify(stored) ? prev : stored
+      );
+    };
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === null || e.key === STORAGE_KEY) sync();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") sync();
+    };
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("pageshow", sync);
+    window.addEventListener("focus", sync);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("pageshow", sync);
+      window.removeEventListener("focus", sync);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
 
   const openCart = useCallback(() => setIsOpen(true), []);
   const closeCart = useCallback(() => setIsOpen(false), []);
@@ -51,7 +96,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const updateQty = useCallback((name: string, qty: number) => {
     setItems((prev) =>
-      prev.map((i) => (i.name === name ? { ...i, qty: Math.max(i.minQty, qty) } : i))
+      prev.flatMap((i) => {
+        if (i.name !== name) return [i];
+        if (qty < i.minQty && qty <= 0) return [];
+        return [{ ...i, qty: Math.max(i.minQty, qty) }];
+      })
     );
   }, []);
 

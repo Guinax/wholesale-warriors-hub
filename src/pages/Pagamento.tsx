@@ -263,6 +263,10 @@ const Pagamento = () => {
                 <p className="text-xs font-heading font-bold text-primary text-center">
                   TOTAL: {formatCurrency(totalPrice)}
                 </p>
+                <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
+                  Vencimento em {PAYMENT_DUE_HOURS}h após a criação do pedido. Pedidos não pagos são
+                  cancelados automaticamente {PAYMENT_GRACE_HOURS}h após o vencimento.
+                </p>
               </TabsContent>
 
               <TabsContent value="cartao" className="mt-4 space-y-3">

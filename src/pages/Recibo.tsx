@@ -4,7 +4,7 @@ import { CheckCircle2, Download, Package, Truck, MapPin, Home, MessageCircle } f
 import jsPDF from "jspdf";
 import PageHeader from "@/components/PageHeader";
 import { supabase } from "@/integrations/supabase/client";
-import { DELIVERY_STAGES, formatCurrency } from "@/lib/orderUtils";
+import { DELIVERY_STAGES, formatCurrency, computeExpiresAt, formatCountdown, isOrderExpired } from "@/lib/orderUtils";
 import { contactWhatsApp } from "@/lib/whatsapp";
 
 interface Order {
@@ -26,6 +26,8 @@ interface Order {
   items: Array<{ name: string; qty: number; unit_price: number; subtotal: number }>;
   total_amount: number;
   created_at: string;
+  due_at?: string | null;
+  expires_at?: string | null;
 }
 
 const PAYMENT_LABEL: Record<string, string> = {
@@ -38,6 +40,12 @@ const Recibo = () => {
   const { code } = useParams<{ code: string }>();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -142,14 +150,24 @@ const Recibo = () => {
     );
   }
 
+  void now;
+  const expired = isOrderExpired(order.payment_status, order.due_at);
+  const pending = order.payment_status === "pending" && !expired;
+  const countdown = order.due_at ? formatCountdown(computeExpiresAt(order.due_at)) : "";
   const stageIndex = DELIVERY_STAGES.findIndex((s) => s.key === order.delivery_status);
 
   return (
     <div className="min-h-screen bg-background">
       <PageHeader
-        eyebrow="PAGAMENTO CONFIRMADO"
-        title="PEDIDO RECEBIDO!"
-        subtitle="Salve seu código de rastreio para acompanhar a entrega."
+        eyebrow={expired ? "PEDIDO EXPIRADO" : pending ? "AGUARDANDO PAGAMENTO" : "PAGAMENTO CONFIRMADO"}
+        title={expired ? "PRAZO ENCERRADO" : pending ? "PEDIDO EM ABERTO" : "PEDIDO RECEBIDO!"}
+        subtitle={
+          expired
+            ? "Este pedido não foi pago dentro do prazo e foi cancelado automaticamente."
+            : pending
+              ? "Conclua o pagamento antes do prazo para garantir seu lote."
+              : "Salve seu código de rastreio para acompanhar a entrega."
+        }
       />
 
       <main className="container py-6 max-w-3xl space-y-5 pb-24">
@@ -159,8 +177,23 @@ const Recibo = () => {
             <CheckCircle2 className="w-8 h-8 text-primary" />
           </div>
           <h2 className="font-heading font-black text-xl text-foreground italic">
-            PAGAMENTO APROVADO
+            {expired ? "PAGAMENTO EXPIRADO" : pending ? "PAGAMENTO PENDENTE" : "PAGAMENTO APROVADO"}
           </h2>
+          {order.due_at && (pending || expired) && (
+            <div className="text-xs space-y-1">
+              <p className="text-muted-foreground">
+                Vencimento: {new Date(order.due_at).toLocaleString("pt-BR")}
+              </p>
+              <p className="text-muted-foreground">
+                Expira em: {computeExpiresAt(order.due_at).toLocaleString("pt-BR")}
+              </p>
+              {pending && (
+                <p className="font-heading font-black text-base text-primary">
+                  Tempo restante: {countdown}
+                </p>
+              )}
+            </div>
+          )}
           <p className="text-xs text-muted-foreground">
             Pedido <strong className="text-foreground">{order.order_code}</strong> registrado em{" "}
             {new Date(order.created_at).toLocaleString("pt-BR")}

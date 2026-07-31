@@ -60,6 +60,7 @@ const DELIVERY_OPTIONS = [
 const PAYMENT_OPTIONS = [
   { value: "pending", label: "Pendente" },
   { value: "paid", label: "Confirmado" },
+  { value: "expired", label: "Expirado" },
   { value: "cancelled", label: "Cancelado" },
 ];
 
@@ -73,6 +74,7 @@ const deliveryColor: Record<string, string> = {
 const paymentColor: Record<string, string> = {
   pending: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
   paid: "bg-green-500/15 text-green-700 dark:text-green-300",
+  expired: "bg-zinc-500/15 text-zinc-700 dark:text-zinc-300",
   cancelled: "bg-red-500/15 text-red-700 dark:text-red-300",
 };
 

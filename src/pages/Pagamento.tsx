@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { formatCurrency, generateOrderCode, generateTrackingCode } from "@/lib/orderUtils";
+import { PAYMENT_DUE_HOURS, PAYMENT_GRACE_HOURS, computeDueAt, formatCurrency, generateOrderCode, generateTrackingCode } from "@/lib/orderUtils";
 import { logAudit } from "@/lib/audit";
 
 type PaymentMethod = "pix" | "cartao";
@@ -145,12 +145,15 @@ const Pagamento = () => {
 
     const orderCode = generateOrderCode();
     const trackingCode = generateTrackingCode();
+    const dueAt = computeDueAt();
 
     const { error } = await supabase.from("orders").insert({
       order_code: orderCode,
       tracking_code: trackingCode,
       payment_method: method,
-      payment_status: "paid",
+      // Pix aguarda compensação: expira 2h após o vencimento se não for pago
+      payment_status: method === "pix" ? "pending" : "paid",
+      due_at: dueAt.toISOString(),
       delivery_status: "postado",
       customer_name: customer.name,
       customer_email: customer.email,
@@ -259,6 +262,10 @@ const Pagamento = () => {
                 <CopyBox label="CÓDIGO PIX COPIA E COLA" value={pixCode} onCopy={() => handleCopy(pixCode, "Código Pix")} />
                 <p className="text-xs font-heading font-bold text-primary text-center">
                   TOTAL: {formatCurrency(totalPrice)}
+                </p>
+                <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
+                  Vencimento em {PAYMENT_DUE_HOURS}h após a criação do pedido. Pedidos não pagos são
+                  cancelados automaticamente {PAYMENT_GRACE_HOURS}h após o vencimento.
                 </p>
               </TabsContent>
 

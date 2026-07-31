@@ -15,13 +15,14 @@ const Auth = () => {
   const [params] = useSearchParams();
   const rawNext = params.get("next") ?? "";
   const nextPath = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
-  const [mode, setMode] = useState<"login" | "signup">("signup");
+  const [mode, setMode] = useState<"login" | "signup" | "recovery">("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [recoverySent, setRecoverySent] = useState(false);
 
   useEffect(() => {
     document.title = "Cadastro e Login | Família Maromba";

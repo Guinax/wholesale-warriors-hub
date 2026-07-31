@@ -133,6 +133,8 @@ export type Database = {
           customer_name: string
           customer_phone: string
           delivery_status: string
+          due_at: string
+          expires_at: string | null
           id: string
           items: Json
           order_code: string
@@ -154,6 +156,8 @@ export type Database = {
           customer_name: string
           customer_phone: string
           delivery_status?: string
+          due_at?: string
+          expires_at?: string | null
           id?: string
           items: Json
           order_code: string
@@ -175,6 +179,8 @@ export type Database = {
           customer_name?: string
           customer_phone?: string
           delivery_status?: string
+          due_at?: string
+          expires_at?: string | null
           id?: string
           items?: Json
           order_code?: string
@@ -322,6 +328,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      expire_overdue_orders: { Args: never; Returns: number }
       get_order_by_code: {
         Args: { _order_code: string }
         Returns: {
@@ -337,6 +344,8 @@ export type Database = {
           customer_name: string
           customer_phone: string
           delivery_status: string
+          due_at: string
+          expires_at: string | null
           id: string
           items: Json
           order_code: string

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { formatCurrency, generateOrderCode, generateTrackingCode } from "@/lib/orderUtils";
+import { PAYMENT_DUE_HOURS, PAYMENT_GRACE_HOURS, computeDueAt, formatCurrency, generateOrderCode, generateTrackingCode } from "@/lib/orderUtils";
 import { logAudit } from "@/lib/audit";
 
 type PaymentMethod = "pix" | "cartao";

@@ -61,8 +61,18 @@ export function useVideos(onlyActive = true) {
       .order("created_at", { ascending: false });
     if (onlyActive) q = q.eq("active", true);
     const { data } = await q;
-    setVideos((data ?? []) as unknown as DbVideo[]);
+    const rows = (data ?? []) as unknown as DbVideo[];
+    const resolved = await Promise.all(
+      rows.map(async (v) => {
+        if (v.source === "upload" && v.video_url) {
+          return { ...v, playback_url: await signVideoPath(v.video_url) };
+        }
+        return v;
+      })
+    );
+    setVideos(resolved);
     setLoading(false);
+
   }, [onlyActive]);
 
   useEffect(() => {

@@ -330,8 +330,11 @@ export type Database = {
           description: string | null
           id: string
           sort_order: number
+          source: string
+          thumbnail_url: string | null
           title: string
           updated_at: string
+          video_url: string | null
           youtube_id: string
         }
         Insert: {
@@ -340,9 +343,12 @@ export type Database = {
           description?: string | null
           id?: string
           sort_order?: number
+          source?: string
+          thumbnail_url?: string | null
           title: string
           updated_at?: string
-          youtube_id: string
+          video_url?: string | null
+          youtube_id?: string
         }
         Update: {
           active?: boolean
@@ -350,8 +356,11 @@ export type Database = {
           description?: string | null
           id?: string
           sort_order?: number
+          source?: string
+          thumbnail_url?: string | null
           title?: string
           updated_at?: string
+          video_url?: string | null
           youtube_id?: string
         }
         Relationships: []

@@ -25,6 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProductsManager from "@/components/admin/ProductsManager";
 import UsersManager from "@/components/admin/UsersManager";
 import AuditLogsManager from "@/components/admin/AuditLogsManager";
+import VideosManager from "@/components/admin/VideosManager";
 import { formatCurrency, DELIVERY_STAGES } from "@/lib/orderUtils";
 import { logAudit } from "@/lib/audit";
 
@@ -202,6 +203,7 @@ const Admin = () => {
             <TabsTrigger value="products">Produtos</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="audit">Auditoria</TabsTrigger>
+            <TabsTrigger value="videos">Vídeos</TabsTrigger>
           </TabsList>
           <TabsContent value="orders" className="space-y-4 mt-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -333,6 +335,9 @@ const Admin = () => {
           </TabsContent>
           <TabsContent value="audit" className="mt-4">
             <AuditLogsManager />
+          </TabsContent>
+          <TabsContent value="videos" className="mt-4">
+            <VideosManager />
           </TabsContent>
         </Tabs>
       </main>

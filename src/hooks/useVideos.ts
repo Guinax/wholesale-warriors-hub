@@ -8,7 +8,24 @@ export interface DbVideo {
   youtube_id: string;
   sort_order: number;
   active: boolean;
+  source: string;
+  /** Caminho do arquivo no bucket "videos" (quando source = "upload") */
+  video_url: string | null;
+  thumbnail_url: string | null;
+  /** URL assinada resolvida em runtime para vídeos enviados */
+  playback_url?: string | null;
 }
+
+export const VIDEOS_BUCKET = "videos";
+
+/** Gera uma URL assinada temporária para um arquivo do bucket de vídeos */
+export async function signVideoPath(path: string, expiresIn = 60 * 60 * 6) {
+  const { data } = await supabase.storage
+    .from(VIDEOS_BUCKET)
+    .createSignedUrl(path, expiresIn);
+  return data?.signedUrl ?? null;
+}
+
 
 /** Aceita URL completa, youtu.be, shorts, embed ou o próprio ID */
 export function parseYoutubeId(input: string): string {

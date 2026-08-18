@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -14,15 +15,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, RefreshCw } from "lucide-react";
+import { Plus, Pencil, Trash2, RefreshCw, Video } from "lucide-react";
 import { useVideos, parseYoutubeId, youtubeThumb, type DbVideo } from "@/hooks/useVideos";
 import { logAudit } from "@/lib/audit";
+import MediaUploader from "@/components/admin/MediaUploader";
 
 type FormState = {
   id?: string;
   title: string;
   description: string;
+  source: "youtube" | "upload";
   url: string;
+  video_url: string;
+  thumbnail_url: string;
   sort_order: string;
   active: boolean;
 };
@@ -30,10 +35,16 @@ type FormState = {
 const emptyForm: FormState = {
   title: "",
   description: "",
+  source: "youtube",
   url: "",
+  video_url: "",
+  thumbnail_url: "",
   sort_order: "0",
   active: true,
 };
+
+const cardThumb = (v: DbVideo) =>
+  v.thumbnail_url || (v.source === "youtube" && v.youtube_id ? youtubeThumb(v.youtube_id) : null);
 
 const VideosManager = () => {
   const { videos, loading, reload } = useVideos(false);
@@ -51,7 +62,10 @@ const VideosManager = () => {
       id: v.id,
       title: v.title,
       description: v.description ?? "",
-      url: `https://youtu.be/${v.youtube_id}`,
+      source: v.source === "upload" ? "upload" : "youtube",
+      url: v.youtube_id ? `https://youtu.be/${v.youtube_id}` : "",
+      video_url: v.playback_url ?? v.video_url ?? "",
+      thumbnail_url: v.thumbnail_url ?? "",
       sort_order: String(v.sort_order),
       active: v.active,
     });
@@ -59,15 +73,21 @@ const VideosManager = () => {
   };
 
   const save = async () => {
-    const youtube_id = parseYoutubeId(form.url);
     if (!form.title.trim()) return toast.error("Informe o título do vídeo");
-    if (!youtube_id) return toast.error("Link do YouTube inválido");
+
+    const youtube_id = form.source === "youtube" ? parseYoutubeId(form.url) : "";
+    if (form.source === "youtube" && !youtube_id) return toast.error("Link do YouTube inválido");
+    if (form.source === "upload" && !form.video_url)
+      return toast.error("Envie o arquivo de vídeo do dispositivo");
 
     setSaving(true);
     const payload = {
       title: form.title.trim(),
       description: form.description.trim() || null,
+      source: form.source,
       youtube_id,
+      video_url: form.source === "upload" ? form.video_url : null,
+      thumbnail_url: form.thumbnail_url || null,
       sort_order: Number(form.sort_order) || 0,
       active: form.active,
     };
@@ -108,7 +128,7 @@ const VideosManager = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="font-heading font-bold text-lg">Vídeos do YouTube</h2>
+        <h2 className="font-heading font-bold text-lg">Vídeos</h2>
         <div className="flex gap-2">
           <Button variant="outline" size="icon" onClick={reload} aria-label="Recarregar">
             <RefreshCw className="w-4 h-4" />
@@ -127,36 +147,46 @@ const VideosManager = () => {
         </Card>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
-          {videos.map((v) => (
-            <Card key={v.id} className="p-3 flex gap-3">
-              <img
-                src={youtubeThumb(v.youtube_id)}
-                alt={v.title}
-                className="w-28 h-16 object-cover rounded-md shrink-0"
-                loading="lazy"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="font-medium truncate">{v.title}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  Ordem {v.sort_order} · {v.active ? "Ativo" : "Oculto"}
-                </p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Switch checked={v.active} onCheckedChange={() => toggleActive(v)} />
-                  <Button size="icon" variant="ghost" onClick={() => openEdit(v)}>
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost" onClick={() => remove(v)}>
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
+          {videos.map((v) => {
+            const thumb = cardThumb(v);
+            return (
+              <Card key={v.id} className="p-3 flex gap-3">
+                {thumb ? (
+                  <img
+                    src={thumb}
+                    alt={v.title}
+                    className="w-28 h-16 object-cover rounded-md shrink-0"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-28 h-16 rounded-md shrink-0 bg-secondary flex items-center justify-center">
+                    <Video className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium truncate">{v.title}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {v.source === "upload" ? "Arquivo" : "YouTube"} · Ordem {v.sort_order} ·{" "}
+                    {v.active ? "Ativo" : "Oculto"}
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Switch checked={v.active} onCheckedChange={() => toggleActive(v)} />
+                    <Button size="icon" variant="ghost" onClick={() => openEdit(v)}>
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={() => remove(v)}>
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{form.id ? "Editar vídeo" : "Novo vídeo"}</DialogTitle>
           </DialogHeader>
@@ -170,18 +200,48 @@ const VideosManager = () => {
                 placeholder="Ex: Lançamento Combo Drinks"
               />
             </div>
-            <div>
-              <Label htmlFor="v-url">Link do YouTube</Label>
-              <Input
-                id="v-url"
-                value={form.url}
-                onChange={(e) => setForm({ ...form, url: e.target.value })}
-                placeholder="https://youtu.be/XXXXXXXX"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Aceita link normal, youtu.be, Shorts ou live.
-              </p>
-            </div>
+
+            <Tabs
+              value={form.source}
+              onValueChange={(val) => setForm({ ...form, source: val as "youtube" | "upload" })}
+            >
+              <TabsList className="grid grid-cols-2 w-full">
+                <TabsTrigger value="upload">Do dispositivo</TabsTrigger>
+                <TabsTrigger value="youtube">Link do YouTube</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="upload" className="mt-3">
+                <MediaUploader
+                  label="Arquivo de vídeo"
+                  value={form.video_url}
+                  onChange={(url) => setForm({ ...form, video_url: url })}
+                  kind="video"
+                  folder="videos"
+                />
+              </TabsContent>
+
+              <TabsContent value="youtube" className="mt-3">
+                <Label htmlFor="v-url">Link do YouTube</Label>
+                <Input
+                  id="v-url"
+                  value={form.url}
+                  onChange={(e) => setForm({ ...form, url: e.target.value })}
+                  placeholder="https://youtu.be/XXXXXXXX"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Aceita link normal, youtu.be, Shorts ou live.
+                </p>
+              </TabsContent>
+            </Tabs>
+
+            <MediaUploader
+              label="Capa / miniatura (opcional)"
+              value={form.thumbnail_url}
+              onChange={(url) => setForm({ ...form, thumbnail_url: url })}
+              kind="image"
+              folder="capas"
+            />
+
             <div>
               <Label htmlFor="v-desc">Descrição (opcional)</Label>
               <Textarea

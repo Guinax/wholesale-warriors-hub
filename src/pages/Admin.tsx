@@ -184,6 +184,9 @@ const Admin = () => {
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b">
         <div className="container flex items-center justify-between h-14">
           <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/")} aria-label="Voltar">
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
             <Package className="w-5 h-5 text-primary" />
             <h1 className="font-heading font-bold tracking-wider text-sm">PAINEL ADMIN</h1>
           </div>

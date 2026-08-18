@@ -23,6 +23,8 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import type { DbProduct, ProductCategory } from "@/hooks/useProducts";
 import { logAudit } from "@/lib/audit";
+import MediaUploader from "@/components/admin/MediaUploader";
+
 
 const CATEGORIES: { value: ProductCategory; label: string }[] = [
   { value: "suplementos", label: "Suplementos" },

@@ -23,6 +23,8 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import type { DbProduct, ProductCategory } from "@/hooks/useProducts";
 import { logAudit } from "@/lib/audit";
+import MediaUploader from "@/components/admin/MediaUploader";
+
 
 const CATEGORIES: { value: ProductCategory; label: string }[] = [
   { value: "suplementos", label: "Suplementos" },
@@ -264,14 +266,14 @@ const ProductsManager = () => {
                 />
               </div>
             </div>
-            <div>
-              <Label>URL da imagem</Label>
-              <Input
-                value={form.image_url}
-                onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-                placeholder="https://..."
-              />
-            </div>
+            <MediaUploader
+              label="Foto do produto"
+              value={form.image_url}
+              onChange={(url) => setForm({ ...form, image_url: url })}
+              kind="image"
+              folder="produtos"
+            />
+
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label>Selo (badge)</Label>

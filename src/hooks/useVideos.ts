@@ -65,7 +65,13 @@ export function useVideos(onlyActive = true) {
     const resolved = await Promise.all(
       rows.map(async (v) => {
         if (v.source === "upload" && v.video_url) {
-          return { ...v, playback_url: await signVideoPath(v.video_url) };
+          return {
+            ...v,
+            playback_url: /^https?:\/\//.test(v.video_url)
+              ? v.video_url
+              : await signVideoPath(v.video_url),
+          };
+
         }
         return v;
       })

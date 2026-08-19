@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { CheckCircle2, Download, Package, Truck, MapPin, Home, MessageCircle } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { useParams, Link, useSearchParams } from "react-router-dom";
+import { CheckCircle2, Download, Package, Truck, MapPin, Home, MessageCircle, RefreshCw } from "lucide-react";
 import jsPDF from "jspdf";
 import PageHeader from "@/components/PageHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { DELIVERY_STAGES, formatCurrency, computeExpiresAt, formatCountdown, isOrderExpired } from "@/lib/orderUtils";
 import { contactWhatsApp } from "@/lib/whatsapp";
+import { checkPaymentStatus } from "@/lib/payments";
+import { useToast } from "@/hooks/use-toast";
+
 
 interface Order {
   order_code: string;
@@ -38,8 +41,11 @@ const PAYMENT_LABEL: Record<string, string> = {
 
 const Recibo = () => {
   const { code } = useParams<{ code: string }>();
+  const [searchParams] = useSearchParams();
+  const { toast } = useToast();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [checking, setChecking] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -47,15 +53,58 @@ const Recibo = () => {
     return () => clearInterval(id);
   }, []);
 
+  const fetchOrder = useCallback(async () => {
+    if (!code) return null;
+    const { data: rows } = await supabase.rpc("get_order_by_code", { _order_code: code });
+    const data = Array.isArray(rows) ? rows[0] : rows;
+    const next = (data as unknown as Order) ?? null;
+    setOrder(next);
+    return next;
+  }, [code]);
+
   useEffect(() => {
     (async () => {
-      if (!code) return;
-      const { data: rows } = await supabase.rpc("get_order_by_code", { _order_code: code });
-      const data = Array.isArray(rows) ? rows[0] : rows;
-      setOrder((data as unknown as Order) ?? null);
+      await fetchOrder();
       setLoading(false);
     })();
-  }, [code]);
+  }, [fetchOrder]);
+
+  const runPaymentCheck = useCallback(
+    async (silent = false) => {
+      if (!code) return;
+      setChecking(true);
+      const res = await checkPaymentStatus(code, {
+        transaction_nsu: searchParams.get("transaction_nsu") ?? undefined,
+        slug: searchParams.get("slug") ?? undefined,
+      });
+      setChecking(false);
+
+      if (res.error) {
+        if (!silent) {
+          toast({ title: "Não foi possível verificar", description: res.error, variant: "destructive" });
+        }
+        return;
+      }
+
+      if (res.paid) {
+        await fetchOrder();
+        toast({ title: "Pagamento confirmado!", description: "Seu pedido foi aprovado." });
+      } else if (!silent) {
+        toast({ title: "Pagamento ainda não identificado", description: "Tente novamente em alguns instantes." });
+      }
+    },
+    [code, fetchOrder, searchParams, toast]
+  );
+
+  // Verificação automática enquanto o pagamento estiver pendente
+  useEffect(() => {
+    if (!order || order.payment_status !== "pending") return;
+    if (isOrderExpired(order.payment_status, order.due_at)) return;
+    runPaymentCheck(true);
+    const id = setInterval(() => runPaymentCheck(true), 20000);
+    return () => clearInterval(id);
+  }, [order?.payment_status, order?.due_at, order, runPaymentCheck]);
+
 
   const handleDownloadPDF = () => {
     if (!order) return;
@@ -194,6 +243,17 @@ const Recibo = () => {
               )}
             </div>
           )}
+          {pending && (
+            <button
+              onClick={() => runPaymentCheck(false)}
+              disabled={checking}
+              className="inline-flex items-center justify-center gap-2 bg-secondary text-foreground font-heading font-black text-xs tracking-wider px-4 py-2.5 rounded-lg border border-border hover:bg-secondary/80 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${checking ? "animate-spin" : ""}`} />
+              {checking ? "VERIFICANDO..." : "JÁ PAGUEI — VERIFICAR"}
+            </button>
+          )}
+
           <p className="text-xs text-muted-foreground">
             Pedido <strong className="text-foreground">{order.order_code}</strong> registrado em{" "}
             {new Date(order.created_at).toLocaleString("pt-BR")}

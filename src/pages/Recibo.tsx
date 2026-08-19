@@ -41,8 +41,11 @@ const PAYMENT_LABEL: Record<string, string> = {
 
 const Recibo = () => {
   const { code } = useParams<{ code: string }>();
+  const [searchParams] = useSearchParams();
+  const { toast } = useToast();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [checking, setChecking] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -50,15 +53,58 @@ const Recibo = () => {
     return () => clearInterval(id);
   }, []);
 
+  const fetchOrder = useCallback(async () => {
+    if (!code) return null;
+    const { data: rows } = await supabase.rpc("get_order_by_code", { _order_code: code });
+    const data = Array.isArray(rows) ? rows[0] : rows;
+    const next = (data as unknown as Order) ?? null;
+    setOrder(next);
+    return next;
+  }, [code]);
+
   useEffect(() => {
     (async () => {
-      if (!code) return;
-      const { data: rows } = await supabase.rpc("get_order_by_code", { _order_code: code });
-      const data = Array.isArray(rows) ? rows[0] : rows;
-      setOrder((data as unknown as Order) ?? null);
+      await fetchOrder();
       setLoading(false);
     })();
-  }, [code]);
+  }, [fetchOrder]);
+
+  const runPaymentCheck = useCallback(
+    async (silent = false) => {
+      if (!code) return;
+      setChecking(true);
+      const res = await checkPaymentStatus(code, {
+        transaction_nsu: searchParams.get("transaction_nsu") ?? undefined,
+        slug: searchParams.get("slug") ?? undefined,
+      });
+      setChecking(false);
+
+      if (res.error) {
+        if (!silent) {
+          toast({ title: "Não foi possível verificar", description: res.error, variant: "destructive" });
+        }
+        return;
+      }
+
+      if (res.paid) {
+        await fetchOrder();
+        toast({ title: "Pagamento confirmado!", description: "Seu pedido foi aprovado." });
+      } else if (!silent) {
+        toast({ title: "Pagamento ainda não identificado", description: "Tente novamente em alguns instantes." });
+      }
+    },
+    [code, fetchOrder, searchParams, toast]
+  );
+
+  // Verificação automática enquanto o pagamento estiver pendente
+  useEffect(() => {
+    if (!order || order.payment_status !== "pending") return;
+    if (isOrderExpired(order.payment_status, order.due_at)) return;
+    runPaymentCheck(true);
+    const id = setInterval(() => runPaymentCheck(true), 20000);
+    return () => clearInterval(id);
+  }, [order?.payment_status, order?.due_at, order, runPaymentCheck]);
+
 
   const handleDownloadPDF = () => {
     if (!order) return;

@@ -243,6 +243,17 @@ const Recibo = () => {
               )}
             </div>
           )}
+          {pending && (
+            <button
+              onClick={() => runPaymentCheck(false)}
+              disabled={checking}
+              className="inline-flex items-center justify-center gap-2 bg-secondary text-foreground font-heading font-black text-xs tracking-wider px-4 py-2.5 rounded-lg border border-border hover:bg-secondary/80 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${checking ? "animate-spin" : ""}`} />
+              {checking ? "VERIFICANDO..." : "JÁ PAGUEI — VERIFICAR"}
+            </button>
+          )}
+
           <p className="text-xs text-muted-foreground">
             Pedido <strong className="text-foreground">{order.order_code}</strong> registrado em{" "}
             {new Date(order.created_at).toLocaleString("pt-BR")}

@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { CheckCircle2, Download, Package, Truck, MapPin, Home, MessageCircle } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { useParams, Link, useSearchParams } from "react-router-dom";
+import { CheckCircle2, Download, Package, Truck, MapPin, Home, MessageCircle, RefreshCw } from "lucide-react";
 import jsPDF from "jspdf";
 import PageHeader from "@/components/PageHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { DELIVERY_STAGES, formatCurrency, computeExpiresAt, formatCountdown, isOrderExpired } from "@/lib/orderUtils";
 import { contactWhatsApp } from "@/lib/whatsapp";
+import { checkPaymentStatus } from "@/lib/payments";
+import { useToast } from "@/hooks/use-toast";
+
 
 interface Order {
   order_code: string;

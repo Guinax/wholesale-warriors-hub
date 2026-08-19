@@ -138,7 +138,11 @@ export type Database = {
           id: string
           items: Json
           order_code: string
+          payment_checked_at: string | null
+          payment_details: Json | null
           payment_method: string
+          payment_nsu: string | null
+          payment_provider: string | null
           payment_status: string
           total_amount: number
           tracking_code: string
@@ -161,7 +165,11 @@ export type Database = {
           id?: string
           items: Json
           order_code: string
+          payment_checked_at?: string | null
+          payment_details?: Json | null
           payment_method: string
+          payment_nsu?: string | null
+          payment_provider?: string | null
           payment_status?: string
           total_amount: number
           tracking_code: string
@@ -184,7 +192,11 @@ export type Database = {
           id?: string
           items?: Json
           order_code?: string
+          payment_checked_at?: string | null
+          payment_details?: Json | null
           payment_method?: string
+          payment_nsu?: string | null
+          payment_provider?: string | null
           payment_status?: string
           total_amount?: number
           tracking_code?: string
@@ -391,7 +403,11 @@ export type Database = {
           id: string
           items: Json
           order_code: string
+          payment_checked_at: string | null
+          payment_details: Json | null
           payment_method: string
+          payment_nsu: string | null
+          payment_provider: string | null
           payment_status: string
           total_amount: number
           tracking_code: string

@@ -1,6 +1,17 @@
 import { useState } from "react";
 import { Play, Youtube } from "lucide-react";
-import { useVideos, youtubeThumb } from "@/hooks/useVideos";
+import { useVideos, youtubeThumb, type DbVideo } from "@/hooks/useVideos";
+
+const isUpload = (v: DbVideo) => v.source === "upload" && !!v.video_url;
+
+/** Resolve a thumbnail/cover a exibir antes da reprodução */
+const coverUrl = (v: DbVideo) => {
+  if (isUpload(v)) {
+    // thumbnail_url pode ser URL assinada já resolvida ou caminho do bucket
+    return v.thumbnail_url || v.playback_url || "";
+  }
+  return v.youtube_id ? youtubeThumb(v.youtube_id) : "";
+};
 
 const VideosSection = () => {
   const { videos, loading } = useVideos(true);
@@ -27,26 +38,44 @@ const VideosSection = () => {
       <div className="rounded-2xl overflow-hidden border border-border bg-card">
         <div className="relative aspect-video bg-black">
           {playing === main.id ? (
-            <iframe
-              className="absolute inset-0 w-full h-full"
-              src={`https://www.youtube.com/embed/${main.youtube_id}?autoplay=1&rel=0`}
-              title={main.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              loading="lazy"
-            />
+            isUpload(main) ? (
+              <video
+                className="absolute inset-0 w-full h-full"
+                src={main.playback_url || undefined}
+                poster={coverUrl(main) || undefined}
+                controls
+                autoPlay
+                playsInline
+                title={main.title}
+              />
+            ) : (
+              <iframe
+                className="absolute inset-0 w-full h-full"
+                src={`https://www.youtube.com/embed/${main.youtube_id}?autoplay=1&rel=0`}
+                title={main.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                loading="lazy"
+              />
+            )
           ) : (
             <button
               onClick={() => setPlaying(main.id)}
               className="group absolute inset-0 w-full h-full"
               aria-label={`Reproduzir vídeo: ${main.title}`}
             >
-              <img
-                src={youtubeThumb(main.youtube_id)}
-                alt={main.title}
-                className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                loading="lazy"
-              />
+              {coverUrl(main) ? (
+                <img
+                  src={coverUrl(main)}
+                  alt={main.title}
+                  className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                  loading="lazy"
+                />
+              ) : (
+                <span className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground text-xs">
+                  Sem miniatura
+                </span>
+              )}
               <span className="absolute inset-0 flex items-center justify-center">
                 <span className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg glow-neon">
                   <Play className="w-7 h-7 ml-1" fill="currentColor" />
@@ -69,29 +98,45 @@ const VideosSection = () => {
           {rest.map((v) => (
             <button
               key={v.id}
-              onClick={() => {
-                setPlaying(v.id);
-              }}
+              onClick={() => setPlaying(v.id)}
               className="snap-start shrink-0 w-56 text-left rounded-xl overflow-hidden border border-border bg-card hover:border-primary/50 transition-colors"
             >
               <div className="relative aspect-video bg-black">
                 {playing === v.id ? (
-                  <iframe
-                    className="absolute inset-0 w-full h-full"
-                    src={`https://www.youtube.com/embed/${v.youtube_id}?autoplay=1&rel=0`}
-                    title={v.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    loading="lazy"
-                  />
-                ) : (
-                  <>
-                    <img
-                      src={youtubeThumb(v.youtube_id)}
-                      alt={v.title}
-                      className="w-full h-full object-cover"
+                  isUpload(v) ? (
+                    <video
+                      className="absolute inset-0 w-full h-full"
+                      src={v.playback_url || undefined}
+                      poster={coverUrl(v) || undefined}
+                      controls
+                      autoPlay
+                      playsInline
+                      title={v.title}
+                    />
+                  ) : (
+                    <iframe
+                      className="absolute inset-0 w-full h-full"
+                      src={`https://www.youtube.com/embed/${v.youtube_id}?autoplay=1&rel=0`}
+                      title={v.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
                       loading="lazy"
                     />
+                  )
+                ) : (
+                  <>
+                    {coverUrl(v) ? (
+                      <img
+                        src={coverUrl(v)}
+                        alt={v.title}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground text-[10px]">
+                        Sem miniatura
+                      </span>
+                    )}
                     <span className="absolute inset-0 flex items-center justify-center">
                       <span className="w-10 h-10 rounded-full bg-primary/90 text-primary-foreground flex items-center justify-center">
                         <Play className="w-4 h-4 ml-0.5" fill="currentColor" />

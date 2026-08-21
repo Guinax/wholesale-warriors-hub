@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Lock, Mail, ArrowLeft, MessageCircle, User, Phone, Eye, EyeOff } from "lucide-react";
+import { Lock, Mail, ArrowLeft, MessageCircle, User, Phone, Eye, EyeOff, MapPin } from "lucide-react";
 import { contactWhatsApp } from "@/lib/whatsapp";
 import { logAudit } from "@/lib/audit";
 

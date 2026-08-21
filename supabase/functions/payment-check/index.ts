@@ -90,7 +90,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    paid = providerResponse.paid === true || providerResponse.success === true;
+    const inner = (providerResponse.data ?? {}) as Record<string, unknown>;
+    paid = providerResponse.paid === true || providerResponse.success === true || inner.paid === true;
   } catch (_e) {
     return json({ error: "Não foi possível contatar o provedor de pagamento." }, 502);
   }

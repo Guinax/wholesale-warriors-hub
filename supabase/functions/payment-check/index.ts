@@ -70,9 +70,9 @@ Deno.serve(async (req) => {
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
         handle,
-        transaction_nsu: nsu,
-        external_order_nsu: order.order_code,
-        slug,
+        order_nsu: order.order_code,
+        ...(nsu ? { transaction_nsu: nsu } : {}),
+        ...(slug ? { slug } : {}),
       }),
     });
 
@@ -90,7 +90,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    paid = providerResponse.paid === true || providerResponse.success === true;
+    const inner = (providerResponse.data ?? {}) as Record<string, unknown>;
+    paid = providerResponse.paid === true || providerResponse.success === true || inner.paid === true;
   } catch (_e) {
     return json({ error: "Não foi possível contatar o provedor de pagamento." }, 502);
   }

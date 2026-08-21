@@ -6,9 +6,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Lock, Mail, ArrowLeft, MessageCircle, User, Phone, Eye, EyeOff } from "lucide-react";
+import { Lock, Mail, ArrowLeft, MessageCircle, User, Phone, Eye, EyeOff, MapPin } from "lucide-react";
 import { contactWhatsApp } from "@/lib/whatsapp";
 import { logAudit } from "@/lib/audit";
+
+const onlyDigits = (v: string) => v.replace(/\D/g, "");
+const maskPhone = (v: string) => {
+  const d = onlyDigits(v).slice(0, 11);
+  if (d.length <= 10) return d.replace(/(\d{2})(\d{0,4})(\d{0,4})/, (_, a, b, c) => `(${a}) ${b}${c ? "-" + c : ""}`).trim();
+  return d.replace(/(\d{2})(\d{5})(\d{0,4})/, (_, a, b, c) => `(${a}) ${b}${c ? "-" + c : ""}`);
+};
+const maskCpf = (v: string) =>
+  onlyDigits(v).slice(0, 11).replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1-$2");
+const maskCnpj = (v: string) =>
+  onlyDigits(v)
+    .slice(0, 14)
+    .replace(/(\d{2})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2");
+const maskCep = (v: string) => onlyDigits(v).slice(0, 8).replace(/(\d{5})(\d{0,3})/, (_, a, b) => (b ? `${a}-${b}` : a));
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -20,6 +37,14 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [cnpj, setCnpj] = useState("");
+  const [zip, setZip] = useState("");
+  const [street, setStreet] = useState("");
+  const [number, setNumber] = useState("");
+  const [complement, setComplement] = useState("");
+  const [city, setCity] = useState("");
+  const [uf, setUf] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [recoverySent, setRecoverySent] = useState(false);
@@ -31,8 +56,33 @@ const Auth = () => {
     });
   }, [nextPath]);
 
+  const validateSignup = () => {
+    if (onlyDigits(phone).length < 10) {
+      toast.error("Informe um WhatsApp válido com DDD");
+      return false;
+    }
+    if (onlyDigits(cpf).length !== 11) {
+      toast.error("Informe um CPF válido (11 dígitos)");
+      return false;
+    }
+    if (cnpj && onlyDigits(cnpj).length !== 14) {
+      toast.error("CNPJ inválido (14 dígitos)");
+      return false;
+    }
+    if (onlyDigits(zip).length !== 8) {
+      toast.error("CEP inválido (8 dígitos)");
+      return false;
+    }
+    if (!street.trim() || !number.trim() || !city.trim() || uf.trim().length !== 2) {
+      toast.error("Preencha o endereço completo (rua, número, cidade e UF)");
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (mode === "signup" && !validateSignup()) return;
     setLoading(true);
     try {
       if (mode === "signup") {
@@ -41,14 +91,26 @@ const Auth = () => {
           password,
           options: {
             emailRedirectTo: `${window.location.origin}${nextPath}`,
-            data: { full_name: fullName, phone },
+            data: {
+              full_name: fullName,
+              phone,
+              cpf,
+              cnpj: cnpj || null,
+              address_street: street,
+              address_number: number,
+              address_complement: complement || null,
+              address_city: city,
+              address_state: uf.toUpperCase(),
+              address_zip: zip,
+            },
           },
         });
         if (error) throw error;
         await logAudit("signup", { details: { email } });
-        toast.success("Cadastro realizado! Você já pode entrar.");
+        toast.success("Cadastro realizado! Seus dados de entrega já estão salvos.");
         setMode("login");
       } else {
+
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         await logAudit("login", { details: { email } });
@@ -169,15 +231,42 @@ const Auth = () => {
                     <Input
                       id="phone"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => setPhone(maskPhone(e.target.value))}
                       required
+                      inputMode="tel"
                       className="pl-9"
                       placeholder="(00) 00000-0000"
                     />
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="cpf">CPF</Label>
+                    <Input id="cpf" value={cpf} inputMode="numeric" required placeholder="000.000.000-00" onChange={(e) => setCpf(maskCpf(e.target.value))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cnpj">CNPJ (opcional)</Label>
+                    <Input id="cnpj" value={cnpj} inputMode="numeric" placeholder="00.000.000/0000-00" onChange={(e) => setCnpj(maskCnpj(e.target.value))} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <MapPin className="w-3.5 h-3.5" /> Endereço de entrega
+                  </Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input value={zip} inputMode="numeric" required placeholder="CEP 00000-000" onChange={(e) => setZip(maskCep(e.target.value))} />
+                    <Input value={number} inputMode="numeric" required placeholder="Número" onChange={(e) => setNumber(e.target.value)} />
+                  </div>
+                  <Input value={street} required placeholder="Rua / Avenida" onChange={(e) => setStreet(e.target.value)} />
+                  <Input value={complement} placeholder="Complemento (opcional)" onChange={(e) => setComplement(e.target.value)} />
+                  <div className="grid grid-cols-[1fr_80px] gap-3">
+                    <Input value={city} required placeholder="Cidade" onChange={(e) => setCity(e.target.value)} />
+                    <Input value={uf} required placeholder="UF" onChange={(e) => setUf(e.target.value.toUpperCase().slice(0, 2))} />
+                  </div>
+                </div>
               </>
             )}
+
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
               <div className="relative">

@@ -58,6 +58,8 @@ const Pagamento = () => {
 
   const [method, setMethod] = useState<PaymentMethod>("pix");
   const [submitting, setSubmitting] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [editing, setEditing] = useState(false);
 
   const [customer, setCustomer] = useState({
     name: "",
@@ -80,6 +82,48 @@ const Pagamento = () => {
       navigate("/");
     }
   }, [items.length, navigate, toast]);
+
+  // Carrega automaticamente os dados salvos no cadastro
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        if (active) setLoadingProfile(false);
+        return;
+      }
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name,email,phone,cnpj,address_street,address_number,address_complement,address_city,address_state,address_zip")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!active) return;
+      if (data) {
+        const filled = {
+          name: data.full_name ?? "",
+          email: data.email ?? user.email ?? "",
+          phone: data.phone ?? "",
+          cnpj: data.cnpj ?? "",
+          street: data.address_street ?? "",
+          number: data.address_number ?? "",
+          complement: data.address_complement ?? "",
+          city: data.address_city ?? "",
+          state: data.address_state ?? "",
+          zip: data.address_zip ?? "",
+        };
+        setCustomer(filled);
+        const complete = filled.name && filled.email && filled.phone && filled.street && filled.number && filled.city && filled.state && filled.zip;
+        if (!complete) setEditing(true);
+      } else {
+        setEditing(true);
+      }
+      setLoadingProfile(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
 
   const pixCode = useMemo(
     () =>
@@ -210,25 +254,56 @@ const Pagamento = () => {
         </div>
         {/* Form */}
         <section className="space-y-4 sm:space-y-6">
-          {/* Dados do cliente */}
+          {/* Dados do cliente (vindos do cadastro) */}
           <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 space-y-4">
-            <h2 className="font-heading font-black text-sm tracking-wider text-foreground">
-              DADOS DE ENTREGA
-            </h2>
-            <div className="grid sm:grid-cols-2 gap-3">
-              <Field label="Nome / Razão Social" value={customer.name} onChange={(v) => setCustomer({ ...customer, name: v })} />
-              <Field label="CNPJ (opcional)" value={customer.cnpj} inputMode="numeric" placeholder="00.000.000/0000-00" onChange={(v) => setCustomer({ ...customer, cnpj: maskCnpj(v) })} />
-              <Field label="E-mail" type="email" value={customer.email} onChange={(v) => setCustomer({ ...customer, email: v })} />
-              <Field label="WhatsApp" value={customer.phone} inputMode="tel" placeholder="(00) 00000-0000" onChange={(v) => setCustomer({ ...customer, phone: maskPhone(v) })} />
-              <Field label="Rua" value={customer.street} onChange={(v) => setCustomer({ ...customer, street: v })} />
-              <Field label="Número" value={customer.number} inputMode="numeric" onChange={(v) => setCustomer({ ...customer, number: v })} />
-              <Field label="Complemento" value={customer.complement} onChange={(v) => setCustomer({ ...customer, complement: v })} />
-              <Field label="CEP" value={customer.zip} inputMode="numeric" placeholder="00000-000" onChange={(v) => setCustomer({ ...customer, zip: maskCep(v) })} />
-
-              <Field label="Cidade" value={customer.city} onChange={(v) => setCustomer({ ...customer, city: v })} />
-              <Field label="UF" value={customer.state} onChange={(v) => setCustomer({ ...customer, state: v.toUpperCase().slice(0, 2) })} />
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-heading font-black text-sm tracking-wider text-foreground">
+                DADOS DE ENTREGA
+              </h2>
+              {!loadingProfile && (
+                <button
+                  onClick={() => setEditing((e) => !e)}
+                  className="text-[11px] font-heading font-bold tracking-wider text-primary hover:underline"
+                >
+                  {editing ? "USAR DADOS SALVOS" : "EDITAR DADOS"}
+                </button>
+              )}
             </div>
+
+            {loadingProfile ? (
+              <p className="text-xs text-muted-foreground">Carregando seus dados cadastrados...</p>
+            ) : !editing ? (
+              <div className="space-y-1.5 text-xs text-muted-foreground">
+                <p className="text-foreground font-semibold">{customer.name}</p>
+                {customer.cnpj && <p>CNPJ: {customer.cnpj}</p>}
+                <p>{customer.email} · {customer.phone}</p>
+                <p>
+                  {customer.street}, {customer.number}
+                  {customer.complement ? ` — ${customer.complement}` : ""}
+                </p>
+                <p>
+                  {customer.city}/{customer.state} · CEP {customer.zip}
+                </p>
+                <p className="text-[10px] pt-1">
+                  Dados salvos no seu cadastro. É só confirmar o pagamento.
+                </p>
+              </div>
+            ) : (
+              <div className="grid sm:grid-cols-2 gap-3">
+                <Field label="Nome / Razão Social" value={customer.name} onChange={(v) => setCustomer({ ...customer, name: v })} />
+                <Field label="CNPJ (opcional)" value={customer.cnpj} inputMode="numeric" placeholder="00.000.000/0000-00" onChange={(v) => setCustomer({ ...customer, cnpj: maskCnpj(v) })} />
+                <Field label="E-mail" type="email" value={customer.email} onChange={(v) => setCustomer({ ...customer, email: v })} />
+                <Field label="WhatsApp" value={customer.phone} inputMode="tel" placeholder="(00) 00000-0000" onChange={(v) => setCustomer({ ...customer, phone: maskPhone(v) })} />
+                <Field label="Rua" value={customer.street} onChange={(v) => setCustomer({ ...customer, street: v })} />
+                <Field label="Número" value={customer.number} inputMode="numeric" onChange={(v) => setCustomer({ ...customer, number: v })} />
+                <Field label="Complemento" value={customer.complement} onChange={(v) => setCustomer({ ...customer, complement: v })} />
+                <Field label="CEP" value={customer.zip} inputMode="numeric" placeholder="00000-000" onChange={(v) => setCustomer({ ...customer, zip: maskCep(v) })} />
+                <Field label="Cidade" value={customer.city} onChange={(v) => setCustomer({ ...customer, city: v })} />
+                <Field label="UF" value={customer.state} onChange={(v) => setCustomer({ ...customer, state: v.toUpperCase().slice(0, 2) })} />
+              </div>
+            )}
           </div>
+
 
           {/* Métodos de pagamento */}
           <div className="bg-card border border-border rounded-2xl p-5 space-y-4">

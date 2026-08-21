@@ -58,6 +58,8 @@ const Pagamento = () => {
 
   const [method, setMethod] = useState<PaymentMethod>("pix");
   const [submitting, setSubmitting] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [editing, setEditing] = useState(false);
 
   const [customer, setCustomer] = useState({
     name: "",
@@ -80,6 +82,48 @@ const Pagamento = () => {
       navigate("/");
     }
   }, [items.length, navigate, toast]);
+
+  // Carrega automaticamente os dados salvos no cadastro
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        if (active) setLoadingProfile(false);
+        return;
+      }
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name,email,phone,cnpj,address_street,address_number,address_complement,address_city,address_state,address_zip")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!active) return;
+      if (data) {
+        const filled = {
+          name: data.full_name ?? "",
+          email: data.email ?? user.email ?? "",
+          phone: data.phone ?? "",
+          cnpj: data.cnpj ?? "",
+          street: data.address_street ?? "",
+          number: data.address_number ?? "",
+          complement: data.address_complement ?? "",
+          city: data.address_city ?? "",
+          state: data.address_state ?? "",
+          zip: data.address_zip ?? "",
+        };
+        setCustomer(filled);
+        const complete = filled.name && filled.email && filled.phone && filled.street && filled.number && filled.city && filled.state && filled.zip;
+        if (!complete) setEditing(true);
+      } else {
+        setEditing(true);
+      }
+      setLoadingProfile(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
 
   const pixCode = useMemo(
     () =>

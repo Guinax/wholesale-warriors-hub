@@ -231,15 +231,42 @@ const Auth = () => {
                     <Input
                       id="phone"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => setPhone(maskPhone(e.target.value))}
                       required
+                      inputMode="tel"
                       className="pl-9"
                       placeholder="(00) 00000-0000"
                     />
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="cpf">CPF</Label>
+                    <Input id="cpf" value={cpf} inputMode="numeric" required placeholder="000.000.000-00" onChange={(e) => setCpf(maskCpf(e.target.value))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cnpj">CNPJ (opcional)</Label>
+                    <Input id="cnpj" value={cnpj} inputMode="numeric" placeholder="00.000.000/0000-00" onChange={(e) => setCnpj(maskCnpj(e.target.value))} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <MapPin className="w-3.5 h-3.5" /> Endereço de entrega
+                  </Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input value={zip} inputMode="numeric" required placeholder="CEP 00000-000" onChange={(e) => setZip(maskCep(e.target.value))} />
+                    <Input value={number} inputMode="numeric" required placeholder="Número" onChange={(e) => setNumber(e.target.value)} />
+                  </div>
+                  <Input value={street} required placeholder="Rua / Avenida" onChange={(e) => setStreet(e.target.value)} />
+                  <Input value={complement} placeholder="Complemento (opcional)" onChange={(e) => setComplement(e.target.value)} />
+                  <div className="grid grid-cols-[1fr_80px] gap-3">
+                    <Input value={city} required placeholder="Cidade" onChange={(e) => setCity(e.target.value)} />
+                    <Input value={uf} required placeholder="UF" onChange={(e) => setUf(e.target.value.toUpperCase().slice(0, 2))} />
+                  </div>
+                </div>
               </>
             )}
+
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
               <div className="relative">

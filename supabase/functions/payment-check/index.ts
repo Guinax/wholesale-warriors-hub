@@ -70,9 +70,9 @@ Deno.serve(async (req) => {
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
         handle,
-        transaction_nsu: nsu,
-        external_order_nsu: order.order_code,
-        slug,
+        order_nsu: order.order_code,
+        ...(nsu ? { transaction_nsu: nsu } : {}),
+        ...(slug ? { slug } : {}),
       }),
     });
 

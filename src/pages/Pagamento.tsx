@@ -68,12 +68,14 @@ const Pagamento = () => {
   const [submitting, setSubmitting] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [docType, setDocType] = useState<"cpf" | "cnpj">("cpf");
 
   const [customer, setCustomer] = useState({
     name: "",
     email: "",
     phone: "",
     cnpj: "",
+    cpf: "",
     street: "",
     number: "",
     complement: "",
@@ -81,6 +83,7 @@ const Pagamento = () => {
     state: "",
     zip: "",
   });
+
 
   const [card, setCard] = useState({ number: "", name: "", expiry: "", cvv: "" });
 

@@ -105,7 +105,7 @@ const Pagamento = () => {
       }
       const { data } = await supabase
         .from("profiles")
-        .select("full_name,email,phone,cnpj,address_street,address_number,address_complement,address_city,address_state,address_zip")
+        .select("full_name,email,phone,cnpj,cpf,address_street,address_number,address_complement,address_city,address_state,address_zip")
         .eq("user_id", user.id)
         .maybeSingle();
       if (!active) return;
@@ -115,6 +115,7 @@ const Pagamento = () => {
           email: data.email ?? user.email ?? "",
           phone: data.phone ?? "",
           cnpj: data.cnpj ?? "",
+          cpf: data.cpf ?? "",
           street: data.address_street ?? "",
           number: data.address_number ?? "",
           complement: data.address_complement ?? "",
@@ -123,8 +124,10 @@ const Pagamento = () => {
           zip: data.address_zip ?? "",
         };
         setCustomer(filled);
+        setDocType(filled.cnpj && !filled.cpf ? "cnpj" : "cpf");
         const complete = filled.name && filled.email && filled.phone && filled.street && filled.number && filled.city && filled.state && filled.zip;
         if (!complete) setEditing(true);
+
       } else {
         setEditing(true);
       }

@@ -297,7 +297,10 @@ const Pagamento = () => {
             ) : !editing ? (
               <div className="space-y-1.5 text-xs text-muted-foreground">
                 <p className="text-foreground font-semibold">{customer.name}</p>
-                {customer.cnpj && <p>CNPJ: {customer.cnpj}</p>}
+                {docType === "cnpj"
+                  ? customer.cnpj && <p>CNPJ: {customer.cnpj}</p>
+                  : customer.cpf && <p>CPF: {customer.cpf}</p>}
+
                 <p>{customer.email} · {customer.phone}</p>
                 <p>
                   {customer.street}, {customer.number}

@@ -44,6 +44,14 @@ const maskCnpj = (v: string) =>
     .replace(/(\d{3})(\d)/, "$1/$2")
     .replace(/(\d{4})(\d)/, "$1-$2");
 
+const maskCpf = (v: string) =>
+  onlyDigits(v)
+    .slice(0, 11)
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+
+
 const maskCard = (v: string) => onlyDigits(v).slice(0, 16).replace(/(\d{4})(?=\d)/g, "$1 ");
 
 const maskExpiry = (v: string) => onlyDigits(v).slice(0, 4).replace(/(\d{2})(\d{1,2})/, "$1/$2");
@@ -60,12 +68,14 @@ const Pagamento = () => {
   const [submitting, setSubmitting] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [docType, setDocType] = useState<"cpf" | "cnpj">("cpf");
 
   const [customer, setCustomer] = useState({
     name: "",
     email: "",
     phone: "",
     cnpj: "",
+    cpf: "",
     street: "",
     number: "",
     complement: "",
@@ -73,6 +83,7 @@ const Pagamento = () => {
     state: "",
     zip: "",
   });
+
 
   const [card, setCard] = useState({ number: "", name: "", expiry: "", cvv: "" });
 
@@ -94,7 +105,7 @@ const Pagamento = () => {
       }
       const { data } = await supabase
         .from("profiles")
-        .select("full_name,email,phone,cnpj,address_street,address_number,address_complement,address_city,address_state,address_zip")
+        .select("full_name,email,phone,cnpj,cpf,address_street,address_number,address_complement,address_city,address_state,address_zip")
         .eq("user_id", user.id)
         .maybeSingle();
       if (!active) return;
@@ -104,6 +115,7 @@ const Pagamento = () => {
           email: data.email ?? user.email ?? "",
           phone: data.phone ?? "",
           cnpj: data.cnpj ?? "",
+          cpf: data.cpf ?? "",
           street: data.address_street ?? "",
           number: data.address_number ?? "",
           complement: data.address_complement ?? "",
@@ -112,8 +124,10 @@ const Pagamento = () => {
           zip: data.address_zip ?? "",
         };
         setCustomer(filled);
+        setDocType(filled.cnpj && !filled.cpf ? "cnpj" : "cpf");
         const complete = filled.name && filled.email && filled.phone && filled.street && filled.number && filled.city && filled.state && filled.zip;
         if (!complete) setEditing(true);
+
       } else {
         setEditing(true);
       }
@@ -157,10 +171,16 @@ const Pagamento = () => {
       toast({ title: "CEP inválido", description: "O CEP deve ter 8 dígitos.", variant: "destructive" });
       return false;
     }
-    if (customer.cnpj && onlyDigits(customer.cnpj).length !== 14) {
-      toast({ title: "CNPJ inválido", description: "O CNPJ deve ter 14 dígitos.", variant: "destructive" });
+    if (docType === "cnpj") {
+      if (onlyDigits(customer.cnpj).length !== 14) {
+        toast({ title: "CNPJ inválido", description: "O CNPJ deve ter 14 dígitos.", variant: "destructive" });
+        return false;
+      }
+    } else if (onlyDigits(customer.cpf).length !== 11) {
+      toast({ title: "CPF inválido", description: "O CPF deve ter 11 dígitos.", variant: "destructive" });
       return false;
     }
+
     return true;
   };
 
@@ -202,7 +222,9 @@ const Pagamento = () => {
       customer_name: customer.name,
       customer_email: customer.email,
       customer_phone: customer.phone,
-      customer_cnpj: customer.cnpj || null,
+      customer_cnpj: docType === "cnpj" ? customer.cnpj : null,
+      customer_cpf: docType === "cpf" ? customer.cpf : null,
+
       address_street: customer.street,
       address_number: customer.number,
       address_complement: customer.complement || null,
@@ -275,7 +297,10 @@ const Pagamento = () => {
             ) : !editing ? (
               <div className="space-y-1.5 text-xs text-muted-foreground">
                 <p className="text-foreground font-semibold">{customer.name}</p>
-                {customer.cnpj && <p>CNPJ: {customer.cnpj}</p>}
+                {docType === "cnpj"
+                  ? customer.cnpj && <p>CNPJ: {customer.cnpj}</p>
+                  : customer.cpf && <p>CPF: {customer.cpf}</p>}
+
                 <p>{customer.email} · {customer.phone}</p>
                 <p>
                   {customer.street}, {customer.number}
@@ -290,10 +315,36 @@ const Pagamento = () => {
               </div>
             ) : (
               <div className="grid sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2 space-y-1.5">
+                  <Label className="text-[10px] font-heading font-bold tracking-wider text-muted-foreground">
+                    TIPO DE DOCUMENTO
+                  </Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["cpf", "cnpj"] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setDocType(t)}
+                        className={`py-2 rounded-md text-[11px] font-heading font-bold tracking-wider border transition-colors ${
+                          docType === t
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-secondary text-muted-foreground border-border"
+                        }`}
+                      >
+                        {t === "cpf" ? "CPF (PESSOA FÍSICA)" : "CNPJ (EMPRESA)"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <Field label="Nome / Razão Social" value={customer.name} onChange={(v) => setCustomer({ ...customer, name: v })} />
-                <Field label="CNPJ (opcional)" value={customer.cnpj} inputMode="numeric" placeholder="00.000.000/0000-00" onChange={(v) => setCustomer({ ...customer, cnpj: maskCnpj(v) })} />
+                {docType === "cnpj" ? (
+                  <Field label="CNPJ" value={customer.cnpj} inputMode="numeric" placeholder="00.000.000/0000-00" onChange={(v) => setCustomer({ ...customer, cnpj: maskCnpj(v) })} />
+                ) : (
+                  <Field label="CPF" value={customer.cpf} inputMode="numeric" placeholder="000.000.000-00" onChange={(v) => setCustomer({ ...customer, cpf: maskCpf(v) })} />
+                )}
                 <Field label="E-mail" type="email" value={customer.email} onChange={(v) => setCustomer({ ...customer, email: v })} />
                 <Field label="WhatsApp" value={customer.phone} inputMode="tel" placeholder="(00) 00000-0000" onChange={(v) => setCustomer({ ...customer, phone: maskPhone(v) })} />
+
                 <Field label="Rua" value={customer.street} onChange={(v) => setCustomer({ ...customer, street: v })} />
                 <Field label="Número" value={customer.number} inputMode="numeric" onChange={(v) => setCustomer({ ...customer, number: v })} />
                 <Field label="Complemento" value={customer.complement} onChange={(v) => setCustomer({ ...customer, complement: v })} />

@@ -36,8 +36,10 @@ Deno.serve(async (req) => {
   const handle = parsed.data.handle ?? Deno.env.get("INFINITEPAY_HANDLE") ?? "";
 
   if (!handle) {
-    return json({ error: "Handle da InfinitePay não configurado." }, 400);
+    // Sem handle configurado: não é erro fatal, apenas não há verificação automática
+    return json({ paid: false, payment_status: "pending", not_configured: true });
   }
+
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,

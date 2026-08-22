@@ -129,6 +129,7 @@ export type Database = {
           address_zip: string
           created_at: string
           customer_cnpj: string | null
+          customer_cpf: string | null
           customer_email: string
           customer_name: string
           customer_phone: string
@@ -156,6 +157,7 @@ export type Database = {
           address_zip: string
           created_at?: string
           customer_cnpj?: string | null
+          customer_cpf?: string | null
           customer_email: string
           customer_name: string
           customer_phone: string
@@ -183,6 +185,7 @@ export type Database = {
           address_zip?: string
           created_at?: string
           customer_cnpj?: string | null
+          customer_cpf?: string | null
           customer_email?: string
           customer_name?: string
           customer_phone?: string
@@ -418,6 +421,7 @@ export type Database = {
           address_zip: string
           created_at: string
           customer_cnpj: string | null
+          customer_cpf: string | null
           customer_email: string
           customer_name: string
           customer_phone: string

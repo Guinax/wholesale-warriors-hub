@@ -4,8 +4,10 @@ export interface PaymentCheckResult {
   paid: boolean;
   payment_status?: string;
   provider?: Record<string, unknown>;
+  not_configured?: boolean;
   error?: string;
 }
+
 
 /**
  * Consulta o status do pagamento na API da InfinitePay através da edge function.

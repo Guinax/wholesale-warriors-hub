@@ -222,7 +222,9 @@ const Pagamento = () => {
       customer_name: customer.name,
       customer_email: customer.email,
       customer_phone: customer.phone,
-      customer_cnpj: customer.cnpj || null,
+      customer_cnpj: docType === "cnpj" ? customer.cnpj : null,
+      customer_cpf: docType === "cpf" ? customer.cpf : null,
+
       address_street: customer.street,
       address_number: customer.number,
       address_complement: customer.complement || null,

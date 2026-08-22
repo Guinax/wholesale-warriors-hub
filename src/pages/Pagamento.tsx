@@ -171,10 +171,16 @@ const Pagamento = () => {
       toast({ title: "CEP inválido", description: "O CEP deve ter 8 dígitos.", variant: "destructive" });
       return false;
     }
-    if (customer.cnpj && onlyDigits(customer.cnpj).length !== 14) {
-      toast({ title: "CNPJ inválido", description: "O CNPJ deve ter 14 dígitos.", variant: "destructive" });
+    if (docType === "cnpj") {
+      if (onlyDigits(customer.cnpj).length !== 14) {
+        toast({ title: "CNPJ inválido", description: "O CNPJ deve ter 14 dígitos.", variant: "destructive" });
+        return false;
+      }
+    } else if (onlyDigits(customer.cpf).length !== 11) {
+      toast({ title: "CPF inválido", description: "O CPF deve ter 11 dígitos.", variant: "destructive" });
       return false;
     }
+
     return true;
   };
 

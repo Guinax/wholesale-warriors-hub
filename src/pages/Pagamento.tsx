@@ -342,8 +342,9 @@ const Pagamento = () => {
                 ) : (
                   <Field label="CPF" value={customer.cpf} inputMode="numeric" placeholder="000.000.000-00" onChange={(v) => setCustomer({ ...customer, cpf: maskCpf(v) })} />
                 )}
-
+                <Field label="E-mail" type="email" value={customer.email} onChange={(v) => setCustomer({ ...customer, email: v })} />
                 <Field label="WhatsApp" value={customer.phone} inputMode="tel" placeholder="(00) 00000-0000" onChange={(v) => setCustomer({ ...customer, phone: maskPhone(v) })} />
+
                 <Field label="Rua" value={customer.street} onChange={(v) => setCustomer({ ...customer, street: v })} />
                 <Field label="Número" value={customer.number} inputMode="numeric" onChange={(v) => setCustomer({ ...customer, number: v })} />
                 <Field label="Complemento" value={customer.complement} onChange={(v) => setCustomer({ ...customer, complement: v })} />

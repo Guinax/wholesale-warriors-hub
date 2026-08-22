@@ -253,6 +253,30 @@ const Pagamento = () => {
       details: { total: totalPrice, method, items: items.length },
     });
 
+    // Salva automaticamente os dados no perfil para pré-preencher próximas compras
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from("profiles")
+          .update({
+            full_name: customer.name,
+            phone: customer.phone,
+            ...(docType === "cnpj" ? { cnpj: customer.cnpj || null } : { cpf: customer.cpf || null }),
+            address_street: customer.street,
+            address_number: customer.number,
+            address_complement: customer.complement || null,
+            address_city: customer.city,
+            address_state: customer.state,
+            address_zip: customer.zip,
+          })
+          .eq("user_id", user.id);
+      }
+    } catch {
+      // falha ao salvar perfil não deve bloquear o pedido
+    }
+
+
     clearCart?.();
     navigate(`/recibo/${orderCode}`);
   };

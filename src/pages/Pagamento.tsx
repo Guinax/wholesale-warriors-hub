@@ -315,9 +315,34 @@ const Pagamento = () => {
               </div>
             ) : (
               <div className="grid sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2 space-y-1.5">
+                  <Label className="text-[10px] font-heading font-bold tracking-wider text-muted-foreground">
+                    TIPO DE DOCUMENTO
+                  </Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["cpf", "cnpj"] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setDocType(t)}
+                        className={`py-2 rounded-md text-[11px] font-heading font-bold tracking-wider border transition-colors ${
+                          docType === t
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-secondary text-muted-foreground border-border"
+                        }`}
+                      >
+                        {t === "cpf" ? "CPF (PESSOA FÍSICA)" : "CNPJ (EMPRESA)"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <Field label="Nome / Razão Social" value={customer.name} onChange={(v) => setCustomer({ ...customer, name: v })} />
-                <Field label="CNPJ (opcional)" value={customer.cnpj} inputMode="numeric" placeholder="00.000.000/0000-00" onChange={(v) => setCustomer({ ...customer, cnpj: maskCnpj(v) })} />
-                <Field label="E-mail" type="email" value={customer.email} onChange={(v) => setCustomer({ ...customer, email: v })} />
+                {docType === "cnpj" ? (
+                  <Field label="CNPJ" value={customer.cnpj} inputMode="numeric" placeholder="00.000.000/0000-00" onChange={(v) => setCustomer({ ...customer, cnpj: maskCnpj(v) })} />
+                ) : (
+                  <Field label="CPF" value={customer.cpf} inputMode="numeric" placeholder="000.000.000-00" onChange={(v) => setCustomer({ ...customer, cpf: maskCpf(v) })} />
+                )}
+
                 <Field label="WhatsApp" value={customer.phone} inputMode="tel" placeholder="(00) 00000-0000" onChange={(v) => setCustomer({ ...customer, phone: maskPhone(v) })} />
                 <Field label="Rua" value={customer.street} onChange={(v) => setCustomer({ ...customer, street: v })} />
                 <Field label="Número" value={customer.number} inputMode="numeric" onChange={(v) => setCustomer({ ...customer, number: v })} />

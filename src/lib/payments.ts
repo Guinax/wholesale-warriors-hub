@@ -17,14 +17,19 @@ export async function checkPaymentStatus(
   orderCode: string,
   opts: { transaction_nsu?: string; slug?: string } = {}
 ): Promise<PaymentCheckResult> {
-  const { data, error } = await supabase.functions.invoke("payment-check", {
-    body: {
-      order_code: orderCode,
-      ...(opts.transaction_nsu ? { transaction_nsu: opts.transaction_nsu } : {}),
-      ...(opts.slug ? { slug: opts.slug } : {}),
-    },
-  });
+  try {
+    const { data, error } = await supabase.functions.invoke("payment-check", {
+      body: {
+        order_code: orderCode,
+        ...(opts.transaction_nsu ? { transaction_nsu: opts.transaction_nsu } : {}),
+        ...(opts.slug ? { slug: opts.slug } : {}),
+      },
+    });
 
-  if (error) return { paid: false, error: error.message };
-  return (data as PaymentCheckResult) ?? { paid: false, error: "Resposta inválida do servidor." };
+    // Nunca propaga erro: pagamento simplesmente segue pendente.
+    if (error) return { paid: false, payment_status: "pending" };
+    return (data as PaymentCheckResult) ?? { paid: false, payment_status: "pending" };
+  } catch {
+    return { paid: false, payment_status: "pending" };
+  }
 }

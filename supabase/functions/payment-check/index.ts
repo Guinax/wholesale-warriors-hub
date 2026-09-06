@@ -86,10 +86,15 @@ Deno.serve(async (req) => {
     }
 
     if (!res.ok) {
-      return json(
-        { paid: false, payment_status: order.payment_status, provider_status: res.status, provider: providerResponse },
-        502,
-      );
+      // 404 = fatura ainda não localizada no provedor (pagamento não iniciado/compensado).
+      // Não é erro fatal: devolve o estado atual como pendente.
+      return json({
+        paid: false,
+        payment_status: order.payment_status,
+        provider_status: res.status,
+        provider: providerResponse,
+        pending_provider: true,
+      });
     }
 
     const inner = (providerResponse.data ?? {}) as Record<string, unknown>;

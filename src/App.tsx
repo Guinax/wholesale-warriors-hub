@@ -20,6 +20,7 @@ import Suplementos from "./pages/Suplementos.tsx";
 import Roupas from "./pages/Roupas.tsx";
 import Acessorios from "./pages/Acessorios.tsx";
 import Equipamento from "./pages/Equipamento.tsx";
+import Bebidas from "./pages/Bebidas.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Compartilhar from "./pages/Compartilhar.tsx";
 import ProtectedRoute from "./components/ProtectedRoute";

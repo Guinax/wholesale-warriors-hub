@@ -13,7 +13,7 @@ const CategoryTabs = () => {
   return (
     <section className="py-6">
       <div className="container">
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
           {categories.map((cat) => (
             <Link
               key={cat.id}

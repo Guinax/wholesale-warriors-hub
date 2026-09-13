@@ -1,4 +1,4 @@
-import { Pill, Shirt, Dumbbell, Wrench } from "lucide-react";
+import { Pill, Shirt, Dumbbell, Wrench, Wine } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const categories = [
@@ -6,13 +6,14 @@ const categories = [
   { id: "02", label: "ROUPAS", icon: Shirt, path: "/roupas" },
   { id: "03", label: "ACESSÓRIOS", icon: Dumbbell, path: "/acessorios" },
   { id: "04", label: "EQUIPAMENTO", icon: Wrench, path: "/equipamento" },
+  { id: "05", label: "BEBIDAS", icon: Wine, path: "/bebidas" },
 ];
 
 const CategoryTabs = () => {
   return (
     <section className="py-6">
       <div className="container">
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
           {categories.map((cat) => (
             <Link
               key={cat.id}

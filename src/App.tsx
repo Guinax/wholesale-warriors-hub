@@ -54,6 +54,7 @@ const App = () => (
             <Route path="/roupas" element={<Roupas />} />
             <Route path="/acessorios" element={<Acessorios />} />
             <Route path="/equipamento" element={<Equipamento />} />
+            <Route path="/bebidas" element={<Bebidas />} />
             <Route path="/compartilhar" element={<Compartilhar />} />
             <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
             <Route path="*" element={<NotFound />} />

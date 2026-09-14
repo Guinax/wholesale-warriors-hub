@@ -8,6 +8,13 @@
       "when": 1789328080560,
       "tag": "0000_add_bebidas_category",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789398199155,
+      "tag": "0001_expedition_logistics",
+      "breakpoints": true
     }
   ]
 }

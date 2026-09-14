@@ -127,17 +127,24 @@ export type Database = {
           address_state: string
           address_street: string
           address_zip: string
+          carrier: string | null
           created_at: string
           customer_cnpj: string | null
           customer_cpf: string | null
           customer_email: string
           customer_name: string
           customer_phone: string
+          delivered_at: string | null
           delivery_status: string
+          dispatched_at: string | null
+          driver_name: string | null
           due_at: string
+          expedition_notes: string | null
+          expedition_status: string
           expires_at: string | null
           id: string
           items: Json
+          loaded_at: string | null
           order_code: string
           payment_checked_at: string | null
           payment_details: Json | null
@@ -147,6 +154,7 @@ export type Database = {
           payment_status: string
           total_amount: number
           tracking_code: string
+          vehicle_plate: string | null
         }
         Insert: {
           address_city: string
@@ -155,17 +163,24 @@ export type Database = {
           address_state: string
           address_street: string
           address_zip: string
+          carrier?: string | null
           created_at?: string
           customer_cnpj?: string | null
           customer_cpf?: string | null
           customer_email: string
           customer_name: string
           customer_phone: string
+          delivered_at?: string | null
           delivery_status?: string
+          dispatched_at?: string | null
+          driver_name?: string | null
           due_at?: string
+          expedition_notes?: string | null
+          expedition_status?: string
           expires_at?: string | null
           id?: string
           items: Json
+          loaded_at?: string | null
           order_code: string
           payment_checked_at?: string | null
           payment_details?: Json | null
@@ -175,6 +190,7 @@ export type Database = {
           payment_status?: string
           total_amount: number
           tracking_code: string
+          vehicle_plate?: string | null
         }
         Update: {
           address_city?: string
@@ -183,17 +199,24 @@ export type Database = {
           address_state?: string
           address_street?: string
           address_zip?: string
+          carrier?: string | null
           created_at?: string
           customer_cnpj?: string | null
           customer_cpf?: string | null
           customer_email?: string
           customer_name?: string
           customer_phone?: string
+          delivered_at?: string | null
           delivery_status?: string
+          dispatched_at?: string | null
+          driver_name?: string | null
           due_at?: string
+          expedition_notes?: string | null
+          expedition_status?: string
           expires_at?: string | null
           id?: string
           items?: Json
+          loaded_at?: string | null
           order_code?: string
           payment_checked_at?: string | null
           payment_details?: Json | null
@@ -203,6 +226,7 @@ export type Database = {
           payment_status?: string
           total_amount?: number
           tracking_code?: string
+          vehicle_plate?: string | null
         }
         Relationships: []
       }
@@ -218,6 +242,7 @@ export type Database = {
           min_qty: number
           name: string
           sort_order: number
+          stock: number
           unit_price: number
           updated_at: string
           wholesale_price: number
@@ -233,6 +258,7 @@ export type Database = {
           min_qty?: number
           name: string
           sort_order?: number
+          stock?: number
           unit_price: number
           updated_at?: string
           wholesale_price: number
@@ -248,6 +274,7 @@ export type Database = {
           min_qty?: number
           name?: string
           sort_order?: number
+          stock?: number
           unit_price?: number
           updated_at?: string
           wholesale_price?: number
@@ -341,6 +368,57 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_movements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          order_code: string | null
+          order_id: string | null
+          product_id: string | null
+          product_name: string
+          qty: number
+          reason: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          order_code?: string | null
+          order_id?: string | null
+          product_id?: string | null
+          product_name: string
+          qty: number
+          reason?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          order_code?: string | null
+          order_id?: string | null
+          product_id?: string | null
+          product_name?: string
+          qty?: number
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -419,17 +497,24 @@ export type Database = {
           address_state: string
           address_street: string
           address_zip: string
+          carrier: string | null
           created_at: string
           customer_cnpj: string | null
           customer_cpf: string | null
           customer_email: string
           customer_name: string
           customer_phone: string
+          delivered_at: string | null
           delivery_status: string
+          dispatched_at: string | null
+          driver_name: string | null
           due_at: string
+          expedition_notes: string | null
+          expedition_status: string
           expires_at: string | null
           id: string
           items: Json
+          loaded_at: string | null
           order_code: string
           payment_checked_at: string | null
           payment_details: Json | null
@@ -439,6 +524,7 @@ export type Database = {
           payment_status: string
           total_amount: number
           tracking_code: string
+          vehicle_plate: string | null
         }[]
         SetofOptions: {
           from: "*"

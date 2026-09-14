@@ -61,10 +61,10 @@ const emptyForm: FormState = {
   active: true,
 };
 
-const ProductsManager = () => {
+const ProductsManager = ({ lockedCategory }: { lockedCategory?: ProductCategory }) => {
   const [products, setProducts] = useState<DbProduct[]>([]);
   const [loading, setLoading] = useState(false);
-  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [filterCategory, setFilterCategory] = useState<string>(lockedCategory ?? "all");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
 

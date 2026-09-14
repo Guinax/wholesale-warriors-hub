@@ -39,10 +39,7 @@ const HeroSection = () => {
         {/* Description with left border */}
         <div className="border-l-2 border-primary pl-4 max-w-md">
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Preços exclusivos para revendedores, academias e distribuidores.{" "}
-            <span className="font-bold text-foreground">
-              Pedido mínimo: R$ 2.500,00.
-            </span>
+            Preços exclusivos para revendedores, academias e distribuidores.
           </p>
         </div>
 

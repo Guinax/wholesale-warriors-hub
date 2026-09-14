@@ -26,6 +26,7 @@ import ProductsManager from "@/components/admin/ProductsManager";
 import UsersManager from "@/components/admin/UsersManager";
 import AuditLogsManager from "@/components/admin/AuditLogsManager";
 import VideosManager from "@/components/admin/VideosManager";
+import PagesManager from "@/components/admin/PagesManager";
 import { formatCurrency, DELIVERY_STAGES } from "@/lib/orderUtils";
 import { logAudit } from "@/lib/audit";
 
@@ -201,8 +202,9 @@ const Admin = () => {
 
       <main className="container py-6 space-y-4">
         <Tabs defaultValue="orders">
-          <TabsList>
+          <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="orders">Pedidos</TabsTrigger>
+            <TabsTrigger value="pages">Páginas</TabsTrigger>
             <TabsTrigger value="products">Produtos</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="audit">Auditoria</TabsTrigger>
@@ -329,6 +331,9 @@ const Admin = () => {
             </Card>
           ))}
         </div>
+          </TabsContent>
+          <TabsContent value="pages" className="mt-4">
+            <PagesManager />
           </TabsContent>
           <TabsContent value="products" className="mt-4">
             <ProductsManager />

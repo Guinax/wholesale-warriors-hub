@@ -85,7 +85,7 @@ const ProductsManager = ({ lockedCategory }: { lockedCategory?: ProductCategory 
   }, []);
 
   const openNew = () => {
-    setForm(emptyForm);
+    setForm({ ...emptyForm, category: lockedCategory ?? emptyForm.category });
     setOpen(true);
   };
 

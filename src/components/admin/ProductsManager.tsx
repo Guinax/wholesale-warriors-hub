@@ -160,19 +160,25 @@ const ProductsManager = ({ lockedCategory }: { lockedCategory?: ProductCategory 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Select value={filterCategory} onValueChange={setFilterCategory}>
-          <SelectTrigger className="w-52">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas as categorias</SelectItem>
-            {CATEGORIES.map((c) => (
-              <SelectItem key={c.value} value={c.value}>
-                {c.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {lockedCategory ? (
+          <p className="text-sm text-muted-foreground">
+            {filtered.length} produto(s) nesta página
+          </p>
+        ) : (
+          <Select value={filterCategory} onValueChange={setFilterCategory}>
+            <SelectTrigger className="w-52">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as categorias</SelectItem>
+              {CATEGORIES.map((c) => (
+                <SelectItem key={c.value} value={c.value}>
+                  {c.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <Button onClick={openNew}>
           <Plus className="w-4 h-4" /> Novo produto
         </Button>

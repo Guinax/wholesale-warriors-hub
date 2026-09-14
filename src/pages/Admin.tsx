@@ -202,8 +202,9 @@ const Admin = () => {
 
       <main className="container py-6 space-y-4">
         <Tabs defaultValue="orders">
-          <TabsList>
+          <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="orders">Pedidos</TabsTrigger>
+            <TabsTrigger value="pages">Páginas</TabsTrigger>
             <TabsTrigger value="products">Produtos</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="audit">Auditoria</TabsTrigger>

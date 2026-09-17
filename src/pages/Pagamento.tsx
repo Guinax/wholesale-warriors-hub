@@ -278,6 +278,22 @@ const Pagamento = () => {
 
 
     clearCart?.();
+
+    // Gera a cobrança oficial (Pix/cartão) na InfinitePay e leva o cliente ao checkout
+    const checkoutUrl = await createPaymentLink(
+      orderCode,
+      `${window.location.origin}/recibo/${orderCode}`
+    );
+
+    if (checkoutUrl) {
+      window.location.href = checkoutUrl;
+      return;
+    }
+
+    toast({
+      title: "Cobrança automática indisponível",
+      description: "Use a chave Pix informada e aguarde a confirmação manual.",
+    });
     navigate(`/recibo/${orderCode}`);
   };
 

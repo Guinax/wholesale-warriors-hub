@@ -6,7 +6,7 @@ import PageHeader from "@/components/PageHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { DELIVERY_STAGES, formatCurrency, computeExpiresAt, formatCountdown, isOrderExpired } from "@/lib/orderUtils";
 import { contactWhatsApp } from "@/lib/whatsapp";
-import { checkPaymentStatus } from "@/lib/payments";
+import { checkPaymentStatus, createPaymentLink } from "@/lib/payments";
 import { useToast } from "@/hooks/use-toast";
 
 

@@ -10,6 +10,26 @@ export interface PaymentCheckResult {
 
 
 /**
+ * Gera o link de checkout da InfinitePay para um pedido.
+ * Retorna null quando não for possível (o pedido segue com pagamento manual).
+ */
+export async function createPaymentLink(
+  orderCode: string,
+  redirectUrl: string
+): Promise<string | null> {
+  try {
+    const { data, error } = await supabase.functions.invoke("payment-link", {
+      body: { order_code: orderCode, redirect_url: redirectUrl },
+    });
+    if (error) return null;
+    const url = (data as { url?: string } | null)?.url;
+    return typeof url === "string" && url.startsWith("http") ? url : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Consulta o status do pagamento na API da InfinitePay através da edge function.
  * Aceita os parâmetros de retorno do checkout (transaction_nsu / slug).
  */

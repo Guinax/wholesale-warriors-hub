@@ -145,7 +145,7 @@ const Admin = () => {
 
   const filtered = useMemo(() => {
     return orders.filter((o) => {
-      if (filterDelivery !== "all" && o.delivery_status !== filterDelivery) return false;
+      if (filterDelivery !== "all" && !(o.delivery_status === filterDelivery && o.payment_status === "paid")) return false;
       if (filterPayment !== "all" && o.payment_status !== filterPayment) return false;
       if (search) {
         const q = search.toLowerCase();

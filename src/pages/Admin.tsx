@@ -294,9 +294,15 @@ const Admin = () => {
               </div>
 
               <div className="flex flex-wrap gap-2 mb-3">
-                <Badge className={deliveryColor[o.delivery_status] ?? ""} variant="secondary">
-                  {DELIVERY_OPTIONS.find((d) => d.value === o.delivery_status)?.label ?? o.delivery_status}
-                </Badge>
+                {o.payment_status === "paid" ? (
+                  <Badge className={deliveryColor[o.delivery_status] ?? ""} variant="secondary">
+                    {DELIVERY_OPTIONS.find((d) => d.value === o.delivery_status)?.label ?? o.delivery_status}
+                  </Badge>
+                ) : (
+                  <Badge className={paymentColor[o.payment_status] ?? paymentColor.pending} variant="secondary">
+                    Entrega: aguardando pagamento
+                  </Badge>
+                )}
                 <Badge className={paymentColor[o.payment_status] ?? ""} variant="secondary">
                   Pgto: {PAYMENT_OPTIONS.find((p) => p.value === o.payment_status)?.label ?? o.payment_status}
                 </Badge>

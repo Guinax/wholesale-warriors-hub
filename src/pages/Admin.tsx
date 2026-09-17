@@ -125,6 +125,11 @@ const Admin = () => {
     field: "delivery_status" | "payment_status",
     value: string
   ) => {
+    const order = orders.find((o) => o.id === id);
+    if (field === "delivery_status" && order && order.payment_status !== "paid") {
+      toast.error("O status de entrega só pode ser alterado após a confirmação do pagamento.");
+      return;
+    }
     const { error } = await supabase.from("orders").update({ [field]: value } as any).eq("id", id);
     if (error) {
       toast.error("Erro ao atualizar");

@@ -216,7 +216,7 @@ const Pagamento = () => {
       tracking_code: trackingCode,
       payment_method: method,
       // Pix aguarda compensação: expira 2h após o vencimento se não for pago
-      payment_status: method === "pix" ? "pending" : "paid",
+      payment_status: "pending",
       due_at: dueAt.toISOString(),
       delivery_status: "postado",
       customer_name: customer.name,

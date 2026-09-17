@@ -125,6 +125,11 @@ const Admin = () => {
     field: "delivery_status" | "payment_status",
     value: string
   ) => {
+    const order = orders.find((o) => o.id === id);
+    if (field === "delivery_status" && order && order.payment_status !== "paid") {
+      toast.error("O status de entrega só pode ser alterado após a confirmação do pagamento.");
+      return;
+    }
     const { error } = await supabase.from("orders").update({ [field]: value } as any).eq("id", id);
     if (error) {
       toast.error("Erro ao atualizar");
@@ -140,7 +145,7 @@ const Admin = () => {
 
   const filtered = useMemo(() => {
     return orders.filter((o) => {
-      if (filterDelivery !== "all" && o.delivery_status !== filterDelivery) return false;
+      if (filterDelivery !== "all" && !(o.delivery_status === filterDelivery && o.payment_status === "paid")) return false;
       if (filterPayment !== "all" && o.payment_status !== filterPayment) return false;
       if (search) {
         const q = search.toLowerCase();
@@ -221,7 +226,7 @@ const Admin = () => {
           <Card className="p-3">
             <p className="text-xs text-muted-foreground">Postados</p>
             <p className="text-2xl font-bold">
-              {orders.filter((o) => o.delivery_status === "postado").length}
+              {orders.filter((o) => o.delivery_status === "postado" && o.payment_status === "paid").length}
             </p>
           </Card>
           <Card className="p-3">
@@ -294,9 +299,15 @@ const Admin = () => {
               </div>
 
               <div className="flex flex-wrap gap-2 mb-3">
-                <Badge className={deliveryColor[o.delivery_status] ?? ""} variant="secondary">
-                  {DELIVERY_OPTIONS.find((d) => d.value === o.delivery_status)?.label ?? o.delivery_status}
-                </Badge>
+                {o.payment_status === "paid" ? (
+                  <Badge className={deliveryColor[o.delivery_status] ?? ""} variant="secondary">
+                    {DELIVERY_OPTIONS.find((d) => d.value === o.delivery_status)?.label ?? o.delivery_status}
+                  </Badge>
+                ) : (
+                  <Badge className={paymentColor[o.payment_status] ?? paymentColor.pending} variant="secondary">
+                    Entrega: aguardando pagamento
+                  </Badge>
+                )}
                 <Badge className={paymentColor[o.payment_status] ?? ""} variant="secondary">
                   Pgto: {PAYMENT_OPTIONS.find((p) => p.value === o.payment_status)?.label ?? o.payment_status}
                 </Badge>
@@ -307,8 +318,11 @@ const Admin = () => {
                 <Select
                   value={o.delivery_status}
                   onValueChange={(v) => updateOrder(o.id, "delivery_status", v)}
+                  disabled={o.payment_status !== "paid"}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder={o.payment_status !== "paid" ? "Aguardando pagamento" : undefined} />
+                  </SelectTrigger>
                   <SelectContent>
                     {DELIVERY_OPTIONS.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>

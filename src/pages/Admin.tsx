@@ -221,7 +221,7 @@ const Admin = () => {
           <Card className="p-3">
             <p className="text-xs text-muted-foreground">Postados</p>
             <p className="text-2xl font-bold">
-              {orders.filter((o) => o.delivery_status === "postado").length}
+              {orders.filter((o) => o.delivery_status === "postado" && o.payment_status === "paid").length}
             </p>
           </Card>
           <Card className="p-3">

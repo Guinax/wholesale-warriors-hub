@@ -27,6 +27,7 @@ import UsersManager from "@/components/admin/UsersManager";
 import AuditLogsManager from "@/components/admin/AuditLogsManager";
 import VideosManager from "@/components/admin/VideosManager";
 import PagesManager from "@/components/admin/PagesManager";
+import ExpeditionManager from "@/components/admin/ExpeditionManager";
 import { formatCurrency, DELIVERY_STAGES } from "@/lib/orderUtils";
 import { logAudit } from "@/lib/audit";
 
@@ -205,6 +206,7 @@ const Admin = () => {
           <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="orders">Pedidos</TabsTrigger>
             <TabsTrigger value="pages">Páginas</TabsTrigger>
+            <TabsTrigger value="expedition">Expedição</TabsTrigger>
             <TabsTrigger value="products">Produtos</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="audit">Auditoria</TabsTrigger>
@@ -334,6 +336,9 @@ const Admin = () => {
           </TabsContent>
           <TabsContent value="pages" className="mt-4">
             <PagesManager />
+          </TabsContent>
+          <TabsContent value="expedition" className="mt-4">
+            <ExpeditionManager />
           </TabsContent>
           <TabsContent value="products" className="mt-4">
             <ProductsManager />

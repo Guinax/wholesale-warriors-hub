@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PAYMENT_DUE_HOURS, PAYMENT_GRACE_HOURS, computeDueAt, formatCurrency, generateOrderCode, generateTrackingCode } from "@/lib/orderUtils";
 import { logAudit } from "@/lib/audit";
+import { createPaymentLink } from "@/lib/payments";
 
 type PaymentMethod = "pix" | "cartao";
 
@@ -216,7 +217,7 @@ const Pagamento = () => {
       tracking_code: trackingCode,
       payment_method: method,
       // Pix aguarda compensação: expira 2h após o vencimento se não for pago
-      payment_status: method === "pix" ? "pending" : "paid",
+      payment_status: "pending",
       due_at: dueAt.toISOString(),
       delivery_status: "postado",
       customer_name: customer.name,
@@ -278,6 +279,22 @@ const Pagamento = () => {
 
 
     clearCart?.();
+
+    // Gera a cobrança oficial (Pix/cartão) na InfinitePay e leva o cliente ao checkout
+    const checkoutUrl = await createPaymentLink(
+      orderCode,
+      `${window.location.origin}/recibo/${orderCode}`
+    );
+
+    if (checkoutUrl) {
+      window.location.href = checkoutUrl;
+      return;
+    }
+
+    toast({
+      title: "Cobrança automática indisponível",
+      description: "Use a chave Pix informada e aguarde a confirmação manual.",
+    });
     navigate(`/recibo/${orderCode}`);
   };
 

@@ -313,8 +313,11 @@ const Admin = () => {
                 <Select
                   value={o.delivery_status}
                   onValueChange={(v) => updateOrder(o.id, "delivery_status", v)}
+                  disabled={o.payment_status !== "paid"}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder={o.payment_status !== "paid" ? "Aguardando pagamento" : undefined} />
+                  </SelectTrigger>
                   <SelectContent>
                     {DELIVERY_OPTIONS.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>

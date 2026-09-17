@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
     const qty = Number(it.qty ?? it.quantity ?? 1) || 1;
     const unit = Number(it.unit_price ?? it.price ?? 0);
     return {
-      name: String(it.name ?? "Produto"),
+      description: String(it.name ?? "Produto"),
       price: Math.max(1, Math.round(unit * 100)),
       quantity: qty,
     };
@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
 
   if (items.length === 0) {
     items.push({
-      name: `Pedido ${order.order_code}`,
+      description: `Pedido ${order.order_code}`,
       price: Math.max(1, Math.round(Number(order.total_amount) * 100)),
       quantity: 1,
     });

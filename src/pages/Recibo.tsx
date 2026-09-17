@@ -245,6 +245,20 @@ const Recibo = () => {
           )}
           {pending && (
             <button
+              onClick={async () => {
+                const url = await createPaymentLink(
+                  order.order_code,
+                  `${window.location.origin}/recibo/${order.order_code}`
+                );
+                if (url) window.location.href = url;
+              }}
+              className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground font-heading font-black text-xs tracking-wider px-4 py-2.5 rounded-lg hover:opacity-90 transition-opacity mr-2"
+            >
+              PAGAR AGORA
+            </button>
+          )}
+          {pending && (
+            <button
               onClick={() => runPaymentCheck(false)}
               disabled={checking}
               className="inline-flex items-center justify-center gap-2 bg-secondary text-foreground font-heading font-black text-xs tracking-wider px-4 py-2.5 rounded-lg border border-border hover:bg-secondary/80 transition-colors disabled:opacity-50"

@@ -24,6 +24,7 @@ import Bebidas from "./pages/Bebidas.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Compartilhar from "./pages/Compartilhar.tsx";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AiAgent from "./components/AiAgent";
 
 const queryClient = new QueryClient();
 

@@ -36,6 +36,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <CartDrawer />
+          <AiAgent />
           <Routes>
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/cadastro" element={<CadastroCNPJ />} />

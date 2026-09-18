@@ -37,7 +37,10 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   const apiKey = Deno.env.get("ZENMUX_API_KEY");
-  if (!apiKey) return json({ error: "Assistente indisponível no momento." }, 200);
+  if (!apiKey) {
+    console.error("ZENMUX_API_KEY ausente no ambiente");
+    return json({ error: "Assistente indisponível no momento." }, 200);
+  }
 
   let raw: unknown;
   try {

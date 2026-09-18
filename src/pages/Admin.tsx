@@ -106,6 +106,37 @@ const Admin = () => {
     }
   }, [isAdmin]);
 
+  // Notificação em tempo real: pagamento confirmado -> pedido pode ser separado
+  useEffect(() => {
+    if (!isAdmin) return;
+    const channel = supabase
+      .channel("orders-payment-confirmed")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "orders" },
+        (payload) => {
+          const next = payload.new as Order;
+          const prevRow = payload.old as Partial<Order>;
+          setOrders((prev) => prev.map((o) => (o.id === next.id ? { ...o, ...next } : o)));
+          if (next.payment_status === "paid" && prevRow?.payment_status !== "paid") {
+            toast.success(`Pagamento confirmado — ${next.order_code}`, {
+              description: `${next.customer_name} · ${formatCurrency(Number(next.total_amount))} · o pedido já pode ser separado.`,
+              duration: 10000,
+            });
+            try {
+              new Audio(
+                "data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA="
+              ).play().catch(() => {});
+            } catch { /* som opcional */ }
+          }
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isAdmin]);
+
   const loadOrders = async () => {
     setFetching(true);
     const { data, error } = await supabase

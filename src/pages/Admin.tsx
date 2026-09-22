@@ -242,6 +242,7 @@ const Admin = () => {
           <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="orders">Pedidos</TabsTrigger>
             <TabsTrigger value="pages">Páginas</TabsTrigger>
+            <TabsTrigger value="catalog">Catálogo</TabsTrigger>
             <TabsTrigger value="expedition">Expedição</TabsTrigger>
             <TabsTrigger value="products">Produtos</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>

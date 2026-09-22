@@ -235,10 +235,12 @@ export type Database = {
           active: boolean
           badge: string | null
           badge_color: string | null
+          catalog_order: number
           category: string
           created_at: string
           id: string
           image_url: string | null
+          in_catalog: boolean
           min_qty: number
           name: string
           sort_order: number
@@ -251,10 +253,12 @@ export type Database = {
           active?: boolean
           badge?: string | null
           badge_color?: string | null
+          catalog_order?: number
           category: string
           created_at?: string
           id?: string
           image_url?: string | null
+          in_catalog?: boolean
           min_qty?: number
           name: string
           sort_order?: number
@@ -267,10 +271,12 @@ export type Database = {
           active?: boolean
           badge?: string | null
           badge_color?: string | null
+          catalog_order?: number
           category?: string
           created_at?: string
           id?: string
           image_url?: string | null
+          in_catalog?: boolean
           min_qty?: number
           name?: string
           sort_order?: number

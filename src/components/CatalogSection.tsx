@@ -1,89 +1,29 @@
 import { Grid3X3, List } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ProductCard from "./ProductCard";
-import iWantYou from "@/assets/i-want-you.jpeg";
-import comboDrinks from "@/assets/combo-drinks.jpeg";
-import productsHero from "@/assets/products-hero.jpeg";
-import whiskyMansao from "@/assets/whisky-mansao.png";
-import vodkaMansao from "@/assets/vodka-mansao.png";
-import ginMansao from "@/assets/gin-mansao.png";
-
-const products = [
-  {
-    badge: "CIMED EDITION",
-    name: "MONSTER WHEY 2KG",
-    unitPrice: "R$ 249,00",
-    wholesalePrice: "R$ 145,00",
-    minQty: 1,
-    image: productsHero,
-  },
-  {
-    badge: "LANÇAMENTO",
-    badgeColor: "bg-success",
-    name: "I WANT YOU THERMOGÊNICO",
-    unitPrice: "R$ 89,00",
-    wholesalePrice: "R$ 49,00",
-    minQty: 1,
-    image: iWantYou,
-  },
-  {
-    badge: "MAIS VENDIDO",
-    badgeColor: "bg-destructive",
-    name: "COMBO DRINKS MANSÃO",
-    unitPrice: "R$ 15,90",
-    wholesalePrice: "R$ 8,90",
-    minQty: 1,
-    image: comboDrinks,
-  },
-  {
-    badge: "MANSÃO EDITION",
-    badgeColor: "bg-primary",
-    name: "WHISKY MANSÃO MAROMBA 750ML",
-    unitPrice: "R$ 89,00",
-    wholesalePrice: "R$ 52,00",
-    minQty: 1,
-    image: whiskyMansao,
-  },
-  {
-    badge: "MANSÃO EDITION",
-    badgeColor: "bg-primary",
-    name: "VODKA MANSÃO MAROMBA 750ML",
-    unitPrice: "R$ 79,00",
-    wholesalePrice: "R$ 45,00",
-    minQty: 1,
-    image: vodkaMansao,
-  },
-  {
-    badge: "MANSÃO EDITION",
-    badgeColor: "bg-primary",
-    name: "GIN MANSÃO MAROMBA 750ML",
-    unitPrice: "R$ 99,00",
-    wholesalePrice: "R$ 58,00",
-    minQty: 1,
-    image: ginMansao,
-  },
-  {
-    name: "CREATINE PURE 500G",
-    unitPrice: "R$ 120,00",
-    wholesalePrice: "R$ 65,00",
-    minQty: 1,
-  },
-  {
-    name: "PRE-WORKOUT VOLTAGE",
-    unitPrice: "R$ 189,00",
-    wholesalePrice: "R$ 98,00",
-    minQty: 1,
-  },
-  {
-    name: 'OVERSIZED "NO PAIN"',
-    unitPrice: "R$ 139,00",
-    wholesalePrice: "R$ 72,00",
-    minQty: 1,
-  },
-];
+import { supabase } from "@/integrations/supabase/client";
+import { toCategoryProduct, type DbProduct } from "@/hooks/useProducts";
 
 const CatalogSection = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [items, setItems] = useState<DbProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase
+        .from("products" as any)
+        .select("*")
+        .eq("active", true)
+        .eq("in_catalog", true)
+        .order("catalog_order", { ascending: true });
+      setItems(((data ?? []) as unknown) as DbProduct[]);
+      setLoading(false);
+    };
+    load();
+  }, []);
+
+  if (!loading && items.length === 0) return null;
 
   return (
     <section id="catalogo" className="py-6 scroll-mt-20">
@@ -113,14 +53,22 @@ const CatalogSection = () => {
           </div>
         </div>
 
-        <div className={viewMode === "grid"
-          ? "grid grid-cols-2 md:grid-cols-3 gap-3"
-          : "flex flex-col gap-3"
-        }>
-          {products.map((product) => (
-            <ProductCard key={product.name} {...product} viewMode={viewMode} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="h-44 rounded-lg bg-secondary animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className={viewMode === "grid"
+            ? "grid grid-cols-2 md:grid-cols-3 gap-3"
+            : "flex flex-col gap-3"
+          }>
+            {items.map((p) => (
+              <ProductCard key={p.id} {...toCategoryProduct(p)} viewMode={viewMode} />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

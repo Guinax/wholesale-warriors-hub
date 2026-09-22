@@ -383,6 +383,9 @@ const Admin = () => {
           <TabsContent value="pages" className="mt-4">
             <PagesManager />
           </TabsContent>
+          <TabsContent value="catalog" className="mt-4">
+            <CatalogManager />
+          </TabsContent>
           <TabsContent value="expedition" className="mt-4">
             <ExpeditionManager />
           </TabsContent>

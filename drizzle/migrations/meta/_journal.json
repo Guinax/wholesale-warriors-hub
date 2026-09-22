@@ -15,6 +15,13 @@
       "when": 1789398199155,
       "tag": "0001_expedition_logistics",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790078804054,
+      "tag": "0002_add_alimentos_category",
+      "breakpoints": true
     }
   ]
 }

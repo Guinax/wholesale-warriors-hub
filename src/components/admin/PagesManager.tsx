@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronRight, Pill, Shirt, Dumbbell, Wrench, Wine } from "lucide-react";
+import { ArrowLeft, ChevronRight, Pill, Shirt, Dumbbell, Wrench, Wine, Apple } from "lucide-react";
 import ProductsManager from "@/components/admin/ProductsManager";
 import type { ProductCategory } from "@/hooks/useProducts";
 
@@ -11,6 +11,7 @@ const PAGES: { category: ProductCategory; label: string; path: string; icon: typ
   { category: "acessorios", label: "Acessórios", path: "/acessorios", icon: Dumbbell },
   { category: "equipamento", label: "Equipamento", path: "/equipamento", icon: Wrench },
   { category: "bebidas", label: "Bebidas", path: "/bebidas", icon: Wine },
+  { category: "alimentos", label: "Alimentar", path: "/alimentar", icon: Apple },
 ];
 
 const PagesManager = () => {

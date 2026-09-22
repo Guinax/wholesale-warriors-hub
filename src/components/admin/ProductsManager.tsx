@@ -32,6 +32,7 @@ const CATEGORIES: { value: ProductCategory; label: string }[] = [
   { value: "acessorios", label: "Acessórios" },
   { value: "equipamento", label: "Equipamento" },
   { value: "bebidas", label: "Bebidas" },
+  { value: "alimentos", label: "Alimentar" },
 ];
 
 type FormState = {

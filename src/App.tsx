@@ -21,6 +21,7 @@ import Roupas from "./pages/Roupas.tsx";
 import Acessorios from "./pages/Acessorios.tsx";
 import Equipamento from "./pages/Equipamento.tsx";
 import Bebidas from "./pages/Bebidas.tsx";
+import Alimentos from "./pages/Alimentos.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Compartilhar from "./pages/Compartilhar.tsx";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -57,6 +58,7 @@ const App = () => (
             <Route path="/acessorios" element={<Acessorios />} />
             <Route path="/equipamento" element={<Equipamento />} />
             <Route path="/bebidas" element={<Bebidas />} />
+            <Route path="/alimentar" element={<Alimentos />} />
             <Route path="/compartilhar" element={<Compartilhar />} />
             <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
             <Route path="*" element={<NotFound />} />

@@ -204,6 +204,15 @@ const ProductsManager = ({ lockedCategory }: { lockedCategory?: ProductCategory 
                 {!p.active && " · INATIVO"}
               </p>
             </div>
+            <Button
+              size="icon"
+              variant={p.in_catalog ? "default" : "outline"}
+              onClick={() => toggleCatalog(p)}
+              title={p.in_catalog ? "Remover do catálogo vigente" : "Adicionar ao catálogo vigente"}
+              aria-label="Catálogo vigente"
+            >
+              <Star className={`w-4 h-4 ${p.in_catalog ? "fill-current" : ""}`} />
+            </Button>
             <Button size="icon" variant="outline" onClick={() => openEdit(p)}>
               <Pencil className="w-4 h-4" />
             </Button>

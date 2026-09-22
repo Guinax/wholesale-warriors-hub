@@ -27,6 +27,7 @@ import UsersManager from "@/components/admin/UsersManager";
 import AuditLogsManager from "@/components/admin/AuditLogsManager";
 import VideosManager from "@/components/admin/VideosManager";
 import PagesManager from "@/components/admin/PagesManager";
+import CatalogManager from "@/components/admin/CatalogManager";
 import ExpeditionManager from "@/components/admin/ExpeditionManager";
 import { formatCurrency, DELIVERY_STAGES } from "@/lib/orderUtils";
 import { logAudit } from "@/lib/audit";

@@ -20,7 +20,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Star } from "lucide-react";
 import type { DbProduct, ProductCategory } from "@/hooks/useProducts";
 import { logAudit } from "@/lib/audit";
 import MediaUploader from "@/components/admin/MediaUploader";

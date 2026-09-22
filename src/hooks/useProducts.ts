@@ -15,6 +15,8 @@ export interface DbProduct {
   badge_color: string | null;
   sort_order: number;
   active: boolean;
+  in_catalog?: boolean;
+  catalog_order?: number;
 }
 
 const formatBRL = (n: number) =>

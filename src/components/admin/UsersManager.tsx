@@ -3,9 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Users, Search, RefreshCw } from "lucide-react";
+import { Users, Search, RefreshCw, Save, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { logAudit } from "@/lib/audit";
 
 type Profile = {
   id: string;
@@ -14,13 +22,38 @@ type Profile = {
   full_name: string | null;
   email: string;
   phone: string | null;
+  cpf: string | null;
+  cnpj: string | null;
+  address_street: string | null;
+  address_number: string | null;
+  address_complement: string | null;
+  address_city: string | null;
+  address_state: string | null;
+  address_zip: string | null;
   created_at: string;
 };
+
+const EDITABLE_FIELDS: { key: keyof Profile; label: string; placeholder?: string }[] = [
+  { key: "full_name", label: "Nome completo" },
+  { key: "email", label: "E-mail" },
+  { key: "phone", label: "Telefone / WhatsApp" },
+  { key: "cpf", label: "CPF" },
+  { key: "cnpj", label: "CNPJ" },
+  { key: "address_street", label: "Rua" },
+  { key: "address_number", label: "Número" },
+  { key: "address_complement", label: "Complemento" },
+  { key: "address_city", label: "Cidade" },
+  { key: "address_state", label: "UF", placeholder: "SP" },
+  { key: "address_zip", label: "CEP" },
+];
 
 const UsersManager = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<Profile | null>(null);
+  const [form, setForm] = useState<Partial<Profile>>({});
+  const [saving, setSaving] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -40,6 +73,38 @@ const UsersManager = () => {
     load();
   }, []);
 
+  const openDetails = (p: Profile) => {
+    setSelected(p);
+    setForm({ ...p });
+  };
+
+  const handleSave = async () => {
+    if (!selected) return;
+    setSaving(true);
+    const updates: Record<string, string | null> = {};
+    for (const f of EDITABLE_FIELDS) {
+      const val = (form[f.key] as string | null | undefined) ?? null;
+      updates[f.key] = typeof val === "string" && val.trim() === "" ? null : val;
+    }
+    const { error } = await supabase
+      .from("profiles")
+      .update(updates as any)
+      .eq("id", selected.id);
+    setSaving(false);
+    if (error) {
+      toast.error("Erro ao salvar: " + error.message);
+      return;
+    }
+    toast.success("Dados do usuário atualizados!");
+    logAudit("order_updated", {
+      entity: "profiles",
+      entity_id: selected.user_code,
+      details: { updated_by_admin: true },
+    });
+    setSelected(null);
+    load();
+  };
+
   const filtered = profiles.filter((p) => {
     const q = search.toLowerCase();
     return (
@@ -47,7 +112,9 @@ const UsersManager = () => {
       p.email?.toLowerCase().includes(q) ||
       p.full_name?.toLowerCase().includes(q) ||
       p.user_code?.toLowerCase().includes(q) ||
-      p.phone?.toLowerCase().includes(q)
+      p.phone?.toLowerCase().includes(q) ||
+      p.cpf?.toLowerCase().includes(q) ||
+      p.cnpj?.toLowerCase().includes(q)
     );
   });
 
@@ -66,7 +133,7 @@ const UsersManager = () => {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por nome, ID, e-mail..."
+              placeholder="Buscar por nome, ID, e-mail, CPF..."
               className="pl-9"
             />
           </div>
@@ -83,7 +150,11 @@ const UsersManager = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {filtered.map((p) => (
-            <Card key={p.id} className="p-4 space-y-2">
+            <Card
+              key={p.id}
+              className="p-4 space-y-2 cursor-pointer hover:border-primary/50 transition-colors"
+              onClick={() => openDetails(p)}
+            >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <h3 className="font-heading font-bold text-sm truncate">
@@ -91,12 +162,19 @@ const UsersManager = () => {
                   </h3>
                   <p className="text-xs text-muted-foreground truncate">{p.email}</p>
                 </div>
-                <Badge variant="secondary" className="font-mono text-[10px] flex-shrink-0">
-                  {p.user_code}
-                </Badge>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Badge variant="secondary" className="font-mono text-[10px]">
+                    {p.user_code}
+                  </Badge>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Ver e editar">
+                    <Eye className="w-4 h-4 text-muted-foreground" />
+                  </Button>
+                </div>
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
                 {p.phone && <span>📱 {p.phone}</span>}
+                {(p.cpf || p.cnpj) && <span>📄 {p.cnpj || p.cpf}</span>}
+                {p.address_city && <span>📍 {p.address_city}{p.address_state ? `/${p.address_state}` : ""}</span>}
                 <span>
                   Cadastrado: {new Date(p.created_at).toLocaleDateString("pt-BR")}
                 </span>
@@ -105,6 +183,61 @@ const UsersManager = () => {
           ))}
         </div>
       )}
+
+      <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              Editar usuário
+              {selected && (
+                <Badge variant="secondary" className="font-mono text-[10px]">
+                  {selected.user_code}
+                </Badge>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+
+          {selected && (
+            <div className="space-y-4">
+              <p className="text-xs text-muted-foreground">
+                Cadastrado em {new Date(selected.created_at).toLocaleDateString("pt-BR")}
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {EDITABLE_FIELDS.map((f) => (
+                  <div
+                    key={f.key}
+                    className={f.key === "full_name" || f.key === "address_street" ? "sm:col-span-2" : ""}
+                  >
+                    <Label htmlFor={`edit-${f.key}`} className="text-xs">
+                      {f.label}
+                    </Label>
+                    <Input
+                      id={`edit-${f.key}`}
+                      value={(form[f.key] as string) ?? ""}
+                      placeholder={f.placeholder}
+                      maxLength={f.key === "address_state" ? 2 : undefined}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, [f.key]: e.target.value }))
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button onClick={handleSave} disabled={saving} className="flex-1">
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? "Salvando..." : "Salvar alterações"}
+                </Button>
+                <Button variant="outline" onClick={() => setSelected(null)}>
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

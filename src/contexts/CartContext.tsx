@@ -53,6 +53,17 @@ function readStorage(): CartItem[] {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>(readStorage);
   const [isOpen, setIsOpen] = useState(false);
+  const [shipping, setShippingState] = useState<Shipping | null>(readShipping);
+
+  const setShipping = useCallback((s: Shipping | null) => {
+    setShippingState(s);
+    try {
+      if (s) localStorage.setItem(SHIPPING_KEY, JSON.stringify(s));
+      else localStorage.removeItem(SHIPPING_KEY);
+    } catch {
+      /* storage indisponível */
+    }
+  }, []);
 
   useEffect(() => {
     try {
@@ -123,9 +134,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const totalItems = items.reduce((sum, i) => sum + i.qty, 0);
   const totalPrice = items.reduce((sum, i) => sum + i.priceNum * i.qty, 0);
 
+  // Recalcula o frete quando o valor do lote muda (frete grátis acima do limite)
+  const shippingCost = shipping ? shippingCostFor(shipping.state, totalPrice) : 0;
+  const grandTotal = totalPrice + shippingCost;
+
   return (
     <CartContext.Provider
-      value={{ items, isOpen, openCart, closeCart, addItem, removeItem, updateQty, clearCart, totalItems, totalPrice }}
+      value={{
+        items,
+        isOpen,
+        openCart,
+        closeCart,
+        addItem,
+        removeItem,
+        updateQty,
+        clearCart,
+        totalItems,
+        totalPrice,
+        shipping,
+        setShipping,
+        shippingCost,
+        grandTotal,
+      }}
     >
       {children}
     </CartContext.Provider>

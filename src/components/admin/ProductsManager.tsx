@@ -141,6 +141,28 @@ const ProductsManager = ({ lockedCategory }: { lockedCategory?: ProductCategory 
     load();
   };
 
+  const toggleCatalog = async (p: DbProduct) => {
+    const next = !p.in_catalog;
+    const catalog_order = next
+      ? (Math.max(0, ...products.filter((x) => x.in_catalog).map((x) => x.catalog_order ?? 0)) + 1)
+      : (p.catalog_order ?? 0);
+    const { error } = await supabase
+      .from("products" as any)
+      .update({ in_catalog: next, catalog_order })
+      .eq("id", p.id);
+    if (error) {
+      toast.error("Erro ao atualizar catálogo: " + error.message);
+      return;
+    }
+    logAudit("product_updated", {
+      entity: "products",
+      entity_id: p.id,
+      details: { in_catalog: next, name: p.name },
+    });
+    toast.success(next ? "Adicionado ao catálogo vigente" : "Removido do catálogo vigente");
+    load();
+  };
+
   const remove = async (id: string) => {
     if (!confirm("Excluir este produto?")) return;
     const { error } = await supabase.from("products" as any).delete().eq("id", id);

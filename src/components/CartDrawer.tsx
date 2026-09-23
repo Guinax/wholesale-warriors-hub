@@ -1,12 +1,71 @@
-import { Minus, Plus, Trash2, ShoppingCart, ArrowLeft } from "lucide-react";
+import { useState } from "react";
+import { Minus, Plus, Trash2, ShoppingCart, ArrowLeft, Truck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useCart } from "@/contexts/CartContext";
-
+import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/lib/orderUtils";
+import {
+  FREE_SHIPPING_FROM,
+  lookupCep,
+  maskCepValue,
+  onlyDigitsCep,
+  shippingCostFor,
+  shippingEtaFor,
+} from "@/lib/shipping";
 
 const CartDrawer = () => {
-  const { items, isOpen, closeCart, removeItem, updateQty, totalItems, totalPrice } = useCart();
+  const {
+    items,
+    isOpen,
+    closeCart,
+    removeItem,
+    updateQty,
+    totalItems,
+    totalPrice,
+    shipping,
+    setShipping,
+    shippingCost,
+    grandTotal,
+  } = useCart();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [cep, setCep] = useState(shipping?.cep ?? "");
+  const [calculating, setCalculating] = useState(false);
+
+  const handleCalcFrete = async () => {
+    if (onlyDigitsCep(cep).length !== 8) {
+      toast({ title: "CEP inválido", description: "Digite os 8 dígitos do CEP.", variant: "destructive" });
+      return;
+    }
+    setCalculating(true);
+    const info = await lookupCep(cep);
+    setCalculating(false);
+    if (!info) {
+      toast({ title: "CEP não encontrado", description: "Confira o CEP e tente novamente.", variant: "destructive" });
+      return;
+    }
+    setShipping({
+      ...info,
+      cost: shippingCostFor(info.state, totalPrice),
+      eta: shippingEtaFor(info.state),
+    });
+    toast({ title: "Frete calculado", description: `${info.city}/${info.state} · entrega em ${shippingEtaFor(info.state)}` });
+  };
+
+  const handleCheckout = () => {
+    if (!shipping) {
+      toast({
+        title: "Informe o CEP de entrega",
+        description: "Calcule o frete antes de ir para o pagamento.",
+        variant: "destructive",
+      });
+      return;
+    }
+    closeCart();
+    navigate("/pagamento");
+  };
+
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && closeCart()}>

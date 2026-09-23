@@ -1,9 +1,23 @@
 import { useContext, useState, useCallback, useEffect, ReactNode } from "react";
-import { CartContext, CartItem } from "./cart-context";
+import { CartContext, CartItem, Shipping } from "./cart-context";
+import { shippingCostFor } from "@/lib/shipping";
 
 export type { CartItem };
 
 const STORAGE_KEY = "fm_cart_v1";
+const SHIPPING_KEY = "fm_shipping_v1";
+
+function readShipping(): Shipping | null {
+  try {
+    const raw = localStorage.getItem(SHIPPING_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    if (!s || typeof s.cep !== "string" || typeof s.state !== "string") return null;
+    return s as Shipping;
+  } catch {
+    return null;
+  }
+}
 
 function parsePrice(price: string): number {
   return parseFloat(price.replace("R$", "").replace(".", "").replace(",", ".").trim());
@@ -39,6 +53,17 @@ function readStorage(): CartItem[] {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>(readStorage);
   const [isOpen, setIsOpen] = useState(false);
+  const [shipping, setShippingState] = useState<Shipping | null>(readShipping);
+
+  const setShipping = useCallback((s: Shipping | null) => {
+    setShippingState(s);
+    try {
+      if (s) localStorage.setItem(SHIPPING_KEY, JSON.stringify(s));
+      else localStorage.removeItem(SHIPPING_KEY);
+    } catch {
+      /* storage indisponível */
+    }
+  }, []);
 
   useEffect(() => {
     try {
@@ -109,9 +134,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const totalItems = items.reduce((sum, i) => sum + i.qty, 0);
   const totalPrice = items.reduce((sum, i) => sum + i.priceNum * i.qty, 0);
 
+  // Recalcula o frete quando o valor do lote muda (frete grátis acima do limite)
+  const shippingCost = shipping ? shippingCostFor(shipping.state, totalPrice) : 0;
+  const grandTotal = totalPrice + shippingCost;
+
   return (
     <CartContext.Provider
-      value={{ items, isOpen, openCart, closeCart, addItem, removeItem, updateQty, clearCart, totalItems, totalPrice }}
+      value={{
+        items,
+        isOpen,
+        openCart,
+        closeCart,
+        addItem,
+        removeItem,
+        updateQty,
+        clearCart,
+        totalItems,
+        totalPrice,
+        shipping,
+        setShipping,
+        shippingCost,
+        grandTotal,
+      }}
     >
       {children}
     </CartContext.Provider>

@@ -1,9 +1,23 @@
 import { useContext, useState, useCallback, useEffect, ReactNode } from "react";
-import { CartContext, CartItem } from "./cart-context";
+import { CartContext, CartItem, Shipping } from "./cart-context";
+import { shippingCostFor } from "@/lib/shipping";
 
 export type { CartItem };
 
 const STORAGE_KEY = "fm_cart_v1";
+const SHIPPING_KEY = "fm_shipping_v1";
+
+function readShipping(): Shipping | null {
+  try {
+    const raw = localStorage.getItem(SHIPPING_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    if (!s || typeof s.cep !== "string" || typeof s.state !== "string") return null;
+    return s as Shipping;
+  } catch {
+    return null;
+  }
+}
 
 function parsePrice(price: string): number {
   return parseFloat(price.replace("R$", "").replace(".", "").replace(",", ".").trim());

@@ -246,11 +246,12 @@ const Recibo = () => {
           {pending && (
             <button
               onClick={async () => {
-                const url = await createPaymentLink(
-                  order.order_code,
-                  `${window.location.origin}/recibo/${order.order_code}`
-                );
-                if (url) window.location.href = url;
+                try {
+                  const url = await createPaymentLink(order.order_code, `${window.location.origin}/recibo/${order.order_code}`);
+                  window.location.href = url;
+                } catch (error) {
+                  toast({ title: "Pagamento indisponível", description: error instanceof Error ? error.message : "Tente novamente em alguns instantes.", variant: "destructive" });
+                }
               }}
               className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground font-heading font-black text-xs tracking-wider px-4 py-2.5 rounded-lg hover:opacity-90 transition-opacity mr-2"
             >

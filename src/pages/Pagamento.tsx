@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Copy, CreditCard, QrCode, ShieldCheck, Wallet } from "lucide-react";
+import { ArrowLeft, CreditCard, QrCode, ShieldCheck, Wallet } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -8,13 +8,11 @@ import { Label } from "@/components/ui/label";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { PAYMENT_DUE_HOURS, PAYMENT_GRACE_HOURS, computeDueAt, formatCurrency, generateOrderCode, generateTrackingCode } from "@/lib/orderUtils";
+import { computeDueAt, formatCurrency, generateOrderCode, generateTrackingCode } from "@/lib/orderUtils";
 import { logAudit } from "@/lib/audit";
 import { createPaymentLink } from "@/lib/payments";
 
 type PaymentMethod = "pix" | "cartao";
-
-const PIX_KEY = "wap33000@gmail.com";
 
 const FIELD_LABELS: Record<string, string> = {
   name: "Nome / Razão Social",
@@ -60,6 +58,7 @@ const Pagamento = () => {
 
   const [method, setMethod] = useState<PaymentMethod>("pix");
   const [submitting, setSubmitting] = useState(false);
+  const pendingOrderCode = useRef<string | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [editing, setEditing] = useState(false);
   const [docType, setDocType] = useState<"cpf" | "cnpj">("cpf");
@@ -131,18 +130,6 @@ const Pagamento = () => {
   }, []);
 
 
-  const pixCode = useMemo(
-    () =>
-      `00020126580014BR.GOV.BCB.PIX0136maromba-${Date.now()}5204000053039865406${totalPrice
-        .toFixed(2)}5802BR5921LOJA FAMILIA MAROMBA6009SAO PAULO62070503***6304ABCD`,
-    [totalPrice]
-  );
-
-  const handleCopy = async (text: string, label: string) => {
-    await navigator.clipboard.writeText(text);
-    toast({ title: "Copiado!", description: `${label} copiado para a área de transferência.` });
-  };
-
   const validateCustomer = () => {
     const required: (keyof typeof customer)[] = ["name", "email", "phone", "street", "number", "city", "state", "zip"];
     for (const k of required) {
@@ -177,6 +164,7 @@ const Pagamento = () => {
   };
 
   const handleConfirm = async () => {
+    if (submitting) return;
     if (!validateCustomer()) return;
     setSubmitting(true);
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -187,10 +175,11 @@ const Pagamento = () => {
       return;
     }
 
-    const orderCode = generateOrderCode();
+    const orderCode = pendingOrderCode.current ?? generateOrderCode();
     const trackingCode = generateTrackingCode();
     const dueAt = computeDueAt();
 
+    if (!pendingOrderCode.current) {
     const { error } = await supabase.from("orders").insert({
       user_id: user.id,
       order_code: orderCode,
@@ -221,12 +210,12 @@ const Pagamento = () => {
       total_amount: totalPrice,
     });
 
-    setSubmitting(false);
-
     if (error) {
+      setSubmitting(false);
       toast({ title: "Erro ao processar pedido", description: error.message, variant: "destructive" });
       return;
     }
+    pendingOrderCode.current = orderCode;
 
     await logAudit("order_created", {
       entity: "orders",
@@ -255,24 +244,22 @@ const Pagamento = () => {
     }
 
 
-    clearCart?.();
-
-    // Gera a cobrança oficial (Pix/cartão) na InfinitePay e leva o cliente ao checkout
-    const checkoutUrl = await createPaymentLink(
-      orderCode,
-      `${window.location.origin}/recibo/${orderCode}`
-    );
-
-    if (checkoutUrl) {
-      window.location.href = checkoutUrl;
-      return;
     }
 
-    toast({
-      title: "Cobrança automática indisponível",
-      description: "Use a chave Pix informada e aguarde a confirmação manual.",
-    });
-    navigate(`/recibo/${orderCode}`);
+    // Gera a cobrança oficial (Pix/cartão) na InfinitePay e leva o cliente ao checkout
+    try {
+      const checkoutUrl = await createPaymentLink(orderCode, `${window.location.origin}/recibo/${orderCode}`);
+      clearCart?.();
+      window.location.href = checkoutUrl;
+    } catch (error) {
+      toast({
+        title: "Pagamento indisponível",
+        description: error instanceof Error ? error.message : "Tente novamente em alguns instantes.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -386,31 +373,7 @@ const Pagamento = () => {
               </TabsList>
 
               <TabsContent value="pix" className="mt-4 space-y-4">
-                <div className="flex flex-col items-center gap-3 py-2">
-                  <div className="w-44 h-44 sm:w-48 sm:h-48 bg-white p-3 rounded-xl flex items-center justify-center">
-                    <div
-                      className="w-full h-full"
-                      style={{
-                        backgroundImage:
-                          "linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000), linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000)",
-                        backgroundSize: "12px 12px",
-                        backgroundPosition: "0 0, 6px 6px",
-                      }}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground text-center max-w-xs">
-                    Escaneie o QR Code com o app do seu banco ou copie a chave Pix abaixo.
-                  </p>
-                </div>
-                <CopyBox label="CHAVE PIX (E-MAIL)" value={PIX_KEY} onCopy={() => handleCopy(PIX_KEY, "Chave Pix")} />
-                <CopyBox label="CÓDIGO PIX COPIA E COLA" value={pixCode} onCopy={() => handleCopy(pixCode, "Código Pix")} />
-                <p className="text-xs font-heading font-bold text-primary text-center">
-                  TOTAL: {formatCurrency(totalPrice)}
-                </p>
-                <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
-                  Vencimento em {PAYMENT_DUE_HOURS}h após a criação do pedido. Pedidos não pagos são
-                  cancelados automaticamente {PAYMENT_GRACE_HOURS}h após o vencimento.
-                </p>
+                <p className="text-xs text-muted-foreground">O Pix será apresentado no checkout seguro da InfinitePay após continuar.</p>
               </TabsContent>
 
               <TabsContent value="cartao" className="mt-4 space-y-3">
@@ -451,7 +414,7 @@ const Pagamento = () => {
             onClick={handleConfirm}
             className="w-full bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {submitting ? "PROCESSANDO..." : "CONFIRMAR PAGAMENTO"}
+            {submitting ? "ABRINDO CHECKOUT..." : "PAGAR NA INFINITEPAY"}
           </button>
           <p className="text-[10px] text-muted-foreground text-center">
             Ao confirmar, você concorda com os termos de venda no atacado.
@@ -492,23 +455,5 @@ const Field = ({
   </div>
 );
 
-
-const CopyBox = ({ label, value, onCopy }: { label: string; value: string; onCopy: () => void }) => (
-  <div className="space-y-1.5">
-    <Label className="text-[10px] font-heading font-bold tracking-wider text-muted-foreground">{label}</Label>
-    <div className="flex gap-2">
-      <div className="flex-1 bg-secondary border border-border rounded-md px-3 py-2 text-[11px] font-mono text-foreground truncate">
-        {value}
-      </div>
-      <button
-        onClick={onCopy}
-        className="px-3 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity"
-        aria-label="Copiar"
-      >
-        <Copy className="w-4 h-4" />
-      </button>
-    </div>
-  </div>
-);
 
 export default Pagamento;

@@ -1,4 +1,4 @@
-- [ ] Secure order ownership, checkout, payment functions, and receipt access; validate changes.
-- [ ] Remove demo Pix/QR checkout and use only a real InfinitePay checkout URL; show actionable failures.
+- [x] Secure order ownership, checkout, payment functions, and receipt access; validate changes.
+- [x] Remove demo Pix/QR checkout and use only a real InfinitePay checkout URL; show actionable failures.
 - [ ] Resolve public media security finding without breaking storefront media access.
 - [ ] Confirm GitHub code-sync guidance/status; report commit SHA availability.

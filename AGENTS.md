@@ -1,2 +1,3 @@
 Order access is bound to authenticated `orders.user_id`; legacy unowned orders remain admin-only, because order codes alone must never expose customer data.
 InfinitePay functions validate the caller before using server-only credentials, because service-role access bypasses row security.
+Checkout uses only HTTPS links from InfinitePay and never falls back to manual Pix or local QR codes, because unverified payment instructions can mislead buyers.

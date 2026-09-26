@@ -1,0 +1,3 @@
+- [ ] Secure order ownership, checkout, payment functions, and receipt access; validate changes.
+- [ ] Resolve public media security finding without breaking storefront media access.
+- [ ] Confirm GitHub code-sync guidance/status; report commit SHA availability.

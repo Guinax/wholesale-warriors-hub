@@ -53,13 +53,6 @@ const maskCpf = (v: string) =>
     .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 
 
-const maskCard = (v: string) => onlyDigits(v).slice(0, 16).replace(/(\d{4})(?=\d)/g, "$1 ");
-
-const maskExpiry = (v: string) => onlyDigits(v).slice(0, 4).replace(/(\d{2})(\d{1,2})/, "$1/$2");
-
-
-
-
 const Pagamento = () => {
   const { items, totalPrice, clearCart } = useCart() as ReturnType<typeof useCart> & { clearCart?: () => void };
   const navigate = useNavigate();
@@ -85,8 +78,6 @@ const Pagamento = () => {
     zip: "",
   });
 
-
-  const [card, setCard] = useState({ number: "", name: "", expiry: "", cvv: "" });
 
   useEffect(() => {
     if (items.length === 0) {
@@ -185,34 +176,23 @@ const Pagamento = () => {
     return true;
   };
 
-  const validateCard = () => {
-    if (method !== "cartao") return true;
-    if (onlyDigits(card.number).length < 13) {
-      toast({ title: "Número de cartão inválido", variant: "destructive" });
-      return false;
-    }
-    if (!card.name.trim() || card.cvv.length < 3) {
-      toast({ title: "Dados do cartão incompletos", variant: "destructive" });
-      return false;
-    }
-    const [mm, yy] = card.expiry.split("/");
-    if (!mm || !yy || +mm < 1 || +mm > 12 || yy.length < 2) {
-      toast({ title: "Validade inválida", description: "Use o formato MM/AA.", variant: "destructive" });
-      return false;
-    }
-    return true;
-  };
-
-
   const handleConfirm = async () => {
-    if (!validateCustomer() || !validateCard()) return;
+    if (!validateCustomer()) return;
     setSubmitting(true);
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      setSubmitting(false);
+      toast({ title: "Entre na sua conta para continuar", variant: "destructive" });
+      navigate(`/auth?next=${encodeURIComponent("/pagamento")}`);
+      return;
+    }
 
     const orderCode = generateOrderCode();
     const trackingCode = generateTrackingCode();
     const dueAt = computeDueAt();
 
     const { error } = await supabase.from("orders").insert({
+      user_id: user.id,
       order_code: orderCode,
       tracking_code: trackingCode,
       payment_method: method,
@@ -256,9 +236,7 @@ const Pagamento = () => {
 
     // Salva automaticamente os dados no perfil para pré-preencher próximas compras
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase
+      await supabase
           .from("profiles")
           .update({
             full_name: customer.name,
@@ -272,7 +250,6 @@ const Pagamento = () => {
             address_zip: customer.zip,
           })
           .eq("user_id", user.id);
-      }
     } catch {
       // falha ao salvar perfil não deve bloquear o pedido
     }
@@ -437,15 +414,8 @@ const Pagamento = () => {
               </TabsContent>
 
               <TabsContent value="cartao" className="mt-4 space-y-3">
-                <Field label="Número do cartão" value={card.number} inputMode="numeric" onChange={(v) => setCard({ ...card, number: maskCard(v) })} placeholder="0000 0000 0000 0000" />
-                <Field label="Nome impresso no cartão" value={card.name} onChange={(v) => setCard({ ...card, name: v.toUpperCase() })} />
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Validade" value={card.expiry} inputMode="numeric" onChange={(v) => setCard({ ...card, expiry: maskExpiry(v) })} placeholder="MM/AA" />
-                  <Field label="CVV" value={card.cvv} inputMode="numeric" placeholder="000" onChange={(v) => setCard({ ...card, cvv: v.replace(/\D/g, "").slice(0, 4) })} />
-
-                </div>
-                <p className="text-[10px] text-muted-foreground flex items-center gap-1.5">
-                  <ShieldCheck className="w-3 h-3 text-primary" /> Pagamento criptografado. Em até 12x sem juros no atacado.
+                <p className="text-xs text-muted-foreground flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-primary shrink-0" /> Os dados do cartão são informados somente no checkout seguro da InfinitePay.
                 </p>
               </TabsContent>
             </Tabs>

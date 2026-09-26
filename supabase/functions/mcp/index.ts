@@ -77,7 +77,7 @@ import { z as z3 } from "npm:zod@^3.25.76";
 var list_my_orders_default = defineTool3({
   name: "list_my_orders",
   title: "Meus pedidos",
-  description: "Lista os pedidos feitos pelo e-mail do usu\xE1rio autenticado.",
+  description: "Lista os pedidos do usu\xE1rio autenticado.",
   inputSchema: {
     limit: z3.number().int().min(1).max(50).optional().describe("Quantidade m\xE1xima (padr\xE3o 20).")
   },
@@ -85,10 +85,6 @@ var list_my_orders_default = defineTool3({
   handler: async ({ limit }, ctx) => {
     if (!ctx.isAuthenticated()) {
       return { content: [{ type: "text", text: "N\xE3o autenticado." }], isError: true };
-    }
-    const email = ctx.getUserEmail();
-    if (!email) {
-      return { content: [{ type: "text", text: "Usu\xE1rio sem e-mail associado." }], isError: true };
     }
     const supabase = createClient3(
       process.env.SUPABASE_URL,
@@ -98,7 +94,11 @@ var list_my_orders_default = defineTool3({
         auth: { persistSession: false, autoRefreshToken: false }
       }
     );
-    const { data, error } = await supabase.from("orders").select("order_code,total,payment_method,payment_status,delivery_status,tracking_code,created_at").eq("email", email).order("created_at", { ascending: false }).limit(limit ?? 20);
+    const { data: { user }, error: authError } = await supabase.auth.getUser(ctx.getToken());
+    if (authError || !user) {
+      return { content: [{ type: "text", text: "Sess\xE3o inv\xE1lida." }], isError: true };
+    }
+    const { data, error } = await supabase.from("orders").select("order_code,total_amount,payment_method,payment_status,delivery_status,tracking_code,created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(limit ?? 20);
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     return {
       content: [{ type: "text", text: JSON.stringify(data ?? []) }],

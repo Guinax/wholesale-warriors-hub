@@ -29,23 +29,38 @@ Deno.serve(async (req) => {
   const parsed = BodySchema.safeParse(raw);
   if (!parsed.success) return json({ error: parsed.error.flatten().fieldErrors }, 400);
 
+  const authorization = req.headers.get("Authorization") ?? "";
+  const token = authorization.match(/^Bearer\s+(\S+)$/i)?.[1];
+  if (!token) return json({ error: "Autenticação necessária." }, 401);
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const publicKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !publicKey || !serviceKey) return json({ error: "Serviço indisponível." }, 500);
+  const authClient = createClient(supabaseUrl, publicKey, {
+    global: { headers: { Authorization: authorization } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+  if (authError || !user) return json({ error: "Sessão inválida." }, 401);
+
   const handle = Deno.env.get("INFINITEPAY_HANDLE") ?? "";
   if (!handle) return json({ not_configured: true, error: "Handle não configurado." }, 200);
 
   const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    supabaseUrl,
+    serviceKey,
     { auth: { persistSession: false } },
   );
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, order_code, items, total_amount, customer_name, customer_email, customer_phone, address_zip, address_street, address_number, address_complement, address_city, address_state, payment_status")
+    .select("id, user_id, order_code, items, total_amount, customer_name, customer_email, customer_phone, address_zip, address_street, address_number, address_complement, address_city, address_state, payment_status")
     .eq("order_code", parsed.data.order_code)
     .maybeSingle();
 
   if (orderError) return json({ error: "Falha ao consultar o pedido." }, 500);
   if (!order) return json({ error: "Pedido não encontrado." }, 404);
+  if (order.user_id !== user.id) return json({ error: "Pedido não encontrado." }, 404);
   if (order.payment_status === "paid") return json({ already_paid: true });
 
   const rawItems = Array.isArray(order.items) ? (order.items as Record<string, unknown>[]) : [];

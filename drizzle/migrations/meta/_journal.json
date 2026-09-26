@@ -29,6 +29,13 @@
       "when": 1790079282417,
       "tag": "0003_add_in_catalog_to_products",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790430871585,
+      "tag": "0004_secure_order_ownership_and_receipt_lookup",
+      "breakpoints": true
     }
   ]
 }

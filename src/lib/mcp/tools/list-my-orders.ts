@@ -5,7 +5,7 @@ import { z } from "zod";
 export default defineTool({
   name: "list_my_orders",
   title: "Meus pedidos",
-  description: "Lista os pedidos feitos pelo e-mail do usuário autenticado.",
+  description: "Lista os pedidos do usuário autenticado.",
   inputSchema: {
     limit: z.number().int().min(1).max(50).optional().describe("Quantidade máxima (padrão 20)."),
   },
@@ -14,11 +14,7 @@ export default defineTool({
     if (!ctx.isAuthenticated()) {
       return { content: [{ type: "text", text: "Não autenticado." }], isError: true };
     }
-    const email = ctx.getUserEmail();
-    if (!email) {
-      return { content: [{ type: "text", text: "Usuário sem e-mail associado." }], isError: true };
-    }
-    // Admin-scoped SELECT policy or user via RPC. Use publishable client with user token.
+    // A política de leitura vincula cada pedido ao usuário autenticado.
     const supabase = createClient(
       process.env.SUPABASE_URL!,
       process.env.SUPABASE_PUBLISHABLE_KEY!,
@@ -27,10 +23,14 @@ export default defineTool({
         auth: { persistSession: false, autoRefreshToken: false },
       },
     );
+    const { data: { user }, error: authError } = await supabase.auth.getUser(ctx.getToken());
+    if (authError || !user) {
+      return { content: [{ type: "text", text: "Sessão inválida." }], isError: true };
+    }
     const { data, error } = await supabase
       .from("orders")
-      .select("order_code,total,payment_method,payment_status,delivery_status,tracking_code,created_at")
-      .eq("email", email)
+      .select("order_code,total_amount,payment_method,payment_status,delivery_status,tracking_code,created_at")
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(limit ?? 20);
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };

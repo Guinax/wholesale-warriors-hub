@@ -23,9 +23,14 @@ export default defineTool({
         auth: { persistSession: false, autoRefreshToken: false },
       },
     );
+    const { data: { user }, error: authError } = await supabase.auth.getUser(ctx.getToken());
+    if (authError || !user) {
+      return { content: [{ type: "text", text: "Sessão inválida." }], isError: true };
+    }
     const { data, error } = await supabase
       .from("orders")
       .select("order_code,total_amount,payment_method,payment_status,delivery_status,tracking_code,created_at")
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(limit ?? 20);
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };

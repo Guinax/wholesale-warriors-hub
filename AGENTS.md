@@ -1,0 +1,2 @@
+Order access is bound to authenticated `orders.user_id`; legacy unowned orders remain admin-only, because order codes alone must never expose customer data.
+InfinitePay functions validate the caller before using server-only credentials, because service-role access bypasses row security.

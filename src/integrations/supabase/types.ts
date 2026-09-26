@@ -154,6 +154,7 @@ export type Database = {
           payment_status: string
           total_amount: number
           tracking_code: string
+          user_id: string | null
           vehicle_plate: string | null
         }
         Insert: {
@@ -190,6 +191,7 @@ export type Database = {
           payment_status?: string
           total_amount: number
           tracking_code: string
+          user_id?: string | null
           vehicle_plate?: string | null
         }
         Update: {
@@ -226,6 +228,7 @@ export type Database = {
           payment_status?: string
           total_amount?: number
           tracking_code?: string
+          user_id?: string | null
           vehicle_plate?: string | null
         }
         Relationships: []
@@ -530,6 +533,7 @@ export type Database = {
           payment_status: string
           total_amount: number
           tracking_code: string
+          user_id: string | null
           vehicle_plate: string | null
         }[]
         SetofOptions: {

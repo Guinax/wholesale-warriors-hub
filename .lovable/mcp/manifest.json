@@ -73,7 +73,7 @@
       {
         "name": "list_my_orders",
         "title": "Meus pedidos",
-        "description": "Lista os pedidos feitos pelo e-mail do usuário autenticado.",
+        "description": "Lista os pedidos do usuário autenticado.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,

@@ -124,7 +124,10 @@ Deno.serve(async (req) => {
     payment_details: providerResponse,
   };
   if (nsu) update.payment_nsu = nsu;
-  if (paid) update.payment_status = "paid";
+  if (paid) {
+    update.payment_status = "paid";
+    update.delivery_status = "postado";
+  }
 
   const { error: updateError } = await supabase.from("orders").update(update).eq("id", order.id);
   if (updateError) return json({ error: "Falha ao atualizar o pedido." }, 500);

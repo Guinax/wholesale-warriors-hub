@@ -59,13 +59,14 @@ const Pagamento = () => {
 
   const [method, setMethod] = useState<PaymentMethod>("pix");
   const [submitting, setSubmitting] = useState(false);
-  const pendingOrderCode = useRef<string | null>(null);
+  const pendingOrder = useRef<{ code: string; snapshot: string } | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [editing, setEditing] = useState(false);
   const [shippingCost, setShippingCost] = useState(0);
   const [shippingEta, setShippingEta] = useState("");
   const [checkingCep, setCheckingCep] = useState(false);
   const [validCep, setValidCep] = useState(false);
+  const [validatedState, setValidatedState] = useState("");
   const [docType, setDocType] = useState<"cpf" | "cnpj">("cpf");
 
   const [customer, setCustomer] = useState({
@@ -138,6 +139,7 @@ const Pagamento = () => {
     const digits = onlyDigits(customer.zip);
     if (digits.length !== 8) {
       setValidCep(false);
+      setValidatedState("");
       setShippingCost(0);
       setShippingEta("");
       return;
@@ -148,12 +150,14 @@ const Pagamento = () => {
       if (!active) return;
       if (!info) {
         setValidCep(false);
+        setValidatedState("");
         setShippingCost(0);
         setShippingEta("");
         setCheckingCep(false);
         return;
       }
       setValidCep(true);
+      setValidatedState(info.state);
       setCustomer((current) => ({
         ...current,
         zip: info.cep,
@@ -186,7 +190,7 @@ const Pagamento = () => {
       toast({ title: "WhatsApp inválido", description: "Informe DDD + número.", variant: "destructive" });
       return false;
     }
-    if (onlyDigits(customer.zip).length !== 8 || checkingCep || !validCep) {
+    if (onlyDigits(customer.zip).length !== 8 || checkingCep || !validCep || customer.state !== validatedState) {
       toast({ title: "CEP inválido", description: checkingCep ? "Aguarde a validação do CEP." : "Informe um CEP válido para calcular o frete.", variant: "destructive" });
       return false;
     }
@@ -215,11 +219,13 @@ const Pagamento = () => {
       return;
     }
 
-    const orderCode = pendingOrderCode.current ?? generateOrderCode();
+    const snapshot = JSON.stringify({ customer, docType, method, items, orderTotal });
+    const reusableOrder = pendingOrder.current?.snapshot === snapshot ? pendingOrder.current : null;
+    const orderCode = reusableOrder?.code ?? generateOrderCode();
     const trackingCode = generateTrackingCode();
     const dueAt = computeDueAt();
 
-    if (!pendingOrderCode.current) {
+    if (!reusableOrder) {
     const { error } = await supabase.from("orders").insert({
       user_id: user.id,
       order_code: orderCode,
@@ -255,7 +261,7 @@ const Pagamento = () => {
       toast({ title: "Erro ao processar pedido", description: error.message, variant: "destructive" });
       return;
     }
-    pendingOrderCode.current = orderCode;
+    pendingOrder.current = { code: orderCode, snapshot };
 
     await logAudit("order_created", {
       entity: "orders",
@@ -396,6 +402,7 @@ const Pagamento = () => {
                 <Field label="CEP" value={customer.zip} inputMode="numeric" placeholder="00000-000" onChange={(v) => {
                   const zip = maskCep(v);
                   setValidCep(false);
+                  setValidatedState("");
                   setShippingCost(0);
                   setShippingEta("");
                   setCustomer((current) => onlyDigits(current.zip) === onlyDigits(zip)
@@ -463,7 +470,7 @@ const Pagamento = () => {
           </div>
 
           <button
-            disabled={submitting || checkingCep || !validCep}
+            disabled={submitting || checkingCep || !validCep || customer.state !== validatedState}
             onClick={handleConfirm}
             className="w-full bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon disabled:opacity-40 disabled:cursor-not-allowed"
           >

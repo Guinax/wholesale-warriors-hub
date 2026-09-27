@@ -1,0 +1,4 @@
+- [x] Secure order ownership, checkout, payment functions, and receipt access; validate changes.
+- [x] Remove demo Pix/QR checkout and use only a real InfinitePay checkout URL; show actionable failures.
+- [ ] Restrict public media access after confirming whether existing storefront links may remain public.
+- [x] Confirm code-sync status and report commit SHA availability (GitHub connection not present in this workspace).

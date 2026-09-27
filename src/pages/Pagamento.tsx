@@ -439,9 +439,14 @@ const Pagamento = () => {
                 </div>
               ))}
             </div>
-            <div className="border-t border-border pt-3 space-y-2">\n              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Produtos</span><span>{formatCurrency(totalPrice)}</span></div>\n              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>\n              {shippingEta && <p className="text-[10px] text-muted-foreground">Prazo estimado: {shippingEta}</p>}\n              <div className="border-t border-border pt-3 flex justify-between items-center">
+            <div className="border-t border-border pt-3 space-y-2">
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Produtos</span><span>{formatCurrency(totalPrice)}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>
+              {shippingEta && <p className="text-[10px] text-muted-foreground">Prazo estimado: {shippingEta}</p>}
+              <div className="border-t border-border pt-3 flex justify-between items-center">
               <span className="font-heading font-bold text-xs tracking-wider text-muted-foreground">TOTAL</span>
-              <span className="font-heading font-black text-xl text-foreground">{formatCurrency(totalPrice)}</span>
+              <span className="font-heading font-black text-xl text-foreground">{formatCurrency(orderTotal)}</span>
+              </div>
             </div>
           </div>
 

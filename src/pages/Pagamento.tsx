@@ -228,7 +228,7 @@ const Pagamento = () => {
       // Pix aguarda compensação: expira 2h após o vencimento se não for pago
       payment_status: "pending",
       due_at: dueAt.toISOString(),
-      delivery_status: "postado",
+      delivery_status: "aguardando_pagamento",
       customer_name: customer.name,
       customer_email: customer.email,
       customer_phone: customer.phone,

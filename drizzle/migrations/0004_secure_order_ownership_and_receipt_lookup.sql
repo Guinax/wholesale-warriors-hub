@@ -18,7 +18,10 @@ AS $$
   SELECT o.* FROM public.orders AS o
   WHERE o.order_code = _order_code
     AND auth.uid() IS NOT NULL
-    AND (o.user_id = auth.uid() OR public.has_role(auth.uid(), 'admin'::public.app_role))
+    AND (
+      o.user_id = auth.uid()
+      OR public.has_role('admin'::public.app_role, auth.uid())
+    )
   LIMIT 1;
 $$;
 REVOKE ALL ON FUNCTION public.get_order_by_code(text) FROM public, anon;

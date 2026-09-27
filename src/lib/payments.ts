@@ -9,10 +9,9 @@ export interface PaymentCheckResult {
   error?: string;
 }
 
-
 /**
  * Gera o link de checkout da InfinitePay para um pedido.
- * Retorna somente a URL HTTPS recebida do provedor; falhas não habilitam pagamento manual.
+ * Retorna somente uma URL HTTPS oficial da InfinitePay; falhas não habilitam pagamento manual.
  */
 export async function createPaymentLink(
   orderCode: string,
@@ -26,11 +25,24 @@ export async function createPaymentLink(
       const details = error instanceof FunctionsHttpError ? await error.context.json().catch(() => null) : null;
       throw new Error((details as { error?: string } | null)?.error ?? "Não foi possível abrir o pagamento. Tente novamente.");
     }
+
     const response = data as { url?: unknown; error?: string; not_configured?: boolean } | null;
-    if (response?.error || response?.not_configured) throw new Error(response.error ?? "Pagamento não configurado. Fale com o suporte.");
-    if (typeof response?.url !== "string") throw new Error("A InfinitePay não retornou um link de pagamento. Tente novamente.");
+    if (response?.error || response?.not_configured) {
+      throw new Error(response.error ?? "Pagamento não configurado. Fale com o suporte.");
+    }
+    if (typeof response?.url !== "string") {
+      throw new Error("A InfinitePay não retornou um link de pagamento. Tente novamente.");
+    }
+
     const url = new URL(response.url);
-    if (url.protocol !== "https:" || !/(^|\.)infinitepay\.io$/.test(url.hostname)) {
+    const hostname = url.hostname.toLowerCase();
+    const officialHost =
+      hostname === "infinitepay.io" ||
+      hostname.endsWith(".infinitepay.io") ||
+      hostname === "infinitepay.com.br" ||
+      hostname.endsWith(".infinitepay.com.br");
+
+    if (url.protocol !== "https:" || !officialHost) {
       throw new Error("A InfinitePay retornou um link inválido. Tente novamente.");
     }
     return url.href;

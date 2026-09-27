@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { computeDueAt, formatCurrency, generateOrderCode, generateTrackingCode } from "@/lib/orderUtils";
 import { logAudit } from "@/lib/audit";
 import { createPaymentLink } from "@/lib/payments";
+import { lookupCep, shippingCostFor, shippingEtaFor } from "@/lib/shipping";
 
 type PaymentMethod = "pix" | "cartao";
 
@@ -61,6 +62,9 @@ const Pagamento = () => {
   const pendingOrderCode = useRef<string | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [shippingCost, setShippingCost] = useState(0);
+  const [shippingEta, setShippingEta] = useState("");
+  const [checkingCep, setCheckingCep] = useState(false);
   const [docType, setDocType] = useState<"cpf" | "cnpj">("cpf");
 
   const [customer, setCustomer] = useState({
@@ -129,6 +133,38 @@ const Pagamento = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const digits = onlyDigits(customer.zip);
+    if (digits.length !== 8) {
+      setShippingCost(0);
+      setShippingEta("");
+      return;
+    }
+    let active = true;
+    setCheckingCep(true);
+    lookupCep(customer.zip).then((info) => {
+      if (!active) return;
+      if (!info) {
+        setShippingCost(0);
+        setShippingEta("");
+        setCheckingCep(false);
+        return;
+      }
+      setCustomer((current) => ({
+        ...current,
+        zip: info.cep,
+        street: current.street || info.street,
+        city: info.city || current.city,
+        state: info.state || current.state,
+      }));
+      setShippingCost(shippingCostFor(info.state, totalPrice));
+      setShippingEta(shippingEtaFor(info.state));
+      setCheckingCep(false);
+    });
+    return () => { active = false; };
+  }, [customer.zip, totalPrice]);
+
+  const orderTotal = totalPrice + shippingCost;
 
   const validateCustomer = () => {
     const required: (keyof typeof customer)[] = ["name", "email", "phone", "street", "number", "city", "state", "zip"];
@@ -207,7 +243,7 @@ const Pagamento = () => {
         unit_price: i.priceNum,
         subtotal: i.priceNum * i.qty,
       })),
-      total_amount: totalPrice,
+      total_amount: orderTotal,
     });
 
     if (error) {
@@ -220,7 +256,7 @@ const Pagamento = () => {
     await logAudit("order_created", {
       entity: "orders",
       entity_id: orderCode,
-      details: { total: totalPrice, method, items: items.length },
+      details: { subtotal: totalPrice, shipping: shippingCost, total: orderTotal, method, items: items.length },
     });
 
     // Salva automaticamente os dados no perfil para pré-preencher próximas compras
@@ -403,7 +439,7 @@ const Pagamento = () => {
                 </div>
               ))}
             </div>
-            <div className="border-t border-border pt-3 flex justify-between items-center">
+            <div className="border-t border-border pt-3 space-y-2">\n              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Produtos</span><span>{formatCurrency(totalPrice)}</span></div>\n              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>\n              {shippingEta && <p className="text-[10px] text-muted-foreground">Prazo estimado: {shippingEta}</p>}\n              <div className="border-t border-border pt-3 flex justify-between items-center">
               <span className="font-heading font-bold text-xs tracking-wider text-muted-foreground">TOTAL</span>
               <span className="font-heading font-black text-xl text-foreground">{formatCurrency(totalPrice)}</span>
             </div>

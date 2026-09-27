@@ -275,7 +275,8 @@ const Recibo = () => {
           </p>
         </div>
 
-        {/* Rastreio */}
+        {/* Rastreio: exibido somente após pagamento confirmado */}
+        {!pending && !expired && (
         <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-heading font-black text-sm tracking-wider text-foreground flex items-center gap-2">
@@ -319,6 +320,7 @@ const Recibo = () => {
             })}
           </div>
         </div>
+        )}
 
         {/* Itens */}
         <div className="bg-card border border-border rounded-2xl p-5 space-y-3">

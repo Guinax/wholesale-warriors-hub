@@ -5,7 +5,7 @@ import { z } from "zod";
 export default defineTool({
   name: "list_products",
   title: "Listar produtos",
-  description: "Lista os produtos ativos do catálogo da Loja Família Maromba, opcionalmente filtrados por categoria (suplementos, roupas, acessorios, equipamento, cimed, mansao).",
+  description: "Lista os produtos ativos do catálogo da Loja Família Maromba, opcionalmente filtrados por categoria (suplementos, roupas, acessorios, equipamento, bebidas, alimentos).",
   inputSchema: {
     category: z.string().optional().describe("Categoria opcional (ex: suplementos, roupas, acessorios, equipamento)."),
     limit: z.number().int().min(1).max(100).optional().describe("Quantidade máxima de itens (padrão 50)."),
@@ -20,7 +20,7 @@ export default defineTool({
         auth: { persistSession: false, autoRefreshToken: false },
       },
     );
-    let q = supabase.from("products").select("id,name,category,price,min_qty,badge,image_url,is_active").eq("is_active", true).order("sort_order", { ascending: true }).limit(limit ?? 50);
+    let q = supabase.from("products").select("id,name,category,unit_price,wholesale_price,min_qty,badge,image_url,active").eq("active", true).order("sort_order", { ascending: true }).limit(limit ?? 50);
     if (category) q = q.eq("category", category);
     const { data, error } = await q;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };

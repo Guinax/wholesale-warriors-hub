@@ -86,7 +86,7 @@ const Auth = () => {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -107,7 +107,9 @@ const Auth = () => {
         });
         if (error) throw error;
         await logAudit("signup", { details: { email } });
-        toast.success("Cadastro realizado! Seus dados de entrega já estão salvos.");
+        toast.success(data.session
+          ? "Cadastro realizado! Você já pode entrar na loja."
+          : "Cadastro solicitado. Confirme seu e-mail pelo link recebido antes de entrar.");
         setMode("login");
       } else {
 
@@ -118,7 +120,9 @@ const Auth = () => {
         window.location.href = nextPath;
       }
     } catch (err: any) {
-      toast.error(err.message || "Erro ao autenticar");
+      toast.error(err?.code === "invalid_credentials"
+        ? "E-mail ou senha incorretos. Se ainda não criou sua conta nesta loja, toque em Cadastre-se."
+        : err?.message || "Erro ao autenticar");
     } finally {
       setLoading(false);
     }

@@ -64,33 +64,63 @@ Deno.serve(async (req) => {
   if (order.payment_status === "paid") return json({ already_paid: true });
 
   const rawItems = Array.isArray(order.items) ? (order.items as Record<string, unknown>[]) : [];
-  const items = rawItems.map((it) => {
-    const qty = Number(it.qty ?? it.quantity ?? 1) || 1;
-    const unit = Number(it.unit_price ?? it.price ?? 0);
+  if (rawItems.length === 0) return json({ error: "Pedido sem itens." }, 400);
+
+  const requested = rawItems.map((it) => ({
+    name: String(it.name ?? "").trim(),
+    qty: Math.max(1, Math.floor(Number(it.qty ?? it.quantity ?? 1) || 1)),
+  }));
+  if (requested.some((it) => !it.name)) return json({ error: "Item inválido no pedido." }, 400);
+
+  const productNames = [...new Set(requested.map((it) => it.name))];
+  const { data: catalog, error: catalogError } = await supabase
+    .from("products")
+    .select("name,price,min_qty,is_active")
+    .in("name", productNames)
+    .eq("is_active", true);
+
+  if (catalogError) return json({ error: "Falha ao validar preços do catálogo." }, 500);
+  const priceByName = new Map((catalog ?? []).map((p) => [String(p.name), p]));
+  if (priceByName.size !== productNames.length) {
+    return json({ error: "Um ou mais produtos não estão disponíveis." }, 409);
+  }
+
+  let merchandiseTotal = 0;
+  const items = requested.map((it) => {
+    const product = priceByName.get(it.name)!;
+    const unit = Number(product.price);
+    const minQty = Math.max(1, Number(product.min_qty ?? 1) || 1);
+    if (!Number.isFinite(unit) || unit <= 0) throw new Error("Preço inválido no catálogo");
+    if (it.qty < minQty) throw new Error(`Quantidade mínima de ${it.name}: ${minQty}`);
+    merchandiseTotal += unit * it.qty;
     return {
-      description: String(it.name ?? "Produto"),
-      price: Math.max(1, Math.round(unit * 100)),
-      quantity: qty,
+      description: it.name,
+      price: Math.round(unit * 100),
+      quantity: it.qty,
     };
   });
 
-  const merchandiseTotal = rawItems.reduce((sum, it) => {
-    const qty = Number(it.qty ?? it.quantity ?? 1) || 1;
-    const unit = Number(it.unit_price ?? it.price ?? 0);
-    return sum + qty * unit;
-  }, 0);
-  const shippingAmount = Math.max(0, Number(order.total_amount) - merchandiseTotal);
-  if (shippingAmount > 0.009) {
-    items.push({ description: "Frete", price: Math.max(1, Math.round(shippingAmount * 100)), quantity: 1 });
+  const uf = String(order.address_state ?? "").trim().toUpperCase();
+  const validUfs = new Set(["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"]);
+  if (!validUfs.has(uf)) return json({ error: "UF de entrega inválida." }, 400);
+
+  const southSoutheast = new Set(["SP","RJ","MG","ES","PR","SC","RS"]);
+  const centerNortheast = new Set(["GO","MT","MS","DF","BA","SE","AL","PE","PB","RN","CE","PI","MA"]);
+  const shippingAmount =
+    merchandiseTotal >= 1000 ? 0 :
+    uf === "SP" ? 19.9 :
+    southSoutheast.has(uf) ? 29.9 :
+    centerNortheast.has(uf) ? 39.9 : 49.9;
+
+  if (shippingAmount > 0) {
+    items.push({ description: "Frete", price: Math.round(shippingAmount * 100), quantity: 1 });
   }
 
-  if (items.length === 0) {
-    items.push({
-      description: `Pedido ${order.order_code}`,
-      price: Math.max(1, Math.round(Number(order.total_amount) * 100)),
-      quantity: 1,
-    });
-  }
+  const trustedTotal = merchandiseTotal + shippingAmount;
+  await supabase
+    .from("orders")
+    .update({ total_amount: trustedTotal })
+    .eq("id", order.id);
 
   const payload = {
     handle: handle.replace(/^\$/, ""),

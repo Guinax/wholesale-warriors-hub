@@ -158,8 +158,8 @@ const Pagamento = () => {
         ...current,
         zip: info.cep,
         street: current.street || info.street,
-        city: info.city || current.city,
-        state: info.state || current.state,
+        city: info.city,
+        state: info.state,
       }));
       setShippingCost(shippingCostFor(info.state, totalPrice));
       setShippingEta(shippingEtaFor(info.state));
@@ -393,7 +393,15 @@ const Pagamento = () => {
                 <Field label="Rua" value={customer.street} onChange={(v) => setCustomer({ ...customer, street: v })} />
                 <Field label="Número" value={customer.number} inputMode="numeric" onChange={(v) => setCustomer({ ...customer, number: v })} />
                 <Field label="Complemento" value={customer.complement} onChange={(v) => setCustomer({ ...customer, complement: v })} />
-                <Field label="CEP" value={customer.zip} inputMode="numeric" placeholder="00000-000" onChange={(v) => setCustomer({ ...customer, zip: maskCep(v) })} />
+                <Field label="CEP" value={customer.zip} inputMode="numeric" placeholder="00000-000" onChange={(v) => {
+                  const zip = maskCep(v);
+                  setValidCep(false);
+                  setShippingCost(0);
+                  setShippingEta("");
+                  setCustomer((current) => onlyDigits(current.zip) === onlyDigits(zip)
+                    ? { ...current, zip }
+                    : { ...current, zip, street: "", city: "", state: "" });
+                }} />
                 <Field label="Cidade" value={customer.city} onChange={(v) => setCustomer({ ...customer, city: v })} />
                 <Field label="UF" value={customer.state} onChange={(v) => setCustomer({ ...customer, state: v.toUpperCase().slice(0, 2) })} />
               </div>

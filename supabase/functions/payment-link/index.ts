@@ -116,6 +116,21 @@ Deno.serve(async (req) => {
   const validUfs = new Set(["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"]);
   if (!validUfs.has(uf)) return json({ error: "UF de entrega inválida." }, 400);
 
+  const cep = String(order.address_zip ?? "").replace(/\D/g, "");
+  if (cep.length !== 8) return json({ error: "CEP de entrega inválido." }, 400);
+  try {
+    const cepResponse = await fetch(`https://viacep.com.br/ws/${cep}/json/`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!cepResponse.ok) return json({ error: "Não foi possível validar o CEP. Tente novamente." }, 503);
+    const address = await cepResponse.json();
+    if (address?.erro || String(address?.uf ?? "").toUpperCase() !== uf) {
+      return json({ error: "O CEP não corresponde à UF de entrega." }, 400);
+    }
+  } catch {
+    return json({ error: "Não foi possível validar o CEP. Tente novamente." }, 503);
+  }
+
   const southSoutheast = new Set(["SP","RJ","MG","ES","PR","SC","RS"]);
   const centerNortheast = new Set(["GO","MT","MS","DF","BA","SE","AL","PE","PB","RN","CE","PI","MA"]);
   const shippingAmount =
@@ -152,7 +167,7 @@ Deno.serve(async (req) => {
       phone_number: phoneNumber,
     },
     address: {
-      cep: String(order.address_zip ?? "").replace(/\D/g, ""),
+      cep,
       street: order.address_street,
       number: order.address_number,
       complement: order.address_complement ?? "",

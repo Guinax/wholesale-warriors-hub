@@ -74,7 +74,18 @@ Deno.serve(async (req) => {
     };
   });
 
-  const merchandiseTotal = rawItems.reduce((sum, it) => {\n    const qty = Number(it.qty ?? it.quantity ?? 1) || 1;\n    const unit = Number(it.unit_price ?? it.price ?? 0);\n    return sum + qty * unit;\n  }, 0);\n  const shippingAmount = Math.max(0, Number(order.total_amount) - merchandiseTotal);\n  if (shippingAmount > 0.009) {\n    items.push({ description: "Frete", price: Math.max(1, Math.round(shippingAmount * 100)), quantity: 1 });\n  }\n\n  if (items.length === 0) {\n    items.push({
+  const merchandiseTotal = rawItems.reduce((sum, it) => {
+    const qty = Number(it.qty ?? it.quantity ?? 1) || 1;
+    const unit = Number(it.unit_price ?? it.price ?? 0);
+    return sum + qty * unit;
+  }, 0);
+  const shippingAmount = Math.max(0, Number(order.total_amount) - merchandiseTotal);
+  if (shippingAmount > 0.009) {
+    items.push({ description: "Frete", price: Math.max(1, Math.round(shippingAmount * 100)), quantity: 1 });
+  }
+
+  if (items.length === 0) {
+    items.push({
       description: `Pedido ${order.order_code}`,
       price: Math.max(1, Math.round(Number(order.total_amount) * 100)),
       quantity: 1,

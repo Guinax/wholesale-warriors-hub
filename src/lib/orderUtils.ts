@@ -20,7 +20,7 @@ export function formatCurrency(value: number): string {
 }
 
 export const DELIVERY_STAGES = [
-  { key: "postado", label: "Postado", description: "Pedido recebido e sendo preparado para envio" },
+  { key: "postado", label: "Preparando pedido", description: "Pagamento confirmado; pedido em separação para envio" },
   { key: "transito", label: "Em trânsito", description: "Encomenda a caminho do centro de distribuição" },
   { key: "saiu_entrega", label: "Saiu para entrega", description: "Encomenda saiu para entrega ao destinatário" },
   { key: "entregue", label: "Entregue", description: "Encomenda entregue com sucesso" },

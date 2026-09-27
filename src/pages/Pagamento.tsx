@@ -65,6 +65,7 @@ const Pagamento = () => {
   const [shippingCost, setShippingCost] = useState(0);
   const [shippingEta, setShippingEta] = useState("");
   const [checkingCep, setCheckingCep] = useState(false);
+  const [validCep, setValidCep] = useState(false);
   const [docType, setDocType] = useState<"cpf" | "cnpj">("cpf");
 
   const [customer, setCustomer] = useState({
@@ -136,6 +137,7 @@ const Pagamento = () => {
   useEffect(() => {
     const digits = onlyDigits(customer.zip);
     if (digits.length !== 8) {
+      setValidCep(false);
       setShippingCost(0);
       setShippingEta("");
       return;
@@ -145,11 +147,13 @@ const Pagamento = () => {
     lookupCep(customer.zip).then((info) => {
       if (!active) return;
       if (!info) {
+        setValidCep(false);
         setShippingCost(0);
         setShippingEta("");
         setCheckingCep(false);
         return;
       }
+      setValidCep(true);
       setCustomer((current) => ({
         ...current,
         zip: info.cep,
@@ -182,8 +186,8 @@ const Pagamento = () => {
       toast({ title: "WhatsApp inválido", description: "Informe DDD + número.", variant: "destructive" });
       return false;
     }
-    if (onlyDigits(customer.zip).length !== 8) {
-      toast({ title: "CEP inválido", description: "O CEP deve ter 8 dígitos.", variant: "destructive" });
+    if (onlyDigits(customer.zip).length !== 8 || checkingCep || !validCep) {
+      toast({ title: "CEP inválido", description: checkingCep ? "Aguarde a validação do CEP." : "Informe um CEP válido para calcular o frete.", variant: "destructive" });
       return false;
     }
     if (docType === "cnpj") {
@@ -451,7 +455,7 @@ const Pagamento = () => {
           </div>
 
           <button
-            disabled={submitting}
+            disabled={submitting || checkingCep || !validCep}
             onClick={handleConfirm}
             className="w-full bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon disabled:opacity-40 disabled:cursor-not-allowed"
           >

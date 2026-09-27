@@ -32,7 +32,7 @@ const BottomNav = () => {
     { icon: Home, label: "HOME", path: "/", badge: 0, action: () => navigate("/") },
     { icon: Store, label: "SACOLA", path: null, badge: totalItems, action: openCart },
     { icon: Receipt, label: "PEDIDOS", path: null, badge: 0, action: () => setLookupOpen(true) },
-    { icon: UserCircle, label: "CADASTRO", path: "/cadastro", badge: 0, action: () => navigate("/cadastro") },
+    { icon: UserCircle, label: "CONTA", path: "/minha-conta", badge: 0, action: () => navigate("/minha-conta") },
   ];
 
   return (

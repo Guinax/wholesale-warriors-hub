@@ -123,7 +123,7 @@ const ExpeditionManager = () => {
   );
 
   const queue = useMemo(
-    () => orders.filter((o) => o.payment_status !== "cancelled" && o.delivery_status !== "entregue"),
+    () => orders.filter((o) => o.payment_status === "paid" && o.delivery_status !== "entregue"),
     [orders]
   );
 
@@ -160,6 +160,10 @@ const ExpeditionManager = () => {
     });
 
   const confirmLoad = async (o: ExpOrder) => {
+    if (o.payment_status !== "paid") {
+      toast.error("A expedição só pode começar após a confirmação do pagamento.");
+      return;
+    }
     const items = orderItems(o);
     const missing = shortages(o);
     if (missing.length) {

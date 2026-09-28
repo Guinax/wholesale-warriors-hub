@@ -52,7 +52,7 @@ const maskCpf = (v: string) =>
     .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 
 
-const Pagamento = () => {
+const TEST_CHECKOUT_TOTAL = 0.09;\n\nconst Pagamento = () => {
   const { items, totalPrice, clearCart } = useCart() as ReturnType<typeof useCart> & { clearCart?: () => void };
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -172,7 +172,7 @@ const Pagamento = () => {
     return () => { active = false; };
   }, [customer.zip, totalPrice]);
 
-  const orderTotal = totalPrice + shippingCost;
+  const isCheckoutTest = Math.round(totalPrice * 100) === Math.round(TEST_CHECKOUT_TOTAL * 100);\n  const effectiveShippingCost = isCheckoutTest ? 0 : shippingCost;\n  const orderTotal = totalPrice + effectiveShippingCost;
 
   const validateCustomer = () => {
     const required: (keyof typeof customer)[] = ["name", "email", "phone", "street", "number", "city", "state", "zip"];
@@ -286,7 +286,7 @@ const Pagamento = () => {
     await logAudit("order_created", {
       entity: "orders",
       entity_id: orderCode,
-      details: { subtotal: totalPrice, shipping: shippingCost, total: orderTotal, method, items: items.length },
+      details: { subtotal: totalPrice, shipping: effectiveShippingCost, total: orderTotal, method, items: items.length },
     });
 
     // Salva automaticamente os dados no perfil para pré-preencher próximas compras
@@ -480,7 +480,7 @@ const Pagamento = () => {
             </div>
             <div className="border-t border-border pt-3 space-y-2">
               <div className="flex justify-between text-xs"><span className="text-muted-foreground">Produtos</span><span>{formatCurrency(totalPrice)}</span></div>
-              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{isCheckoutTest ? "Grátis (teste)" : checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>
               {shippingEta && <p className="text-[10px] text-muted-foreground">Prazo estimado: {shippingEta}</p>}
               <div className="border-t border-border pt-3 flex justify-between items-center">
               <span className="font-heading font-bold text-xs tracking-wider text-muted-foreground">TOTAL</span>

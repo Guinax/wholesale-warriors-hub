@@ -42,7 +42,12 @@ const Compartilhar = () => {
           text: "Cadastre-se e acesse preços de atacado exclusivos!",
           url: shareUrl,
         });
-      } catch {}
+      } catch (error) {
+        // O cancelamento da janela nativa de compartilhamento é esperado e não exige ação.
+        if (error instanceof DOMException && error.name !== "AbortError") {
+          console.error("Falha ao abrir o compartilhamento nativo", error);
+        }
+      }
     } else {
       copyLink();
     }

@@ -49,7 +49,9 @@ export function useAdminAuth() {
     try {
       const { logAudit } = await import("@/lib/audit");
       await logAudit("logout");
-    } catch {}
+    } catch (error) {
+      console.warn("Não foi possível registrar o logout na auditoria.", error);
+    }
     await supabase.auth.signOut();
     setIsAdmin(false);
   };

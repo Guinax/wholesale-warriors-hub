@@ -21,10 +21,16 @@ type AuditLog = {
   action: string;
   entity: string | null;
   entity_id: string | null;
-  details: any;
+  details: unknown;
   user_agent: string | null;
   created_at: string;
 };
+
+type UntypedTableClient = {
+  from: (relation: string) => ReturnType<typeof supabase.from>;
+};
+
+const auditClient = supabase as unknown as UntypedTableClient;
 
 const ACTION_LABEL: Record<string, string> = {
   login: "Login",
@@ -59,8 +65,8 @@ const AuditLogsManager = () => {
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("audit_logs" as any)
+    const { data, error } = await auditClient
+      .from("audit_logs")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(500);
@@ -166,7 +172,7 @@ const AuditLogsManager = () => {
                   <p className="text-sm font-semibold mt-1 truncate">
                     {l.user_email ?? "anônimo"}
                   </p>
-                  {l.details && (
+                  {l.details != null && (
                     <pre className="text-[11px] text-muted-foreground mt-1 whitespace-pre-wrap break-all">
                       {JSON.stringify(l.details, null, 0)}
                     </pre>

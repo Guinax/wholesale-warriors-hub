@@ -20,6 +20,12 @@ import {
 import { formatCurrency, DELIVERY_STAGES } from "@/lib/orderUtils";
 import { logAudit } from "@/lib/audit";
 
+type OrderItem = {
+  name?: string;
+  qty?: number | string;
+  quantity?: number | string;
+};
+
 type ExpOrder = {
   id: string;
   order_code: string;
@@ -38,7 +44,7 @@ type ExpOrder = {
   loaded_at: string | null;
   dispatched_at: string | null;
   delivered_at: string | null;
-  items: any;
+  items: unknown;
   created_at: string;
 };
 
@@ -75,7 +81,7 @@ const expColor: Record<string, string> = {
   entregue: "bg-green-500/15 text-green-700 dark:text-green-300",
 };
 
-const itemQty = (it: any) => Number(it.qty ?? it.quantity ?? 0);
+const itemQty = (it: OrderItem) => Number(it.qty ?? it.quantity ?? 0);
 
 const ExpeditionManager = () => {
   const [orders, setOrders] = useState<ExpOrder[]>([]);
@@ -89,8 +95,8 @@ const ExpeditionManager = () => {
     setLoading(true);
     const [o, p, m] = await Promise.all([
       supabase.from("orders").select("*").order("created_at", { ascending: false }).limit(100),
-      supabase.from("products" as any).select("id,name,category,stock,wholesale_price").order("category").order("name"),
-      supabase.from("stock_movements" as any).select("*").order("created_at", { ascending: false }).limit(30),
+      supabase.from("products").select("id,name,category,stock,wholesale_price").order("category").order("name"),
+      supabase.from("stock_movements").select("*").order("created_at", { ascending: false }).limit(30),
     ]);
     if (o.error || p.error) toast.error("Erro ao carregar expedição");
     setOrders(((o.data ?? []) as unknown) as ExpOrder[]);
@@ -127,8 +133,8 @@ const ExpeditionManager = () => {
     [orders]
   );
 
-  const patchOrder = async (id: string, patch: Record<string, any>, msg = "Expedição atualizada") => {
-    const { error } = await supabase.from("orders").update(patch as any).eq("id", id);
+  const patchOrder = async (id: string, patch: Partial<Pick<ExpOrder, "expedition_status" | "delivery_status" | "carrier" | "driver_name" | "vehicle_plate" | "expedition_notes" | "loaded_at" | "dispatched_at" | "delivered_at">>, msg = "Expedição atualizada") => {
+    const { error } = await supabase.from("orders").update(patch).eq("id", id);
     if (error) { toast.error("Erro ao atualizar pedido"); return false; }
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, ...patch } as ExpOrder : o)));
     logAudit("expedition_updated", { entity: "orders", entity_id: id, details: patch });
@@ -138,11 +144,11 @@ const ExpeditionManager = () => {
 
   const adjustStock = async (p: StockProduct, delta: number) => {
     const next = Math.max(0, p.stock + delta);
-    const { error } = await supabase.from("products" as any).update({ stock: next } as any).eq("id", p.id);
+    const { error } = await supabase.from("products").update({ stock: next }).eq("id", p.id);
     if (error) { toast.error("Erro ao ajustar estoque"); return; }
-    await supabase.from("stock_movements" as any).insert({
+    await supabase.from("stock_movements").insert({
       product_id: p.id, product_name: p.name, qty: next - p.stock, reason: "ajuste manual",
-    } as any);
+    });
     setProducts((prev) => prev.map((x) => (x.id === p.id ? { ...x, stock: next } : x)));
   };
 
@@ -151,10 +157,10 @@ const ExpeditionManager = () => {
     await adjustStock(p, value - p.stock);
   };
 
-  const orderItems = (o: ExpOrder) => (Array.isArray(o.items) ? o.items : []);
+  const orderItems = (o: ExpOrder): OrderItem[] => (Array.isArray(o.items) ? o.items as OrderItem[] : []);
 
   const shortages = (o: ExpOrder) =>
-    orderItems(o).filter((it: any) => {
+    orderItems(o).filter((it: OrderItem) => {
       const p = stockByName.get(String(it.name ?? "").trim().toLowerCase());
       return p ? p.stock < itemQty(it) : false;
     });
@@ -167,15 +173,15 @@ const ExpeditionManager = () => {
     const items = orderItems(o);
     const missing = shortages(o);
     if (missing.length) {
-      toast.error(`Estoque insuficiente: ${missing.map((m: any) => m.name).join(", ")}`);
+      toast.error(`Estoque insuficiente: ${missing.map((m: OrderItem) => m.name).join(", ")}`);
       return;
     }
     for (const it of items) {
       const p = stockByName.get(String(it.name ?? "").trim().toLowerCase());
       const qty = itemQty(it);
       if (!p || qty <= 0) continue;
-      await supabase.from("products" as any).update({ stock: Math.max(0, p.stock - qty) } as any).eq("id", p.id);
-      await supabase.from("stock_movements" as any).insert({
+      await supabase.from("products").update({ stock: Math.max(0, p.stock - qty) }).eq("id", p.id);
+      await supabase.from("stock_movements").insert({
         product_id: p.id, product_name: p.name, order_id: o.id, order_code: o.order_code,
         qty: -qty, reason: "carregamento",
       } as any);

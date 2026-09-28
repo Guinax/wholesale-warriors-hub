@@ -23,7 +23,7 @@ export default defineConfig(({ mode }) => ({
       devOptions: {
         enabled: false,
       },
-      includeAssets: ["favicon.ico", "apple-touch-icon.png", "icon-192.png", "icon-512.png"],
+      includeAssets: ["favicon.ico", "favicon-maromba-v2.png", "apple-touch-icon-maromba-v2.png", "icon-192-maromba-v2.png", "icon-512-maromba-v2.png", "icon-maskable-maromba-v2.png"],
       manifest: {
         name: "Loja Oficial Família Maromba",
         short_name: "Família Maromba",
@@ -36,9 +36,9 @@ export default defineConfig(({ mode }) => ({
         scope: "/",
         lang: "pt-BR",
         icons: [
-          { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-          { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-          { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+          { src: "/icon-192-maromba-v2.png", sizes: "192x192", type: "image/png", purpose: "any" },
+          { src: "/icon-512-maromba-v2.png", sizes: "512x512", type: "image/png", purpose: "any" },
+          { src: "/icon-maskable-maromba-v2.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
         ],
       },
       workbox: {

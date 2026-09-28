@@ -23,8 +23,6 @@ const CatalogSection = () => {
     load();
   }, []);
 
-  if (!loading && items.length === 0) return null;
-
   return (
     <section id="catalogo" className="py-6 scroll-mt-20">
       <div className="container">
@@ -59,6 +57,10 @@ const CatalogSection = () => {
               <div key={i} className="h-44 rounded-lg bg-secondary animate-pulse" />
             ))}
           </div>
+        ) : items.length === 0 ? (
+          <p className="rounded-lg border border-border bg-card p-6 text-sm text-muted-foreground">
+            O catálogo está sendo preparado. Volte em breve para conferir os produtos disponíveis.
+          </p>
         ) : (
           <div className={viewMode === "grid"
             ? "grid grid-cols-2 md:grid-cols-3 gap-3"

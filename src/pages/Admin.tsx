@@ -160,13 +160,15 @@ const Admin = () => {
     value: string
   ) => {
     const order = orders.find((o) => o.id === id);
+    if (field === "payment_status" && value === "paid") {
+      toast.error("O pagamento só pode ser confirmado pela InfinitePay.");
+      return;
+    }
     if (field === "delivery_status" && order && order.payment_status !== "paid") {
       toast.error("O status de entrega só pode ser alterado após a confirmação do pagamento.");
       return;
     }
-    const changes = field === "payment_status" && value === "paid" && order?.delivery_status === "aguardando_pagamento"
-      ? { payment_status: value, delivery_status: "preparando" }
-      : { [field]: value };
+    const changes = { [field]: value };
     const { error } = await supabase.from("orders").update(changes as any).eq("id", id);
     if (error) {
       toast.error("Erro ao atualizar");
@@ -367,17 +369,9 @@ const Admin = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select
-                  value={o.payment_status}
-                  onValueChange={(v) => updateOrder(o.id, "payment_status", v)}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {PAYMENT_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>Pgto: {opt.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center text-xs text-muted-foreground px-3">
+                  Pagamento confirmado automaticamente pela InfinitePay
+                </div>
                 <Button variant="outline" onClick={() => setSelected(o)}>
                   <Eye className="w-4 h-4" /> Detalhes
                 </Button>

@@ -33,7 +33,21 @@ type Profile = {
   created_at: string;
 };
 
-const EDITABLE_FIELDS: { key: keyof Profile; label: string; placeholder?: string }[] = [
+type ProfileUpdate = Partial<Pick<Profile,
+  | "full_name"
+  | "email"
+  | "phone"
+  | "cpf"
+  | "cnpj"
+  | "address_street"
+  | "address_number"
+  | "address_complement"
+  | "address_city"
+  | "address_state"
+  | "address_zip"
+>>;
+
+const EDITABLE_FIELDS: { key: keyof ProfileUpdate; label: string; placeholder?: string }[] = [
   { key: "full_name", label: "Nome completo" },
   { key: "email", label: "E-mail" },
   { key: "phone", label: "Telefone / WhatsApp" },
@@ -81,14 +95,14 @@ const UsersManager = () => {
   const handleSave = async () => {
     if (!selected) return;
     setSaving(true);
-    const updates: Record<string, string | null> = {};
+    const updates: ProfileUpdate = {};
     for (const f of EDITABLE_FIELDS) {
       const val = (form[f.key] as string | null | undefined) ?? null;
       updates[f.key] = typeof val === "string" && val.trim() === "" ? null : val;
     }
     const { error } = await supabase
       .from("profiles")
-      .update(updates as any)
+      .update(updates)
       .eq("id", selected.id);
     setSaving(false);
     if (error) {

@@ -35,7 +35,7 @@ const CatalogManager = () => {
   const load = async () => {
     setLoading(true);
     const { data, error } = await supabase
-      .from("products" as any)
+      .from("products")
       .select("*")
       .order("category", { ascending: true })
       .order("sort_order", { ascending: true });
@@ -58,7 +58,7 @@ const CatalogManager = () => {
     .filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
 
   const update = async (id: string, patch: Record<string, unknown>, msg?: string) => {
-    const { error } = await supabase.from("products" as any).update(patch).eq("id", id);
+    const { error } = await supabase.from("products").update(patch).eq("id", id);
     if (error) {
       toast.error("Erro ao salvar: " + error.message);
       return;
@@ -83,8 +83,8 @@ const CatalogManager = () => {
     if (target < 0 || target >= inCatalog.length) return;
     const a = inCatalog[index];
     const b = inCatalog[target];
-    await supabase.from("products" as any).update({ catalog_order: b.catalog_order }).eq("id", a.id);
-    await supabase.from("products" as any).update({ catalog_order: a.catalog_order }).eq("id", b.id);
+    await supabase.from("products").update({ catalog_order: b.catalog_order }).eq("id", a.id);
+    await supabase.from("products").update({ catalog_order: a.catalog_order }).eq("id", b.id);
     load();
   };
 

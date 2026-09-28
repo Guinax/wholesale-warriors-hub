@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
 
     const { error } = await admin.from("orders").update({
       payment_status: "paid",
-      delivery_status: "postado",
+      delivery_status: "preparando",
       payment_checked_at: new Date().toISOString(),
       payment_nsu: result.transaction_nsu ?? transactionNsu ?? null,
       payment_provider: "infinitepay",

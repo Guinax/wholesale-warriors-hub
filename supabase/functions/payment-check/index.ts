@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
   if (nsu) update.payment_nsu = nsu;
   if (paid) {
     update.payment_status = "paid";
-    update.delivery_status = "postado";
+    update.delivery_status = "preparando";
   }
 
   const { error: updateError } = await supabase.from("orders").update(update).eq("id", order.id);

@@ -55,6 +55,7 @@ type Order = {
 };
 
 const DELIVERY_OPTIONS = [
+  { value: "preparando", label: "Preparando pedido" },
   { value: "postado", label: "Postado" },
   { value: "transito", label: "Em trânsito" },
   { value: "saiu_entrega", label: "Saiu para entrega" },
@@ -69,6 +70,7 @@ const PAYMENT_OPTIONS = [
 ];
 
 const deliveryColor: Record<string, string> = {
+  preparando: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
   postado: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
   transito: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
   saiu_entrega: "bg-purple-500/15 text-purple-700 dark:text-purple-300",
@@ -162,15 +164,18 @@ const Admin = () => {
       toast.error("O status de entrega só pode ser alterado após a confirmação do pagamento.");
       return;
     }
-    const { error } = await supabase.from("orders").update({ [field]: value } as any).eq("id", id);
+    const changes = field === "payment_status" && value === "paid" && order?.delivery_status === "aguardando_pagamento"
+      ? { payment_status: value, delivery_status: "preparando" }
+      : { [field]: value };
+    const { error } = await supabase.from("orders").update(changes as any).eq("id", id);
     if (error) {
       toast.error("Erro ao atualizar");
       return;
     }
     setOrders((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, [field]: value } : o))
+      prev.map((o) => (o.id === id ? { ...o, ...changes } : o))
     );
-    if (selected?.id === id) setSelected({ ...selected, [field]: value } as Order);
+    if (selected?.id === id) setSelected({ ...selected, ...changes } as Order);
     logAudit("order_updated", { entity: "orders", entity_id: id, details: { [field]: value } });
     toast.success("Pedido atualizado");
   };

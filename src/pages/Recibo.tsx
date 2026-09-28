@@ -334,7 +334,7 @@ const Recibo = () => {
             ))}
           </div>
           <div className="border-t border-border pt-3 flex justify-between items-center">
-            <span className="font-heading font-bold text-xs tracking-wider text-muted-foreground">TOTAL PAGO</span>
+            <span className="font-heading font-bold text-xs tracking-wider text-muted-foreground">{order.payment_status === "paid" ? "TOTAL PAGO" : "TOTAL DO PEDIDO"}</span>
             <span className="font-heading font-black text-xl text-foreground">
               {formatCurrency(order.total_amount)}
             </span>

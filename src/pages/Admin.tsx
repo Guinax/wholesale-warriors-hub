@@ -32,6 +32,15 @@ import ExpeditionManager from "@/components/admin/ExpeditionManager";
 import { formatCurrency, DELIVERY_STAGES } from "@/lib/orderUtils";
 import { logAudit } from "@/lib/audit";
 
+type OrderItem = {
+  name?: string;
+  qty?: number | string;
+  quantity?: number | string;
+  subtotal?: number | string;
+  unit_price?: number | string;
+  price?: number | string;
+};
+
 type Order = {
   id: string;
   order_code: string;
@@ -50,7 +59,7 @@ type Order = {
   address_city: string;
   address_state: string;
   address_zip: string;
-  items: any;
+  items: unknown;
   created_at: string;
 };
 
@@ -168,8 +177,8 @@ const Admin = () => {
       toast.error("O status de entrega só pode ser alterado após a confirmação do pagamento.");
       return;
     }
-    const changes = { [field]: value };
-    const { error } = await supabase.from("orders").update(changes as any).eq("id", id);
+    const changes: Partial<Pick<Order, "delivery_status" | "payment_status">> = { [field]: value };
+    const { error } = await supabase.from("orders").update(changes).eq("id", id);
     if (error) {
       toast.error("Erro ao atualizar");
       return;
@@ -431,7 +440,7 @@ const Admin = () => {
               <section>
                 <h3 className="font-semibold mb-1">Itens</h3>
                 <ul className="space-y-1">
-                  {Array.isArray(selected.items) && selected.items.map((it: any, i: number) => {
+                  {Array.isArray(selected.items) && selected.items.map((it: OrderItem, i: number) => {
                     const qty = Number(it.qty ?? it.quantity ?? 0);
                     const subtotal = Number(
                       it.subtotal ?? (Number(it.unit_price ?? it.price ?? 0) * qty)

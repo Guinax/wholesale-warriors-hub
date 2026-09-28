@@ -7,9 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
 
 interface CadastroForm {
+  password: string;
+  confirmPassword: string;
   razaoSocial: string;
   nomeFantasia: string;
   cnpj: string;
@@ -63,12 +66,91 @@ const formatCEP = (value: string) => {
 const CadastroCNPJ = () => {
   const navigate = useNavigate();
   const [submitted, setSubmitted] = useState(false);
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<CadastroForm>();
+  const [confirmed, setConfirmed] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState("");
+  const [resending, setResending] = useState(false);
+  const [resendAfter, setResendAfter] = useState(0);
+  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<CadastroForm>();
 
-  const onSubmit = (data: CadastroForm) => {
-    console.log("Cadastro enviado:", data);
-    setSubmitted(true);
-    toast.success("Cadastro enviado com sucesso!");
+  const emailRedirectTo = "https://wholesale-warriors-hub.lovable.app/minha-conta";
+
+  const onSubmit = async (form: CadastroForm) => {
+    try {
+      const { data: current, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (current.session) {
+        toast.error("Você já está conectado. Acesse Minha conta para consultar seu cadastro ou saia antes de criar outra conta.");
+        return;
+      }
+      // Never include either password in user metadata.
+      const { password, confirmPassword: _confirmation, ...registration } = form;
+      const email = registration.email.trim().toLowerCase();
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo,
+          data: {
+            full_name: registration.responsavel.trim(),
+            phone: registration.telefone,
+            cpf: registration.cpfResponsavel,
+            cnpj: registration.cnpj,
+            address_street: registration.endereco.trim(),
+            address_number: registration.numero.trim(),
+            address_complement: registration.complemento || null,
+            address_city: registration.cidade.trim(),
+            address_state: registration.estado,
+            address_zip: registration.cep,
+            // Descriptive data only; never use this metadata to grant roles.
+            reseller_registration: { ...registration, email },
+          },
+        },
+      });
+      if (error) throw error;
+      if (!data.user) throw new Error("Não foi possível concluir o cadastro. Tente novamente.");
+      if (data.user.identities?.length === 0) {
+        toast.error("Não foi possível criar outra conta com este e-mail. Tente entrar ou recuperar sua senha.");
+        return;
+      }
+      setSubmittedEmail(email);
+      setConfirmed(Boolean(data.session));
+      setResendAfter(Date.now() + 60_000);
+      setValue("password", "");
+      setValue("confirmPassword", "");
+      setSubmitted(true);
+    } catch (error) {
+      const code = (error as { code?: string })?.code;
+      toast.error(code === "over_email_send_rate_limit" || code === "over_request_rate_limit"
+        ? "Muitas tentativas. Aguarde alguns minutos antes de tentar novamente."
+        : code === "user_already_exists"
+        ? "Este e-mail já possui uma conta. Entre ou recupere sua senha."
+        : code === "email_address_not_authorized"
+        ? "O envio para este e-mail ainda não está liberado. Entre em contato com o suporte."
+        : error instanceof Error ? error.message : "Não foi possível enviar o cadastro. Tente novamente.");
+    }
+  };
+
+  const resendConfirmation = async () => {
+    if (resending) return;
+    if (Date.now() < resendAfter) {
+      toast.info("Aguarde um minuto entre os envios.");
+      return;
+    }
+    setResending(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: submittedEmail,
+        options: { emailRedirectTo },
+      });
+      if (error) throw error;
+      setResendAfter(Date.now() + 60_000);
+      toast.success("Solicitação enviada. Confira sua caixa de entrada e o spam.");
+    } catch {
+      toast.error("Não foi possível reenviar o e-mail agora. Aguarde alguns minutos e tente novamente.");
+    } finally {
+      setResending(false);
+    }
   };
 
   if (submitted) {
@@ -79,13 +161,18 @@ const CadastroCNPJ = () => {
             <CheckCircle2 className="w-10 h-10 text-primary" />
           </div>
           <h2 className="font-heading font-black text-2xl text-foreground">
-            CADASTRO ENVIADO!
+            {confirmed ? "CADASTRO CONCLUÍDO!" : "CONFIRME SEU E-MAIL"}
           </h2>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            Recebemos seu cadastro de revendedor. Nossa equipe irá analisar suas informações e entrar em contato em até <span className="text-foreground font-bold">48 horas úteis</span>.
+            {confirmed
+              ? "Seu cadastro foi salvo. Você já pode acessar sua conta."
+              : <>Seu cadastro foi recebido. Enviamos um link para <strong>{submittedEmail}</strong>. Abra o e-mail para confirmar sua conta e acessar a plataforma. Confira também a pasta de spam.</>}
           </p>
-          <Button onClick={() => navigate("/")} className="w-full font-heading font-bold tracking-wider">
-            VOLTAR À LOJA
+          {!confirmed && <Button variant="outline" className="w-full" disabled={resending} onClick={resendConfirmation}>
+            {resending ? "REENVIANDO..." : "REENVIAR CONFIRMAÇÃO"}
+          </Button>}
+          <Button onClick={() => navigate(confirmed ? "/minha-conta" : "/auth")} className="w-full font-heading font-bold tracking-wider">
+            ACESSAR MINHA CONTA
           </Button>
         </div>
       </div>
@@ -244,6 +331,22 @@ const CadastroCNPJ = () => {
             </div>
           </section>
 
+          <section className="space-y-4">
+            <h2 className="font-heading font-bold text-sm text-primary tracking-wider">ACESSO À CONTA</h2>
+            <div>
+              <Label htmlFor="password">Senha *</Label>
+              <Input id="password" type="password" autoComplete="new-password"
+                {...register("password", { required: "Crie uma senha", minLength: { value: 8, message: "Use pelo menos 8 caracteres" } })} />
+              {errors.password && <p className="text-destructive text-xs mt-1">{errors.password.message}</p>}
+            </div>
+            <div>
+              <Label htmlFor="confirmPassword">Confirme a senha *</Label>
+              <Input id="confirmPassword" type="password" autoComplete="new-password"
+                {...register("confirmPassword", { required: "Confirme sua senha", validate: value => value === watch("password") || "As senhas não coincidem" })} />
+              {errors.confirmPassword && <p className="text-destructive text-xs mt-1">{errors.confirmPassword.message}</p>}
+            </div>
+          </section>
+
           {/* Endereço */}
           <section className="space-y-4">
             <div className="flex items-center gap-2 text-primary">
@@ -322,8 +425,8 @@ const CadastroCNPJ = () => {
           </section>
 
           {/* Submit */}
-          <Button type="submit" className="w-full font-heading font-black text-sm tracking-wider py-6 glow-neon">
-            ENVIAR CADASTRO
+          <Button type="submit" disabled={isSubmitting} className="w-full font-heading font-black text-sm tracking-wider py-6 glow-neon">
+            {isSubmitting ? "ENVIANDO..." : "CRIAR CONTA"}
           </Button>
 
           <p className="text-[10px] text-muted-foreground text-center leading-relaxed">

@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
   const productNames = [...new Set(requested.map((item) => item.name))];
   const { data: catalog, error: catalogError } = await supabase
     .from("products")
-    .select("name,wholesale_price,min_qty,active")
+    .select("name,wholesale_price,min_qty,stock,active")
     .in("name", productNames)
     .eq("active", true);
 
@@ -102,6 +102,9 @@ Deno.serve(async (req) => {
     }
     if (requestedItem.qty < minQty) {
       return json({ error: `Quantidade mínima de ${requestedItem.name}: ${minQty}` }, 409);
+    }
+    if (requestedItem.qty > Number(product.stock ?? 0)) {
+      return json({ error: `Estoque indisponível para ${requestedItem.name}.` }, 409);
     }
 
     merchandiseTotal += unit * requestedItem.qty;

@@ -9,15 +9,17 @@ interface ProductCardProps {
   unitPrice: string;
   wholesalePrice: string;
   minQty: number;
+  stock?: number;
   image?: string;
   viewMode?: "grid" | "list";
 }
 
-const ProductCard = ({ badge, badgeColor = "bg-primary", name, unitPrice, wholesalePrice, minQty, image, viewMode = "grid" }: ProductCardProps) => {
+const ProductCard = ({ badge, badgeColor = "bg-primary", name, unitPrice, wholesalePrice, minQty, stock, image, viewMode = "grid" }: ProductCardProps) => {
   const [qty, setQty] = useState(minQty);
   const { addItem } = useCart();
 
   const handleAdd = () => {
+    if (stock !== undefined && stock < qty) return;
     addItem({ name, wholesalePrice, qty, minQty });
     setQty(minQty);
   };
@@ -49,12 +51,12 @@ const ProductCard = ({ badge, badgeColor = "bg-primary", name, unitPrice, wholes
                 <Minus className="w-3 h-3" />
               </button>
               <span className="font-heading font-bold text-xs text-foreground min-w-[2ch] text-center">{qty}</span>
-              <button onClick={() => setQty(qty + 1)} className="w-7 h-7 rounded-md bg-secondary flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors">
+              <button onClick={() => setQty(qty + 1)} disabled={stock !== undefined && qty >= stock} className="w-7 h-7 rounded-md bg-secondary flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors disabled:opacity-40">
                 <Plus className="w-3 h-3" />
               </button>
             </div>
-            <button onClick={handleAdd} className="w-9 h-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 transition-opacity">
-              <ShoppingCart className="w-4 h-4" />
+            <button onClick={handleAdd} disabled={stock !== undefined && stock < minQty} className="w-9 h-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-40">
+              {stock !== undefined && stock < minQty ? "—" : <ShoppingCart className="w-4 h-4" />}
             </button>
           </div>
         </div>
@@ -102,6 +104,7 @@ const ProductCard = ({ badge, badgeColor = "bg-primary", name, unitPrice, wholes
           </span>
           <button
             onClick={() => setQty(qty + 1)}
+            disabled={stock !== undefined && qty >= stock}
             className="w-8 h-8 rounded-md bg-secondary flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -110,10 +113,11 @@ const ProductCard = ({ badge, badgeColor = "bg-primary", name, unitPrice, wholes
 
         <button
           onClick={handleAdd}
+          disabled={stock !== undefined && stock < minQty}
           className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-heading font-bold text-xs tracking-wider py-3 rounded-lg hover:opacity-90 transition-opacity hover:shadow-[0_0_20px_hsl(45_100%_50%/0.3)]"
         >
           <ShoppingCart className="w-4 h-4" />
-          ADICIONAR AO CARRINHO
+          {stock !== undefined && stock < minQty ? "INDISPONÍVEL" : "ADICIONAR AO CARRINHO"}
         </button>
       </div>
     </div>

@@ -10,6 +10,7 @@ export interface DbProduct {
   unit_price: number;
   wholesale_price: number;
   min_qty: number;
+  stock: number;
   image_url: string | null;
   badge: string | null;
   badge_color: string | null;
@@ -29,6 +30,7 @@ export const toCategoryProduct = (p: DbProduct) => ({
   unitPrice: formatBRL(p.unit_price),
   wholesalePrice: formatBRL(p.wholesale_price),
   minQty: p.min_qty,
+  stock: p.stock,
   image: p.image_url ?? undefined,
 });
 

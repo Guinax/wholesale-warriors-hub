@@ -214,20 +214,29 @@ const CommandCenter = () => {
           </Card>
 
           <Card className="overflow-hidden">
-            <div className="p-4 border-b flex items-center gap-2"><Sparkles className="w-5 h-5 text-primary" /><div><h2 className="font-heading font-black">PRÉVIA DO ANÚNCIO</h2><p className="text-xs text-muted-foreground">Arte-base com produto + mensagem + QR Code</p></div></div>
+            <div className="p-4 border-b flex items-center gap-2"><Sparkles className="w-5 h-5 text-primary" /><div><h2 className="font-heading font-black">PRÉVIA DO ANÚNCIO</h2><p className="text-xs text-muted-foreground">Foto principal do produto + mensagem + QR Code secundário</p></div></div>
             <div className="p-5 space-y-4">
               <div className="rounded-2xl border bg-card overflow-hidden shadow-sm">
-                <div className="aspect-square bg-muted relative grid place-items-center overflow-hidden">
-                  {selectedProduct?.image_url ? <img src={selectedProduct.image_url} alt={selectedProduct.name} className="w-full h-full object-cover" /> : <div className="text-muted-foreground text-sm">Selecione um produto com imagem</div>}
-                  <div className="absolute inset-x-0 bottom-0 bg-background/90 backdrop-blur p-4 space-y-2">
-                    <p className="text-lg font-black leading-tight">{headline || "Seu título impactante aparece aqui"}</p>
-                    <p className="text-xs text-muted-foreground line-clamp-3">{body || "Texto comercial do anúncio."}</p>
-                    <div className="flex items-end justify-between gap-3">
-                      <div>{selectedProduct && <><p className="text-xs text-muted-foreground">A partir de</p><p className="font-black text-primary">{formatCurrency(selectedProduct.wholesale_price)}</p></>}</div>
-                      <div className="bg-white p-1.5 rounded-lg"><QRCodeSVG value={destinationUrl} size={84} level="M" /></div>
+                <div className="aspect-square bg-white grid place-items-center overflow-hidden p-3">
+                  {selectedProduct?.image_url ? (
+                    <img src={selectedProduct.image_url} alt={selectedProduct.name} className="w-full h-full object-contain" />
+                  ) : (
+                    <div className="text-muted-foreground text-sm text-center px-6">Selecione um produto com imagem para usar a foto como destaque principal do anúncio.</div>
+                  )}
+                </div>
+                <div className="border-t bg-background p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <p className="text-lg font-black leading-tight">{headline || "Seu título impactante aparece aqui"}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-3">{body || "Texto comercial do anúncio."}</p>
+                      {selectedProduct && <><p className="text-xs text-muted-foreground pt-1">A partir de</p><p className="font-black text-primary">{formatCurrency(selectedProduct.wholesale_price)}</p></>}
                     </div>
-                    <div className="rounded-lg bg-primary text-primary-foreground text-center font-heading font-black text-xs tracking-wider py-2">{cta || "COMPRAR AGORA"}</div>
+                    <div className="shrink-0 text-center">
+                      <div className="bg-white p-1.5 rounded-lg border"><QRCodeSVG value={destinationUrl} size={64} level="M" /></div>
+                      <p className="text-[9px] text-muted-foreground mt-1">Aponte a câmera</p>
+                    </div>
                   </div>
+                  <div className="rounded-lg bg-primary text-primary-foreground text-center font-heading font-black text-xs tracking-wider py-2">{cta || "COMPRAR AGORA"}</div>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground break-all">Destino do QR Code: <span className="text-foreground">{destinationUrl}</span></p>

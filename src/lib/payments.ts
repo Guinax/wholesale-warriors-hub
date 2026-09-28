@@ -17,9 +17,8 @@ const CANONICAL_SITE_ORIGIN = "https://wholesale-warriors-hub.lovable.app";
  * é aberto por um preview/URL alternativa. Retorna somente uma URL HTTPS oficial
  * da InfinitePay; falhas não habilitam pagamento manual.
  *
- * Após validar a URL, a navegação externa é iniciada aqui. A Promise fica pendente
- * enquanto o documento atual é descarregado para impedir que o chamador limpe o
- * carrinho e dispare uma navegação interna antes do checkout externo no mobile.
+ * Após validar a URL, abre o checkout externo fora do contexto do PWA quando
+ * possível. Isso evita falhas de conexão em navegadores/webviews incorporados.
  */
 export async function createPaymentLink(
   orderCode: string,
@@ -55,10 +54,16 @@ export async function createPaymentLink(
       throw new Error("A InfinitePay retornou um link inválido. Tente novamente.");
     }
 
-    // Inicia a navegação antes de devolver o controle ao checkout. Isso evita que
-    // clearCart() faça o React Router navegar para "/" antes da InfinitePay abrir.
-    window.location.assign(url.href);
-    return await new Promise<string>(() => {});
+    // Em PWA instalado, abrir em uma nova janela/aba força o checkout a sair do
+    // webview do app. Se o navegador bloquear a abertura, fazemos fallback para
+    // navegação direta na mesma janela.
+    const externalWindow = window.open(url.href, "_blank", "noopener,noreferrer");
+    if (!externalWindow) {
+      window.location.assign(url.href);
+      return await new Promise<string>(() => {});
+    }
+
+    return url.href;
   } catch (error) {
     throw error instanceof Error ? error : new Error("Não foi possível abrir o pagamento. Tente novamente.");
   }

@@ -219,6 +219,26 @@ const Pagamento = () => {
       return;
     }
 
+    const { data: catalog, error: catalogError } = await supabase.from("products")
+      .select("name,wholesale_price,min_qty,stock").eq("active", true).in("name", items.map(item => item.name));
+    if (catalogError) {
+      setSubmitting(false);
+      toast({ title: "Não foi possível consultar o catálogo", description: "Tente novamente.", variant: "destructive" });
+      return;
+    }
+    const invalidItem = items.find(item => {
+      const product = catalog?.find(product => product.name === item.name);
+      return !product || !Number.isInteger(item.qty) || item.qty < product.min_qty || item.qty > product.stock ||
+        Math.round(item.priceNum * 100) !== Math.round(product.wholesale_price * 100);
+    });
+    if (!items.length || invalidItem) {
+      setSubmitting(false);
+      toast({ title: "Revise seu carrinho", description: invalidItem
+        ? `${invalidItem.name}: preço, quantidade ou estoque mudou. Remova o item e adicione-o novamente pelo catálogo.`
+        : "Seu carrinho está vazio.", variant: "destructive" });
+      return;
+    }
+
     const snapshot = JSON.stringify({ customer, docType, method, items, orderTotal });
     const reusableOrder = pendingOrder.current?.snapshot === snapshot ? pendingOrder.current : null;
     const orderCode = reusableOrder?.code ?? generateOrderCode();

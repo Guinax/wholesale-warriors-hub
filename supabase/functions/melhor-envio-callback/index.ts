@@ -28,10 +28,10 @@ Deno.serve(async (req: Request) => {
   // credentials are stored as server-side Supabase secrets.
   // Never log or return the authorization code.
   return new Response(JSON.stringify({
-    ok: true,
+    ok: false,
     provider: "melhor_envio",
-    status: "authorization_received",
+    status: "integration_not_configured",
     state_received: Boolean(state),
     next: "configure_oauth_credentials",
-  }), { status: 200, headers });
+  }), { status: 503, headers });
 });

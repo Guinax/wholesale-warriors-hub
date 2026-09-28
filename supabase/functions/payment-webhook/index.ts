@@ -41,6 +41,7 @@ Deno.serve(async (req) => {
 
     const response = await fetch("https://api.checkout.infinitepay.io/payment_check", {
       method: "POST",
+      signal: AbortSignal.timeout(10000),
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
         handle,
@@ -78,7 +79,7 @@ Deno.serve(async (req) => {
         transaction_nsu: result.transaction_nsu ?? transactionNsu ?? null,
         slug: slug ?? null,
       },
-    }).eq("id", order.id);
+    }).eq("id", order.id).neq("payment_status", "paid");
 
     if (error) throw error;
     return reply({ success: true, message: null });

@@ -31,8 +31,8 @@ const Auth = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const rawNext = params.get("next") ?? "";
-  const nextPath = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
-  const [mode, setMode] = useState<"login" | "signup" | "recovery">("signup");
+  const nextPath = rawNext.startsWith("/") && !rawNext.startsWith("//") && !rawNext.includes("\\") ? rawNext : "/minha-conta";
+  const [mode, setMode] = useState<"login" | "signup" | "recovery">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -87,7 +87,7 @@ const Auth = () => {
     try {
       if (mode === "signup") {
         const { data, error } = await supabase.auth.signUp({
-          email,
+          email: email.trim().toLowerCase(),
           password,
           options: {
             emailRedirectTo: `${window.location.origin}${nextPath}`,
@@ -106,6 +106,10 @@ const Auth = () => {
           },
         });
         if (error) throw error;
+        if (!data.user || data.user.identities?.length === 0) {
+          throw new Error("Este e-mail já pode ter cadastro. Tente entrar ou recuperar sua senha.");
+        }
+        setPassword("");
         await logAudit("signup", { details: { email } });
         toast.success(data.session
           ? "Cadastro realizado! Você já pode entrar na loja."
@@ -295,7 +299,7 @@ const Auth = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={mode === "signup" ? 8 : 1}
                   placeholder="••••••••"
                   className="pr-10"
                 />

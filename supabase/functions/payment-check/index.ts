@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
   if (orderError) return json({ error: "Falha ao consultar o pedido." }, 500);
   if (!order || order.user_id !== user.id) return json({ error: "Pedido não encontrado." }, 404);
 
-  if (order.payment_status === "paid" || order.payment_status === "expired") {
+  if (order.payment_status === "paid") {
     return json({ paid: order.payment_status === "paid", payment_status: order.payment_status });
   }
 
@@ -73,6 +73,7 @@ Deno.serve(async (req) => {
   try {
     const response = await fetch(INFINITEPAY_ENDPOINT, {
       method: "POST",
+      signal: AbortSignal.timeout(10000),
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
         handle,
@@ -129,7 +130,7 @@ Deno.serve(async (req) => {
     update.delivery_status = "preparando";
   }
 
-  const { error: updateError } = await supabase.from("orders").update(update).eq("id", order.id);
+  const { error: updateError } = await supabase.from("orders").update(update).eq("id", order.id).neq("payment_status", "paid");
   if (updateError) return json({ error: "Falha ao atualizar o pedido." }, 500);
 
   return json({

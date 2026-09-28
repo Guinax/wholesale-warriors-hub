@@ -201,21 +201,22 @@ const Recibo = () => {
 
   void now;
   const expired = isOrderExpired(order.payment_status, order.due_at);
-  const pending = order.payment_status === "pending" && !expired;
+  const paid = order.payment_status === "paid";
+  const pending = !paid && !expired && order.payment_status === "pending";
   const countdown = order.due_at ? formatCountdown(computeExpiresAt(order.due_at)) : "";
   const stageIndex = DELIVERY_STAGES.findIndex((s) => s.key === order.delivery_status);
 
   return (
     <div className="min-h-screen bg-background">
       <PageHeader
-        eyebrow={expired ? "PEDIDO EXPIRADO" : pending ? "AGUARDANDO PAGAMENTO" : "PAGAMENTO CONFIRMADO"}
-        title={expired ? "PRAZO ENCERRADO" : pending ? "PEDIDO EM ABERTO" : "PEDIDO RECEBIDO!"}
+        eyebrow={expired ? "PEDIDO EXPIRADO" : paid ? "PAGAMENTO CONFIRMADO" : "PAGAMENTO NÃO CONFIRMADO"}
+        title={expired ? "PRAZO ENCERRADO" : paid ? "PEDIDO RECEBIDO!" : "PEDIDO EM ABERTO"}
         subtitle={
           expired
-            ? "Este pedido não foi pago dentro do prazo e foi cancelado automaticamente."
+            ? "O prazo de pagamento deste pedido terminou. Se você já pagou, consulte a confirmação abaixo."
             : pending
               ? "Conclua o pagamento antes do prazo para garantir seu lote."
-              : "Salve seu código de rastreio para acompanhar a entrega."
+              : paid ? "Acompanhe abaixo a preparação e a entrega do seu pedido." : "O pagamento deste pedido não está aprovado. Entre em contato com o suporte."
         }
       />
 
@@ -226,7 +227,7 @@ const Recibo = () => {
             <CheckCircle2 className="w-8 h-8 text-primary" />
           </div>
           <h2 className="font-heading font-black text-xl text-foreground italic">
-            {expired ? "PAGAMENTO EXPIRADO" : pending ? "PAGAMENTO PENDENTE" : "PAGAMENTO APROVADO"}
+            {expired ? "PAGAMENTO EXPIRADO" : paid ? "PAGAMENTO APROVADO" : "PAGAMENTO NÃO CONFIRMADO"}
           </h2>
           {order.due_at && (pending || expired) && (
             <div className="text-xs space-y-1">
@@ -258,7 +259,7 @@ const Recibo = () => {
               PAGAR AGORA
             </button>
           )}
-          {pending && (
+          {!paid && (
             <button
               onClick={() => runPaymentCheck(false)}
               disabled={checking}
@@ -276,7 +277,7 @@ const Recibo = () => {
         </div>
 
         {/* Rastreio: exibido somente após pagamento confirmado */}
-        {!pending && !expired && (
+        {paid && (
         <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-heading font-black text-sm tracking-wider text-foreground flex items-center gap-2">

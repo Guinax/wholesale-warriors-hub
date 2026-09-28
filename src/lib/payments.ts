@@ -68,10 +68,12 @@ export async function checkPaymentStatus(
       },
     });
 
-    // Nunca propaga erro: pagamento simplesmente segue pendente.
-    if (error) return { paid: false, payment_status: "pending" };
+    if (error) {
+      const details = error instanceof FunctionsHttpError ? await error.context.json().catch(() => null) : null;
+      return { paid: false, error: details?.error ?? "Não foi possível consultar a InfinitePay. Tente novamente." };
+    }
     return (data as PaymentCheckResult) ?? { paid: false, payment_status: "pending" };
   } catch {
-    return { paid: false, payment_status: "pending" };
+    return { paid: false, error: "Não foi possível consultar a InfinitePay. Verifique sua conexão e tente novamente." };
   }
 }

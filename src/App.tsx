@@ -16,6 +16,8 @@ import Auth from "./pages/Auth.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import OAuthConsent from "./pages/OAuthConsent.tsx";
 import Admin from "./pages/Admin.tsx";
+import CommandCenter from "./pages/CommandCenter.tsx";
+import Produto from "./pages/Produto.tsx";
 import Suplementos from "./pages/Suplementos.tsx";
 import Roupas from "./pages/Roupas.tsx";
 import Acessorios from "./pages/Acessorios.tsx";
@@ -26,6 +28,49 @@ import NotFound from "./pages/NotFound.tsx";
 import Compartilhar from "./pages/Compartilhar.tsx";
 import MinhaConta from "./pages/MinhaConta.tsx";
 import ProtectedRoute from "./components/ProtectedRoute";
-const queryClient=new QueryClient();
-const App=()=> <QueryClientProvider client={queryClient}><TooltipProvider><BrowserRouter><CartProvider><Toaster/><Sonner/><CartDrawer/><Routes><Route path="/" element={<ProtectedRoute><Index/></ProtectedRoute>}/><Route path="/cadastro" element={<CadastroCNPJ/>}/><Route path="/mais-vendidos" element={<MaisVendidos/>}/><Route path="/avaliacoes" element={<Avaliacoes/>}/><Route path="/comissoes" element={<Comissoes/>}/><Route path="/pagamento" element={<ProtectedRoute><Pagamento/></ProtectedRoute>}/><Route path="/recibo/:code" element={<ProtectedRoute><Recibo/></ProtectedRoute>}/><Route path="/minha-conta" element={<ProtectedRoute><MinhaConta/></ProtectedRoute>}/><Route path="/auth" element={<Auth/>}/><Route path="/reset-password" element={<ResetPassword/>}/><Route path="/entrar" element={<Auth/>}/><Route path="/cadastro-login" element={<Auth/>}/><Route path="/share" element={<Auth/>}/><Route path="/convite" element={<Auth/>}/><Route path="/admin" element={<ProtectedRoute requireAdmin><Admin/></ProtectedRoute>}/><Route path="/suplementos" element={<Suplementos/>}/><Route path="/roupas" element={<Roupas/>}/><Route path="/acessorios" element={<Acessorios/>}/><Route path="/equipamento" element={<Equipamento/>}/><Route path="/bebidas" element={<Bebidas/>}/><Route path="/alimentar" element={<Alimentos/>}/><Route path="/compartilhar" element={<Compartilhar/>}/><Route path="/.lovable/oauth/consent" element={<OAuthConsent/>}/><Route path="*" element={<NotFound/>}/></Routes></CartProvider></BrowserRouter></TooltipProvider></QueryClientProvider>;
+
+const queryClient = new QueryClient();
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <BrowserRouter>
+        <CartProvider>
+          <Toaster />
+          <Sonner />
+          <CartDrawer />
+          <Routes>
+            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/cadastro" element={<CadastroCNPJ />} />
+            <Route path="/mais-vendidos" element={<MaisVendidos />} />
+            <Route path="/avaliacoes" element={<Avaliacoes />} />
+            <Route path="/comissoes" element={<Comissoes />} />
+            <Route path="/pagamento" element={<ProtectedRoute><Pagamento /></ProtectedRoute>} />
+            <Route path="/recibo/:code" element={<ProtectedRoute><Recibo /></ProtectedRoute>} />
+            <Route path="/minha-conta" element={<ProtectedRoute><MinhaConta /></ProtectedRoute>} />
+            <Route path="/produto/:id" element={<Produto />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/entrar" element={<Auth />} />
+            <Route path="/cadastro-login" element={<Auth />} />
+            <Route path="/share" element={<Auth />} />
+            <Route path="/convite" element={<Auth />} />
+            <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
+            <Route path="/admin/comando" element={<ProtectedRoute requireAdmin><CommandCenter /></ProtectedRoute>} />
+            <Route path="/suplementos" element={<Suplementos />} />
+            <Route path="/roupas" element={<Roupas />} />
+            <Route path="/acessorios" element={<Acessorios />} />
+            <Route path="/equipamento" element={<Equipamento />} />
+            <Route path="/bebidas" element={<Bebidas />} />
+            <Route path="/alimentar" element={<Alimentos />} />
+            <Route path="/compartilhar" element={<Compartilhar />} />
+            <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </CartProvider>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
+
 export default App;

@@ -35,8 +35,9 @@ const ResetPassword = () => {
       toast.success("Senha atualizada! Faça login novamente.");
       await supabase.auth.signOut();
       navigate("/auth");
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao atualizar senha");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erro ao atualizar senha";
+      toast.error(message);
     } finally {
       setLoading(false);
     }

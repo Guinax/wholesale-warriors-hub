@@ -5,21 +5,26 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Shield } from "lucide-react";
 
-type AnyRec = Record<string, any>;
+type OAuthRecord = Record<string, unknown> & {
+  message?: string;
+  redirect_url?: string;
+  redirect_to?: string;
+  client?: { name?: string };
+};
 
 // Local typed wrapper for the beta @supabase/supabase-js OAuth namespace.
 const oauth = (supabase.auth as unknown as {
   oauth: {
-    getAuthorizationDetails: (id: string) => Promise<{ data: AnyRec | null; error: AnyRec | null }>;
-    approveAuthorization: (id: string) => Promise<{ data: AnyRec | null; error: AnyRec | null }>;
-    denyAuthorization: (id: string) => Promise<{ data: AnyRec | null; error: AnyRec | null }>;
+    getAuthorizationDetails: (id: string) => Promise<{ data: OAuthRecord | null; error: OAuthRecord | null }>;
+    approveAuthorization: (id: string) => Promise<{ data: OAuthRecord | null; error: OAuthRecord | null }>;
+    denyAuthorization: (id: string) => Promise<{ data: OAuthRecord | null; error: OAuthRecord | null }>;
   };
 }).oauth;
 
 export default function OAuthConsent() {
   const [params] = useSearchParams();
   const authorizationId = params.get("authorization_id") ?? "";
-  const [details, setDetails] = useState<AnyRec | null>(null);
+  const [details, setDetails] = useState<OAuthRecord | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 

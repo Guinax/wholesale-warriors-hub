@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ImagePlus, Save, ShieldCheck, Video } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,7 +27,6 @@ const CampaignMediaStudio = () => {
   const [image2, setImage2] = useState("");
   const [video, setVideo] = useState("");
   const [saving, setSaving] = useState(false);
-  const db = supabase as any;
 
   useEffect(() => {
     document.title = "Mídia de Campanhas | Família Maromba";
@@ -38,9 +37,9 @@ const CampaignMediaStudio = () => {
     if (!loading && user && !isAdmin) navigate("/", { replace: true });
   }, [loading, user, isAdmin, navigate]);
 
-  const loadCampaigns = async () => {
+  const loadCampaigns = useCallback(async () => {
     if (!isAdmin) return;
-    const { data, error } = await db
+    const { data, error } = await supabase
       .from("admin_campaigns")
       .select("id,name,headline,media_urls,created_at")
       .order("created_at", { ascending: false });
@@ -48,12 +47,12 @@ const CampaignMediaStudio = () => {
       toast.error("Não foi possível carregar as campanhas.");
       return;
     }
-    setCampaigns((data ?? []) as Campaign[]);
-  };
+    setCampaigns(data ?? []);
+  }, [isAdmin]);
 
   useEffect(() => {
     if (isAdmin) void loadCampaigns();
-  }, [isAdmin]);
+  }, [isAdmin, loadCampaigns]);
 
   const selected = useMemo(
     () => campaigns.find((c) => c.id === campaignId) ?? null,
@@ -71,7 +70,7 @@ const CampaignMediaStudio = () => {
     setImage1(media[0] ?? "");
     setImage2(media[1] ?? "");
     setVideo(media[2] ?? "");
-  }, [selected?.id]);
+  }, [selected]);
 
   const save = async () => {
     if (!selected) {
@@ -80,7 +79,7 @@ const CampaignMediaStudio = () => {
     }
     const media_urls = [image1, image2, video].filter(Boolean);
     setSaving(true);
-    const { error } = await db
+    const { error } = await supabase
       .from("admin_campaigns")
       .update({ media_urls, updated_at: new Date().toISOString() })
       .eq("id", selected.id);

@@ -72,7 +72,7 @@ const ProductsManager = ({ lockedCategory }: { lockedCategory?: ProductCategory 
   const load = async () => {
     setLoading(true);
     const { data, error } = await supabase
-      .from("products" as any)
+      .from("products")
       .select("*")
       .order("category", { ascending: true })
       .order("sort_order", { ascending: true });
@@ -125,8 +125,8 @@ const ProductsManager = ({ lockedCategory }: { lockedCategory?: ProductCategory 
       active: form.active,
     };
     const { error } = form.id
-      ? await supabase.from("products" as any).update(payload).eq("id", form.id)
-      : await supabase.from("products" as any).insert(payload);
+      ? await supabase.from("products").update(payload).eq("id", form.id)
+      : await supabase.from("products").insert(payload);
     if (error) {
       toast.error("Erro ao salvar: " + error.message);
       return;
@@ -147,7 +147,7 @@ const ProductsManager = ({ lockedCategory }: { lockedCategory?: ProductCategory 
       ? (Math.max(0, ...products.filter((x) => x.in_catalog).map((x) => x.catalog_order ?? 0)) + 1)
       : (p.catalog_order ?? 0);
     const { error } = await supabase
-      .from("products" as any)
+      .from("products")
       .update({ in_catalog: next, catalog_order })
       .eq("id", p.id);
     if (error) {
@@ -165,7 +165,7 @@ const ProductsManager = ({ lockedCategory }: { lockedCategory?: ProductCategory 
 
   const remove = async (id: string) => {
     if (!confirm("Excluir este produto?")) return;
-    const { error } = await supabase.from("products" as any).delete().eq("id", id);
+    const { error } = await supabase.from("products").delete().eq("id", id);
     if (error) {
       toast.error("Erro ao excluir");
       return;

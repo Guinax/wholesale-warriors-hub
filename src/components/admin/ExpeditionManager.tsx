@@ -184,7 +184,7 @@ const ExpeditionManager = () => {
       await supabase.from("stock_movements").insert({
         product_id: p.id, product_name: p.name, order_id: o.id, order_code: o.order_code,
         qty: -qty, reason: "carregamento",
-      } as any);
+      });
     }
     await patchOrder(o.id, {
       expedition_status: "carregado",
@@ -319,7 +319,7 @@ const ExpeditionManager = () => {
                     <div>
                       <p className="text-xs font-semibold mb-1">Itens da carga</p>
                       <ul className="space-y-1 text-sm">
-                        {orderItems(o).map((it: any, i: number) => {
+                        {orderItems(o).map((it: OrderItem, i: number) => {
                           const p = stockByName.get(String(it.name ?? "").trim().toLowerCase());
                           const qty = itemQty(it);
                           const ok = !p || p.stock >= qty;

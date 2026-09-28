@@ -4,6 +4,8 @@ import ProductCard from "./ProductCard";
 import { supabase } from "@/integrations/supabase/client";
 import { toCategoryProduct, type DbProduct } from "@/hooks/useProducts";
 
+const productsTable = () => supabase.from("products" as never);
+
 const CatalogSection = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [items, setItems] = useState<DbProduct[]>([]);
@@ -11,8 +13,7 @@ const CatalogSection = () => {
 
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase
-        .from("products" as any)
+      const { data } = await productsTable()
         .select("*")
         .eq("active", true)
         .eq("in_catalog", true)

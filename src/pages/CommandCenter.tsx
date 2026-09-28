@@ -63,8 +63,6 @@ const CommandCenter = () => {
   const [cta, setCta] = useState("COMPRAR AGORA");
   const [platforms, setPlatforms] = useState<string[]>(["Instagram", "Facebook"]);
 
-  const db = supabase as any;
-
   useEffect(() => {
     document.title = "Centro de Comando | Família Maromba";
   }, []);
@@ -80,7 +78,7 @@ const CommandCenter = () => {
     const [productsRes, ordersRes, campaignsRes] = await Promise.all([
       supabase.from("products").select("id,name,category,wholesale_price,unit_price,min_qty,stock,image_url,active").eq("active", true).order("name"),
       supabase.from("orders").select("id,total_amount,payment_status,address_state,items,created_at").order("created_at", { ascending: false }),
-      db.from("admin_campaigns").select("id,name,headline,body,cta,destination_url,platforms,status,created_at").order("created_at", { ascending: false }).limit(12),
+      supabase.from("admin_campaigns").select("id,name,headline,body,cta,destination_url,platforms,status,created_at").order("created_at", { ascending: false }).limit(12),
     ]);
     if (productsRes.error || ordersRes.error || campaignsRes.error) {
       toast.error("Não foi possível carregar todos os dados do Centro de Comando.");

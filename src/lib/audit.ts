@@ -12,17 +12,23 @@ export type AuditAction =
   | "admin_access"
   | "page_view";
 
+type AuditInsertClient = {
+  from: (relation: string) => {
+    insert: (values: Record<string, unknown>) => PromiseLike<unknown>;
+  };
+};
+
 export async function logAudit(
   action: AuditAction | string,
   opts: {
     entity?: string;
     entity_id?: string;
-    details?: Record<string, any>;
+    details?: Record<string, unknown>;
   } = {}
 ) {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    await supabase.from("audit_logs" as any).insert({
+    await (supabase as unknown as AuditInsertClient).from("audit_logs").insert({
       user_id: user?.id ?? null,
       user_email: user?.email ?? null,
       action,

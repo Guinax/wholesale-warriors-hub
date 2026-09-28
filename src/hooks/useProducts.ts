@@ -20,6 +20,8 @@ export interface DbProduct {
   catalog_order?: number;
 }
 
+const productsTable = () => supabase.from("products" as never);
+
 const formatBRL = (n: number) =>
   `R$ ${Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -40,8 +42,7 @@ export function useProducts(category?: ProductCategory) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    let q = supabase
-      .from("products" as any)
+    let q = productsTable()
       .select("*")
       .eq("active", true)
       .order("sort_order", { ascending: true });

@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCart } from "@/contexts/CartContext";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { computeDueAt, formatCurrency, generateOrderCode, generateTrackingCode } from "@/lib/orderUtils";
@@ -51,9 +52,9 @@ const maskCpf = (v: string) =>
     .replace(/(\d{3})(\d)/, "$1.$2")
     .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 
-
-const TEST_CHECKOUT_TOTAL = 0.09;\n\nconst Pagamento = () => {
+const Pagamento = () => {
   const { items, totalPrice, clearCart } = useCart() as ReturnType<typeof useCart> & { clearCart?: () => void };
+  const { isAdmin } = useAdminAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -68,6 +69,7 @@ const TEST_CHECKOUT_TOTAL = 0.09;\n\nconst Pagamento = () => {
   const [validCep, setValidCep] = useState(false);
   const [validatedState, setValidatedState] = useState("");
   const [docType, setDocType] = useState<"cpf" | "cnpj">("cpf");
+  const [testWithoutShipping, setTestWithoutShipping] = useState(false);
 
   const [customer, setCustomer] = useState({
     name: "",
@@ -83,7 +85,6 @@ const TEST_CHECKOUT_TOTAL = 0.09;\n\nconst Pagamento = () => {
     zip: "",
   });
 
-
   useEffect(() => {
     if (items.length === 0) {
       toast({ title: "Carrinho vazio", description: "Adicione produtos antes de pagar." });
@@ -91,7 +92,6 @@ const TEST_CHECKOUT_TOTAL = 0.09;\n\nconst Pagamento = () => {
     }
   }, [items.length, navigate, toast]);
 
-  // Carrega automaticamente os dados salvos no cadastro
   useEffect(() => {
     let active = true;
     (async () => {
@@ -124,16 +124,17 @@ const TEST_CHECKOUT_TOTAL = 0.09;\n\nconst Pagamento = () => {
         setDocType(filled.cnpj && !filled.cpf ? "cnpj" : "cpf");
         const complete = filled.name && filled.email && filled.phone && filled.street && filled.number && filled.city && filled.state && filled.zip;
         if (!complete) setEditing(true);
-
       } else {
         setEditing(true);
       }
       setLoadingProfile(false);
     })();
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    if (!isAdmin) setTestWithoutShipping(false);
+  }, [isAdmin]);
 
   useEffect(() => {
     const digits = onlyDigits(customer.zip);
@@ -172,7 +173,9 @@ const TEST_CHECKOUT_TOTAL = 0.09;\n\nconst Pagamento = () => {
     return () => { active = false; };
   }, [customer.zip, totalPrice]);
 
-  const isCheckoutTest = Math.round(totalPrice * 100) === Math.round(TEST_CHECKOUT_TOTAL * 100);\n  const effectiveShippingCost = isCheckoutTest ? 0 : shippingCost;\n  const orderTotal = totalPrice + effectiveShippingCost;
+  const freeShippingTestActive = isAdmin && testWithoutShipping;
+  const effectiveShippingCost = freeShippingTestActive ? 0 : shippingCost;
+  const orderTotal = totalPrice + effectiveShippingCost;
 
   const validateCustomer = () => {
     const required: (keyof typeof customer)[] = ["name", "email", "phone", "street", "number", "city", "state", "zip"];
@@ -203,7 +206,6 @@ const TEST_CHECKOUT_TOTAL = 0.09;\n\nconst Pagamento = () => {
       toast({ title: "CPF inválido", description: "O CPF deve ter 11 dígitos.", variant: "destructive" });
       return false;
     }
-
     return true;
   };
 
@@ -217,6 +219,21 @@ const TEST_CHECKOUT_TOTAL = 0.09;\n\nconst Pagamento = () => {
       toast({ title: "Entre na sua conta para continuar", variant: "destructive" });
       navigate(`/auth?next=${encodeURIComponent("/pagamento")}`);
       return;
+    }
+
+    if (testWithoutShipping) {
+      const { data: adminRole, error: adminError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (adminError || !adminRole) {
+        setTestWithoutShipping(false);
+        setSubmitting(false);
+        toast({ title: "Teste sem frete não autorizado", description: "Esta opção é exclusiva para administrador.", variant: "destructive" });
+        return;
+      }
     }
 
     const { data: catalog, error: catalogError } = await supabase.from("products")
@@ -239,59 +256,56 @@ const TEST_CHECKOUT_TOTAL = 0.09;\n\nconst Pagamento = () => {
       return;
     }
 
-    const snapshot = JSON.stringify({ customer, docType, method, items, orderTotal });
+    const snapshot = JSON.stringify({ customer, docType, method, items, orderTotal, freeShippingTestActive });
     const reusableOrder = pendingOrder.current?.snapshot === snapshot ? pendingOrder.current : null;
     const orderCode = reusableOrder?.code ?? generateOrderCode();
     const trackingCode = generateTrackingCode();
     const dueAt = computeDueAt();
 
     if (!reusableOrder) {
-    const { error } = await supabase.from("orders").insert({
-      user_id: user.id,
-      order_code: orderCode,
-      tracking_code: trackingCode,
-      payment_method: method,
-      // Pix aguarda compensação: expira 2h após o vencimento se não for pago
-      payment_status: "pending",
-      due_at: dueAt.toISOString(),
-      delivery_status: "aguardando_pagamento",
-      customer_name: customer.name,
-      customer_email: customer.email,
-      customer_phone: customer.phone,
-      customer_cnpj: docType === "cnpj" ? customer.cnpj : null,
-      customer_cpf: docType === "cpf" ? customer.cpf : null,
+      const { error } = await supabase.from("orders").insert({
+        user_id: user.id,
+        order_code: orderCode,
+        tracking_code: trackingCode,
+        payment_method: method,
+        payment_status: "pending",
+        due_at: dueAt.toISOString(),
+        delivery_status: "aguardando_pagamento",
+        customer_name: customer.name,
+        customer_email: customer.email,
+        customer_phone: customer.phone,
+        customer_cnpj: docType === "cnpj" ? customer.cnpj : null,
+        customer_cpf: docType === "cpf" ? customer.cpf : null,
+        address_street: customer.street,
+        address_number: customer.number,
+        address_complement: customer.complement || null,
+        address_city: customer.city,
+        address_state: customer.state,
+        address_zip: customer.zip,
+        items: items.map((i) => ({
+          name: i.name,
+          qty: i.qty,
+          unit_price: i.priceNum,
+          subtotal: i.priceNum * i.qty,
+        })),
+        total_amount: orderTotal,
+      });
 
-      address_street: customer.street,
-      address_number: customer.number,
-      address_complement: customer.complement || null,
-      address_city: customer.city,
-      address_state: customer.state,
-      address_zip: customer.zip,
-      items: items.map((i) => ({
-        name: i.name,
-        qty: i.qty,
-        unit_price: i.priceNum,
-        subtotal: i.priceNum * i.qty,
-      })),
-      total_amount: orderTotal,
-    });
+      if (error) {
+        setSubmitting(false);
+        toast({ title: "Erro ao processar pedido", description: error.message, variant: "destructive" });
+        return;
+      }
+      pendingOrder.current = { code: orderCode, snapshot };
 
-    if (error) {
-      setSubmitting(false);
-      toast({ title: "Erro ao processar pedido", description: error.message, variant: "destructive" });
-      return;
-    }
-    pendingOrder.current = { code: orderCode, snapshot };
+      await logAudit("order_created", {
+        entity: "orders",
+        entity_id: orderCode,
+        details: { subtotal: totalPrice, shipping: effectiveShippingCost, total: orderTotal, method, items: items.length, free_shipping_test: freeShippingTestActive },
+      });
 
-    await logAudit("order_created", {
-      entity: "orders",
-      entity_id: orderCode,
-      details: { subtotal: totalPrice, shipping: effectiveShippingCost, total: orderTotal, method, items: items.length },
-    });
-
-    // Salva automaticamente os dados no perfil para pré-preencher próximas compras
-    try {
-      await supabase
+      try {
+        await supabase
           .from("profiles")
           .update({
             full_name: customer.name,
@@ -305,14 +319,11 @@ const TEST_CHECKOUT_TOTAL = 0.09;\n\nconst Pagamento = () => {
             address_zip: customer.zip,
           })
           .eq("user_id", user.id);
-    } catch {
-      // falha ao salvar perfil não deve bloquear o pedido
+      } catch {
+        // falha ao salvar perfil não deve bloquear o pedido
+      }
     }
 
-
-    }
-
-    // Gera a cobrança oficial (Pix/cartão) na InfinitePay e leva o cliente ao checkout
     try {
       const checkoutUrl = await createPaymentLink(orderCode, `${window.location.origin}/recibo/${orderCode}`);
       clearCart?.();
@@ -338,26 +349,17 @@ const TEST_CHECKOUT_TOTAL = 0.09;\n\nconst Pagamento = () => {
 
       <main className="container px-3 sm:px-4 py-4 sm:py-6 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4 sm:gap-6 pb-24">
         <div className="lg:hidden">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-xs font-heading font-bold text-muted-foreground hover:text-foreground"
-          >
+          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-xs font-heading font-bold text-muted-foreground hover:text-foreground">
             <ArrowLeft className="w-4 h-4" /> VOLTAR ÀS COMPRAS
           </button>
         </div>
-        {/* Form */}
+
         <section className="space-y-4 sm:space-y-6">
-          {/* Dados do cliente (vindos do cadastro) */}
           <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 space-y-4">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="font-heading font-black text-sm tracking-wider text-foreground">
-                DADOS DE ENTREGA
-              </h2>
+              <h2 className="font-heading font-black text-sm tracking-wider text-foreground">DADOS DE ENTREGA</h2>
               {!loadingProfile && (
-                <button
-                  onClick={() => setEditing((e) => !e)}
-                  className="text-[11px] font-heading font-bold tracking-wider text-primary hover:underline"
-                >
+                <button onClick={() => setEditing((e) => !e)} className="text-[11px] font-heading font-bold tracking-wider text-primary hover:underline">
                   {editing ? "USAR DADOS SALVOS" : "EDITAR DADOS"}
                 </button>
               )}
@@ -368,40 +370,19 @@ const TEST_CHECKOUT_TOTAL = 0.09;\n\nconst Pagamento = () => {
             ) : !editing ? (
               <div className="space-y-1.5 text-xs text-muted-foreground">
                 <p className="text-foreground font-semibold">{customer.name}</p>
-                {docType === "cnpj"
-                  ? customer.cnpj && <p>CNPJ: {customer.cnpj}</p>
-                  : customer.cpf && <p>CPF: {customer.cpf}</p>}
-
+                {docType === "cnpj" ? customer.cnpj && <p>CNPJ: {customer.cnpj}</p> : customer.cpf && <p>CPF: {customer.cpf}</p>}
                 <p>{customer.email} · {customer.phone}</p>
-                <p>
-                  {customer.street}, {customer.number}
-                  {customer.complement ? ` — ${customer.complement}` : ""}
-                </p>
-                <p>
-                  {customer.city}/{customer.state} · CEP {customer.zip}
-                </p>
-                <p className="text-[10px] pt-1">
-                  Dados salvos no seu cadastro. É só confirmar o pagamento.
-                </p>
+                <p>{customer.street}, {customer.number}{customer.complement ? ` — ${customer.complement}` : ""}</p>
+                <p>{customer.city}/{customer.state} · CEP {customer.zip}</p>
+                <p className="text-[10px] pt-1">Dados salvos no seu cadastro. É só confirmar o pagamento.</p>
               </div>
             ) : (
               <div className="grid sm:grid-cols-2 gap-3">
                 <div className="sm:col-span-2 space-y-1.5">
-                  <Label className="text-[10px] font-heading font-bold tracking-wider text-muted-foreground">
-                    TIPO DE DOCUMENTO
-                  </Label>
+                  <Label className="text-[10px] font-heading font-bold tracking-wider text-muted-foreground">TIPO DE DOCUMENTO</Label>
                   <div className="grid grid-cols-2 gap-2">
                     {(["cpf", "cnpj"] as const).map((t) => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => setDocType(t)}
-                        className={`py-2 rounded-md text-[11px] font-heading font-bold tracking-wider border transition-colors ${
-                          docType === t
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-secondary text-muted-foreground border-border"
-                        }`}
-                      >
+                      <button key={t} type="button" onClick={() => setDocType(t)} className={`py-2 rounded-md text-[11px] font-heading font-bold tracking-wider border transition-colors ${docType === t ? "bg-primary text-primary-foreground border-primary" : "bg-secondary text-muted-foreground border-border"}`}>
                         {t === "cpf" ? "CPF (PESSOA FÍSICA)" : "CNPJ (EMPRESA)"}
                       </button>
                     ))}
@@ -415,7 +396,6 @@ const TEST_CHECKOUT_TOTAL = 0.09;\n\nconst Pagamento = () => {
                 )}
                 <Field label="E-mail" type="email" value={customer.email} onChange={(v) => setCustomer({ ...customer, email: v })} />
                 <Field label="WhatsApp" value={customer.phone} inputMode="tel" placeholder="(00) 00000-0000" onChange={(v) => setCustomer({ ...customer, phone: maskPhone(v) })} />
-
                 <Field label="Rua" value={customer.street} onChange={(v) => setCustomer({ ...customer, street: v })} />
                 <Field label="Número" value={customer.number} inputMode="numeric" onChange={(v) => setCustomer({ ...customer, number: v })} />
                 <Field label="Complemento" value={customer.complement} onChange={(v) => setCustomer({ ...customer, complement: v })} />
@@ -425,9 +405,7 @@ const TEST_CHECKOUT_TOTAL = 0.09;\n\nconst Pagamento = () => {
                   setValidatedState("");
                   setShippingCost(0);
                   setShippingEta("");
-                  setCustomer((current) => onlyDigits(current.zip) === onlyDigits(zip)
-                    ? { ...current, zip }
-                    : { ...current, zip, street: "", city: "", state: "" });
+                  setCustomer((current) => onlyDigits(current.zip) === onlyDigits(zip) ? { ...current, zip } : { ...current, zip, street: "", city: "", state: "" });
                 }} />
                 <Field label="Cidade" value={customer.city} onChange={(v) => setCustomer({ ...customer, city: v })} />
                 <Field label="UF" value={customer.state} onChange={(v) => setCustomer({ ...customer, state: v.toUpperCase().slice(0, 2) })} />
@@ -435,84 +413,62 @@ const TEST_CHECKOUT_TOTAL = 0.09;\n\nconst Pagamento = () => {
             )}
           </div>
 
-
-          {/* Métodos de pagamento */}
           <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-            <h2 className="font-heading font-black text-sm tracking-wider text-foreground">
-              FORMA DE PAGAMENTO
-            </h2>
+            <h2 className="font-heading font-black text-sm tracking-wider text-foreground">FORMA DE PAGAMENTO</h2>
             <Tabs value={method} onValueChange={(v) => setMethod(v as PaymentMethod)}>
               <TabsList className="w-full grid grid-cols-2 bg-secondary">
                 <TabsTrigger value="pix" className="gap-1.5"><QrCode className="w-3.5 h-3.5" /> PIX</TabsTrigger>
                 <TabsTrigger value="cartao" className="gap-1.5"><CreditCard className="w-3.5 h-3.5" /> CARTÃO</TabsTrigger>
               </TabsList>
-
               <TabsContent value="pix" className="mt-4 space-y-4">
                 <p className="text-xs text-muted-foreground">O Pix será apresentado no checkout seguro da InfinitePay após continuar.</p>
               </TabsContent>
-
               <TabsContent value="cartao" className="mt-4 space-y-3">
-                <p className="text-xs text-muted-foreground flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-primary shrink-0" /> Os dados do cartão são informados somente no checkout seguro da InfinitePay.
-                </p>
+                <p className="text-xs text-muted-foreground flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-primary shrink-0" /> Os dados do cartão são informados somente no checkout seguro da InfinitePay.</p>
               </TabsContent>
             </Tabs>
           </div>
         </section>
 
-        {/* Resumo */}
         <aside className="space-y-4 lg:sticky lg:top-20 self-start">
           <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
-            <h3 className="font-heading font-black text-sm tracking-wider text-foreground flex items-center gap-2">
-              <Wallet className="w-4 h-4 text-primary" /> RESUMO DO LOTE
-            </h3>
+            <h3 className="font-heading font-black text-sm tracking-wider text-foreground flex items-center gap-2"><Wallet className="w-4 h-4 text-primary" /> RESUMO DO LOTE</h3>
             <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
               {items.map((i) => (
                 <div key={i.name} className="flex justify-between text-xs">
-                  <span className="text-muted-foreground truncate pr-2">
-                    {i.qty}× {i.name}
-                  </span>
-                  <span className="text-foreground font-semibold whitespace-nowrap">
-                    {formatCurrency(i.priceNum * i.qty)}
-                  </span>
+                  <span className="text-muted-foreground truncate pr-2">{i.qty}× {i.name}</span>
+                  <span className="text-foreground font-semibold whitespace-nowrap">{formatCurrency(i.priceNum * i.qty)}</span>
                 </div>
               ))}
             </div>
             <div className="border-t border-border pt-3 space-y-2">
               <div className="flex justify-between text-xs"><span className="text-muted-foreground">Produtos</span><span>{formatCurrency(totalPrice)}</span></div>
-              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{isCheckoutTest ? "Grátis (teste)" : checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{freeShippingTestActive ? "Grátis (teste admin)" : checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>
               {shippingEta && <p className="text-[10px] text-muted-foreground">Prazo estimado: {shippingEta}</p>}
+              {isAdmin && (
+                <label className="mt-3 flex items-start gap-2 rounded-lg border border-border bg-secondary/50 p-3 cursor-pointer">
+                  <input type="checkbox" checked={testWithoutShipping} onChange={(e) => setTestWithoutShipping(e.target.checked)} className="mt-0.5 h-4 w-4 accent-current" />
+                  <span className="text-[11px] text-foreground"><strong>Teste sem frete</strong><br /><span className="text-muted-foreground">Somente administrador. Zera o frete desta cobrança para teste.</span></span>
+                </label>
+              )}
               <div className="border-t border-border pt-3 flex justify-between items-center">
-              <span className="font-heading font-bold text-xs tracking-wider text-muted-foreground">TOTAL</span>
-              <span className="font-heading font-black text-xl text-foreground">{formatCurrency(orderTotal)}</span>
+                <span className="font-heading font-bold text-xs tracking-wider text-muted-foreground">TOTAL</span>
+                <span className="font-heading font-black text-xl text-foreground">{formatCurrency(orderTotal)}</span>
               </div>
             </div>
           </div>
 
-          <button
-            disabled={submitting || checkingCep || !validCep || customer.state !== validatedState}
-            onClick={handleConfirm}
-            className="w-full bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon disabled:opacity-40 disabled:cursor-not-allowed"
-          >
+          <button disabled={submitting || checkingCep || !validCep || customer.state !== validatedState} onClick={handleConfirm} className="w-full bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon disabled:opacity-40 disabled:cursor-not-allowed">
             {submitting ? "ABRINDO CHECKOUT..." : "PAGAR NA INFINITEPAY"}
           </button>
-          <p className="text-[10px] text-muted-foreground text-center">
-            Ao confirmar, você concorda com os termos de venda no atacado.
-          </p>
+          <p className="text-[10px] text-muted-foreground text-center">Ao confirmar, você concorda com os termos de venda no atacado.</p>
         </aside>
       </main>
     </div>
   );
 };
 
-const Field = ({
-  label,
-  value,
-  onChange,
-  type = "text",
-  placeholder,
-  inputMode,
-}: {
+const Field = ({ label, value, onChange, type = "text", placeholder, inputMode }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
@@ -521,19 +477,9 @@ const Field = ({
   inputMode?: "text" | "numeric" | "tel" | "email" | "decimal";
 }) => (
   <div className="space-y-1.5">
-    <Label className="text-[10px] font-heading font-bold tracking-wider text-muted-foreground">
-      {label}
-    </Label>
-    <Input
-      type={type}
-      value={value}
-      inputMode={inputMode}
-      placeholder={placeholder}
-      onChange={(e) => onChange(e.target.value)}
-      className="bg-secondary border-border text-foreground"
-    />
+    <Label className="text-[10px] font-heading font-bold tracking-wider text-muted-foreground">{label}</Label>
+    <Input type={type} value={value} inputMode={inputMode} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} className="bg-secondary border-border text-foreground" />
   </div>
 );
-
 
 export default Pagamento;

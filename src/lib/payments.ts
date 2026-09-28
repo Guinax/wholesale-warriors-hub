@@ -9,15 +9,20 @@ export interface PaymentCheckResult {
   error?: string;
 }
 
+const CANONICAL_SITE_ORIGIN = "https://wholesale-warriors-hub.lovable.app";
+
 /**
  * Gera o link de checkout da InfinitePay para um pedido.
- * Retorna somente uma URL HTTPS oficial da InfinitePay; falhas não habilitam pagamento manual.
+ * O retorno sempre aponta para o domínio público oficial, mesmo quando o checkout
+ * é aberto por um preview/URL alternativa. Retorna somente uma URL HTTPS oficial
+ * da InfinitePay; falhas não habilitam pagamento manual.
  */
 export async function createPaymentLink(
   orderCode: string,
-  redirectUrl: string
+  _redirectUrl: string
 ): Promise<string> {
   try {
+    const redirectUrl = `${CANONICAL_SITE_ORIGIN}/recibo/${encodeURIComponent(orderCode)}`;
     const { data, error } = await supabase.functions.invoke("payment-link", {
       body: { order_code: orderCode, redirect_url: redirectUrl },
     });

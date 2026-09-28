@@ -16,6 +16,10 @@ const CANONICAL_SITE_ORIGIN = "https://wholesale-warriors-hub.lovable.app";
  * O retorno sempre aponta para o domínio público oficial, mesmo quando o checkout
  * é aberto por um preview/URL alternativa. Retorna somente uma URL HTTPS oficial
  * da InfinitePay; falhas não habilitam pagamento manual.
+ *
+ * Após validar a URL, a navegação externa é iniciada aqui. A Promise fica pendente
+ * enquanto o documento atual é descarregado para impedir que o chamador limpe o
+ * carrinho e dispare uma navegação interna antes do checkout externo no mobile.
  */
 export async function createPaymentLink(
   orderCode: string,
@@ -50,7 +54,11 @@ export async function createPaymentLink(
     if (url.protocol !== "https:" || !officialHost) {
       throw new Error("A InfinitePay retornou um link inválido. Tente novamente.");
     }
-    return url.href;
+
+    // Inicia a navegação antes de devolver o controle ao checkout. Isso evita que
+    // clearCart() faça o React Router navegar para "/" antes da InfinitePay abrir.
+    window.location.assign(url.href);
+    return await new Promise<string>(() => {});
   } catch (error) {
     throw error instanceof Error ? error : new Error("Não foi possível abrir o pagamento. Tente novamente.");
   }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { ArrowLeft, BarChart3, Megaphone, RefreshCw, Save, ShieldCheck, Sparkles } from "lucide-react";
@@ -23,6 +23,12 @@ type Product = {
   stock: number;
   image_url: string | null;
   active: boolean;
+};
+
+type OrderItem = {
+  name?: string;
+  qty?: number | string;
+  quantity?: number | string;
 };
 
 type Order = {
@@ -72,7 +78,7 @@ const CommandCenter = () => {
     if (!loading && user && !isAdmin) navigate("/", { replace: true });
   }, [loading, user, isAdmin, navigate]);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!isAdmin) return;
     setBusy(true);
     const [productsRes, ordersRes, campaignsRes] = await Promise.all([
@@ -87,11 +93,11 @@ const CommandCenter = () => {
     setOrders((ordersRes.data ?? []) as Order[]);
     setCampaigns((campaignsRes.data ?? []) as Campaign[]);
     setBusy(false);
-  };
+  }, [isAdmin]);
 
   useEffect(() => {
     if (isAdmin) void load();
-  }, [isAdmin]);
+  }, [isAdmin, load]);
 
   const selectedProduct = products.find((p) => p.id === productId) ?? null;
   const destinationUrl = selectedProduct ? `${SITE_ORIGIN}/produto/${selectedProduct.id}` : SITE_ORIGIN;
@@ -101,7 +107,7 @@ const CommandCenter = () => {
     setCampaignName(`Campanha - ${selectedProduct.name}`);
     setHeadline(`${selectedProduct.name}: destaque que vende`);
     setBody(`Apresente ${selectedProduct.name} com uma oferta clara, benefício direto e chamada para ação. Pedido mínimo: ${selectedProduct.min_qty} unidade(s).`);
-  }, [productId]);
+  }, [selectedProduct]);
 
   const metrics = useMemo(() => {
     const paid = orders.filter((o) => o.payment_status === "paid");
@@ -115,7 +121,7 @@ const CommandCenter = () => {
     const productQty = new Map<string, number>();
     paid.forEach((o) => {
       if (!Array.isArray(o.items)) return;
-      o.items.forEach((item: any) => {
+      o.items.forEach((item: OrderItem) => {
         const name = String(item?.name ?? "");
         const qty = Number(item?.qty ?? item?.quantity ?? 0);
         if (name) productQty.set(name, (productQty.get(name) ?? 0) + qty);
@@ -131,7 +137,7 @@ const CommandCenter = () => {
       return;
     }
     setBusy(true);
-    const { error } = await db.from("admin_campaigns").insert({
+    const { error } = await supabase.from("admin_campaigns").insert({
       created_by: user.id,
       product_id: selectedProduct.id,
       name: campaignName.trim(),

@@ -32,8 +32,8 @@ jobs:
       - name: Audit dependencies
         run: npm audit --audit-level=high || true
 
-      - name: Test React Router security upgrade
-        run: npm install --no-save react-router-dom@7.18.4
+      - name: Test compatible security upgrades
+        run: npm install --no-save vite@7.3.6 vitest@5.0.2 react-router-dom@7.18.4
 
       - name: Run lint
         run: npm run lint

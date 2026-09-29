@@ -80,6 +80,7 @@ const FeaturedProducts = () => {
                 onClick={() =>
                   addItem({
                     name: "LOTE COMBO DRINKS (7 SABORES)",
+                    unitPrice: "R$ 62,30",
                     wholesalePrice: "R$ 62,30",
                     qty: 1,
                     minQty: 1,

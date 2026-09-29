@@ -6,26 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Lock, Mail, ArrowLeft, MessageCircle, User, Phone, Eye, EyeOff, MapPin } from "lucide-react";
+import { Mail, ArrowLeft, MessageCircle, Eye, EyeOff } from "lucide-react";
 import { contactWhatsApp } from "@/lib/whatsapp";
 import { logAudit } from "@/lib/audit";
-
-const onlyDigits = (v: string) => v.replace(/\D/g, "");
-const maskPhone = (v: string) => {
-  const d = onlyDigits(v).slice(0, 11);
-  if (d.length <= 10) return d.replace(/(\d{2})(\d{0,4})(\d{0,4})/, (_, a, b, c) => `(${a}) ${b}${c ? "-" + c : ""}`).trim();
-  return d.replace(/(\d{2})(\d{5})(\d{0,4})/, (_, a, b, c) => `(${a}) ${b}${c ? "-" + c : ""}`);
-};
-const maskCpf = (v: string) =>
-  onlyDigits(v).slice(0, 11).replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1-$2");
-const maskCnpj = (v: string) =>
-  onlyDigits(v)
-    .slice(0, 14)
-    .replace(/(\d{2})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d)/, "$1/$2")
-    .replace(/(\d{4})(\d)/, "$1-$2");
-const maskCep = (v: string) => onlyDigits(v).slice(0, 8).replace(/(\d{5})(\d{0,3})/, (_, a, b) => (b ? `${a}-${b}` : a));
+import logo from "@/assets/logo.png";
 
 const getAuthError = (err: unknown) => {
   if (err && typeof err === "object") {
@@ -46,16 +30,6 @@ const Auth = () => {
   const [mode, setMode] = useState<"login" | "recovery">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [cpf, setCpf] = useState("");
-  const [cnpj, setCnpj] = useState("");
-  const [zip, setZip] = useState("");
-  const [street, setStreet] = useState("");
-  const [number, setNumber] = useState("");
-  const [complement, setComplement] = useState("");
-  const [city, setCity] = useState("");
-  const [uf, setUf] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [recoverySent, setRecoverySent] = useState(false);
@@ -66,30 +40,6 @@ const Auth = () => {
       if (session) window.location.href = nextPath;
     });
   }, [nextPath]);
-
-  const validateSignup = () => {
-    if (onlyDigits(phone).length < 10) {
-      toast.error("Informe um WhatsApp válido com DDD");
-      return false;
-    }
-    if (onlyDigits(cpf).length !== 11) {
-      toast.error("Informe um CPF válido (11 dígitos)");
-      return false;
-    }
-    if (cnpj && onlyDigits(cnpj).length !== 14) {
-      toast.error("CNPJ inválido (14 dígitos)");
-      return false;
-    }
-    if (onlyDigits(zip).length !== 8) {
-      toast.error("CEP inválido (8 dígitos)");
-      return false;
-    }
-    if (!street.trim() || !number.trim() || !city.trim() || uf.trim().length !== 2) {
-      toast.error("Preencha o endereço completo (rua, número, cidade e UF)");
-      return false;
-    }
-    return true;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,13 +87,15 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md p-6 space-y-5">
-        <button onClick={() => navigate("/")} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="w-4 h-4" /> Ir para a loja
-        </button>
+        {mode === "recovery" && (
+          <button type="button" onClick={() => setMode("login")} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="w-4 h-4" /> Voltar para o login
+          </button>
+        )}
         <div className="text-center space-y-1">
-          <div className="inline-flex p-3 rounded-full bg-primary/10"><Lock className="w-6 h-6 text-primary" /></div>
+          <img src={logo} alt="Mansão Maromba" className="w-20 h-20 object-contain mx-auto" />
           <h1 className="text-2xl font-heading font-bold">Família Maromba</h1>
-          <p className="text-sm text-muted-foreground">{mode === "recovery" ? "Recupere sua senha" : "Entre com suas credenciais"}</p>
+          <p className="text-sm text-muted-foreground">{mode === "recovery" ? "Recupere sua senha" : "Entre na sua conta para acessar a loja"}</p>
         </div>
         {mode === "recovery" ? (
           <form onSubmit={handleForgotPassword} className="space-y-4">
@@ -159,7 +111,7 @@ const Auth = () => {
             <Button type="submit" className="w-full" disabled={loading}>{loading ? "Aguarde..." : "Entrar"}</Button>
           </form>
         )}
-        <div className="text-center text-sm space-y-2">{mode === "recovery" ? <button onClick={() => setMode("login")} className="text-primary hover:underline">Voltar para o login</button> : <button onClick={() => navigate("/cadastro")} className="text-primary hover:underline">Não tem conta? Cadastre-se</button>}</div>
+        <div className="text-center text-sm space-y-2">{mode === "login" && <button onClick={() => navigate("/cadastro")} className="text-primary hover:underline">Não tem conta? Cadastre-se</button>}</div>
         <button onClick={() => contactWhatsApp("Olá! Preciso de suporte com a Loja Família Maromba.")} className="w-full flex items-center justify-center gap-2 bg-[#25D366] text-white font-heading font-bold text-sm py-3 rounded-lg hover:opacity-90 transition-opacity"><MessageCircle className="w-4 h-4" />SUPORTE VIA WHATSAPP</button>
         <p className="text-[10px] text-muted-foreground text-center">(19) 97115-1107 — atendimento direto com nossa equipe</p>
       </Card>

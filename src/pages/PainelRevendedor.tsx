@@ -7,6 +7,9 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
+type Offer = { id: string; items: Array<{ name: string; qty: number }>; subtotal: number; city: string; distance_km: number; partner_merchandise: number };
+type Request = { id: string; status: string; store_id?: string | null; store_name?: string | null; order_code?: string | null; payment_status?: string | null; shipping?: number | null; route_km?: number | null; eta_minutes?: number | null; items: Array<{ name: string; qty: number }> };
+
 type Store = {
   id: string;
   name: string;
@@ -19,6 +22,11 @@ type Store = {
 export default function PainelRevendedor() {
   const [stores, setStores] = useState<Store[]>([]);
   const [saving, setSaving] = useState<string | null>(null);
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [requests, setRequests] = useState<Request[]>([]);
+  const [routeKm, setRouteKm] = useState<Record<string, string>>({});
+  const [weightKg, setWeightKg] = useState<Record<string, string>>({});
+  const [eta, setEta] = useState<Record<string, string>>({});
 
   const load = async () => {
     const { data, error } = await supabase
@@ -27,6 +35,12 @@ export default function PainelRevendedor() {
       .order("created_at", { ascending: false });
     if (error) return toast.error("Não foi possível carregar suas lojas.");
     setStores((data ?? []) as unknown as Store[]);
+    const { data: dashboard, error: dashboardError } = await supabase.rpc("partner_command" as never, { p_action: "dashboard", p_payload: {} } as never);
+    if (!dashboardError && dashboard) {
+      const d = dashboard as unknown as { offers?: Offer[]; requests?: Request[] };
+      setOffers(d.offers ?? []);
+      setRequests(d.requests ?? []);
+    }
   };
 
   useEffect(() => { void load(); }, []);
@@ -44,6 +58,17 @@ export default function PainelRevendedor() {
     void load();
   };
 
+  const command = async (action: string, payload: Record<string, unknown>, success: string) => {
+    setSaving(String(payload.request_id ?? action));
+    const { data, error } = await supabase.rpc("partner_command" as never, { p_action: action, p_payload: payload } as never);
+    setSaving(null);
+    if (error) return toast.error(error.message);
+    const result = data as unknown as { error?: string };
+    if (result?.error) return toast.error(result.error);
+    toast.success(success);
+    await load();
+  };
+
   return (
     <main className="min-h-screen bg-background p-4 md:p-8">
       <div className="mx-auto max-w-4xl space-y-6">
@@ -51,6 +76,33 @@ export default function PainelRevendedor() {
           <h1 className="text-2xl font-bold">Operação do revendedor</h1>
           <p className="text-muted-foreground">Controle como cada loja atende as entregas locais.</p>
         </div>
+        {offers.length > 0 && <section className="space-y-3">
+          <h2 className="text-xl font-semibold">Novas entregas na sua região</h2>
+          {offers.map((offer) => <Card key={offer.id}><CardContent className="py-5 space-y-3">
+            <div className="flex flex-wrap justify-between gap-2"><strong>{offer.city}</strong><span>{Number(offer.distance_km).toFixed(1)} km</span></div>
+            <p className="text-sm text-muted-foreground">{offer.items.map((i) => `${i.qty}x ${i.name}`).join(" • ")}</p>
+            <div className="flex gap-2"><Button onClick={() => void command("accept", { request_id: offer.id }, "Pedido aceito. Informe a rota para calcular a entrega.")}>Aceitar</Button>
+            <Button variant="outline" onClick={() => void command("decline", { request_id: offer.id }, "Oferta recusada.")}>Recusar</Button></div>
+          </CardContent></Card>)}
+        </section>}
+
+        {requests.filter((r) => ["accepted","quoted","paid","delivering"].includes(r.status)).length > 0 && <section className="space-y-3">
+          <h2 className="text-xl font-semibold">Pedidos em operação</h2>
+          {requests.filter((r) => ["accepted","quoted","paid","delivering"].includes(r.status)).map((r) => <Card key={r.id}><CardContent className="py-5 space-y-4">
+            <div className="flex flex-wrap justify-between gap-2"><strong>{r.store_name ?? "Loja"}</strong><span>{r.order_code ?? r.status}</span></div>
+            <p className="text-sm">{r.items?.map((i) => `${i.qty}x ${i.name}`).join(" • ")}</p>
+            {r.status === "accepted" && <div className="grid gap-2 md:grid-cols-4">
+              <input className="h-10 rounded-md border bg-background px-3" placeholder="Rota km" inputMode="decimal" value={routeKm[r.id] ?? ""} onChange={(e) => setRouteKm((x) => ({...x,[r.id]:e.target.value}))} />
+              <input className="h-10 rounded-md border bg-background px-3" placeholder="Peso kg" inputMode="decimal" value={weightKg[r.id] ?? ""} onChange={(e) => setWeightKg((x) => ({...x,[r.id]:e.target.value}))} />
+              <input className="h-10 rounded-md border bg-background px-3" placeholder="Prazo min" inputMode="numeric" value={eta[r.id] ?? ""} onChange={(e) => setEta((x) => ({...x,[r.id]:e.target.value}))} />
+              <Button onClick={() => void command("quote", { request_id:r.id, route_km:Number(routeKm[r.id]), weight_kg:Number(weightKg[r.id]), eta_minutes:Number(eta[r.id]) }, "Frete calculado e enviado ao cliente.")}>Calcular entrega</Button>
+            </div>}
+            {r.status === "quoted" && <p className="font-medium">Frete calculado: R$ {Number(r.shipping ?? 0).toFixed(2).replace(".", ",")} • aguardando cliente/pagamento</p>}
+            {r.status === "paid" && <Button onClick={() => void command("dispatch", { request_id:r.id }, "Pedido saiu para entrega.")}>Saiu para entrega</Button>}
+            {r.status === "delivering" && <p className="text-sm text-muted-foreground">Em entrega. A confirmação final exige o código do cliente e verificação de maioridade.</p>}
+          </CardContent></Card>)}
+        </section>}
+
         {stores.length === 0 && <Card><CardContent className="py-8">Nenhuma loja vinculada à sua conta.</CardContent></Card>}
         {stores.map((store) => (
           <Card key={store.id}>

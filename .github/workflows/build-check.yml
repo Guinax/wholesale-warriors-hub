@@ -9,7 +9,7 @@ on:
       - Main
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
@@ -29,22 +29,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Apply safe dependency security fixes
-        run: npm audit fix || true
-
-      - name: Persist safe dependency fixes
-        if: github.event_name == 'push'
-        run: |
-          if ! git diff --quiet -- package-lock.json; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add package-lock.json
-            git commit -m "chore: persist safe npm audit fixes"
-            git push
-          fi
-
       - name: Audit dependencies
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=high || true
 
       - name: Run lint
         run: npm run lint

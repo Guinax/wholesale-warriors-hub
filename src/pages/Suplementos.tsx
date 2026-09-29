@@ -7,7 +7,7 @@ const Suplementos = () => {
     <CategoryPage
       eyebrow="CATEGORIA 01"
       title="SUPLEMENTOS"
-      subtitle="Whey, creatina, termogênicos e mais. Preço de atacado a partir de 1 unidade."
+      subtitle="Whey, creatina, termogênicos e mais. Compra a partir de 1 unidade. Preço de atacado automático a partir de 6 unidades."
       products={products.map(toCategoryProduct)}
       docTitle="Suplementos — Família Maromba"
     />

@@ -10,6 +10,8 @@ const CatalogSection = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [items, setItems] = useState<DbProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [catalogTitle, setCatalogTitle] = useState("CATÁLOGO VIGENTE");
+  const [catalogSubtitle, setCatalogSubtitle] = useState("ESTILO CIMED x MAROMBA");
 
   useEffect(() => {
     const load = async () => {
@@ -19,6 +21,16 @@ const CatalogSection = () => {
         .eq("in_catalog", true)
         .order("catalog_order", { ascending: true });
       setItems(((data ?? []) as unknown) as DbProduct[]);
+      const { data: settings } = await supabase
+        .from("catalog_settings" as never)
+        .select("title, subtitle")
+        .eq("id", 1)
+        .maybeSingle();
+      if (settings) {
+        const s = settings as unknown as { title: string; subtitle: string };
+        setCatalogTitle(s.title || "CATÁLOGO VIGENTE");
+        setCatalogSubtitle(s.subtitle || "ESTILO CIMED x MAROMBA");
+      }
       setLoading(false);
     };
     load();
@@ -30,10 +42,10 @@ const CatalogSection = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="font-heading font-black text-lg tracking-wide text-foreground">
-              CATÁLOGO VIGENTE
+              {catalogTitle}
             </h2>
             <p className="text-xs text-primary font-heading font-semibold tracking-wider mt-1">
-              ESTILO CIMED x MAROMBA
+              {catalogSubtitle}
             </p>
           </div>
           <div className="flex items-center gap-1 bg-secondary rounded-lg p-1">

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
-import { ArrowLeft, BarChart3, Megaphone, RefreshCw, Save, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowLeft, BarChart3, Facebook, Instagram, Megaphone, MessageCircle, RefreshCw, Save, Share2, ShieldCheck, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
@@ -158,6 +158,59 @@ const CommandCenter = () => {
     await load();
   };
 
+  const shareText = useMemo(() => {
+    const parts = [
+      headline.trim(),
+      body.trim(),
+      selectedProduct ? `A partir de ${formatCurrency(selectedProduct.wholesale_price)}` : "",
+      cta.trim(),
+      destinationUrl,
+    ];
+    return parts.filter(Boolean).join("\n\n");
+  }, [headline, body, selectedProduct, cta, destinationUrl]);
+
+  const copyShareContent = async () => {
+    try {
+      await navigator.clipboard.writeText(shareText);
+      toast.success("Texto e link do anúncio copiados.");
+    } catch {
+      toast.error("Não foi possível copiar o anúncio.");
+    }
+  };
+
+  const shareNative = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: headline.trim() || campaignName.trim() || "Família Maromba",
+          text: shareText,
+          url: destinationUrl,
+        });
+        return;
+      }
+      await copyShareContent();
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      await copyShareContent();
+    }
+  };
+
+  const shareWhatsApp = () => {
+    const url = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const shareFacebook = () => {
+    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(destinationUrl)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const shareInstagram = async () => {
+    // Instagram não oferece URL web oficial para pré-preencher uma publicação.
+    // No celular, o compartilhamento nativo permite escolher o Instagram quando instalado.
+    await shareNative();
+  };
+
   const togglePlatform = (platform: string) => {
     setPlatforms((current) => current.includes(platform) ? current.filter((p) => p !== platform) : [...current, platform]);
   };
@@ -242,6 +295,24 @@ const CommandCenter = () => {
                   </div>
                   <div className="rounded-lg bg-primary text-primary-foreground text-center font-heading font-black text-xs tracking-wider py-2">{cta || "COMPRAR AGORA"}</div>
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Compartilhar anúncio</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <Button type="button" variant="outline" onClick={shareFacebook} disabled={!selectedProduct}>
+                    <Facebook className="w-4 h-4" /> Facebook
+                  </Button>
+                  <Button type="button" variant="outline" onClick={shareWhatsApp} disabled={!selectedProduct}>
+                    <MessageCircle className="w-4 h-4" /> WhatsApp
+                  </Button>
+                  <Button type="button" variant="outline" onClick={shareInstagram} disabled={!selectedProduct}>
+                    <Instagram className="w-4 h-4" /> Instagram
+                  </Button>
+                  <Button type="button" variant="outline" onClick={shareNative} disabled={!selectedProduct}>
+                    <Share2 className="w-4 h-4" /> Compartilhar
+                  </Button>
+                </div>
+                <p className="text-[11px] text-muted-foreground">No Instagram, o menu de compartilhamento do celular será aberto para você escolher o app. Em navegadores sem suporte, o texto e o link são copiados.</p>
               </div>
               <p className="text-xs text-muted-foreground break-all">Destino do QR Code: <span className="text-foreground">{destinationUrl}</span></p>
             </div>

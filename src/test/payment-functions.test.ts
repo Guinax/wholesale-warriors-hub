@@ -8,7 +8,7 @@ import { z } from 'zod';
 function loadHandler(name: string, overrides: Record<string, unknown> = {}) {
   const order = { id: 'order-id', user_id: 'buyer', order_code: 'FM-TEST', payment_status: 'pending', total_amount: 29.9,
     items: [{ name: 'Product', qty: 1 }], address_state: 'SP', address_zip: '01001000', due_at: new Date(Date.now()+86400000).toISOString(), ...overrides };
-  const catalog = [{ name: 'Product', wholesale_price: 10, min_qty: 1, stock: 2, active: true }];
+  const catalog = [{ name: 'Product', unit_price: 10, wholesale_price: 8, min_qty: 1, stock: 20, active: true }];
   const updates: unknown[] = [];
   const filters: unknown[] = [];
   function from(table: string) {
@@ -50,8 +50,11 @@ describe('Payment integration boundaries', () => {
   it('rejects redirect outside the store',async()=>{
     const x=loadHandler('payment-link'); expect((await x.request({...linkBody,redirect_url:'https://other.test'})).status).toBe(400);
   });
-  it('creates a checkout containing catalog price and shipping',async()=>{
+  it('creates a checkout containing retail catalog price and shipping below six units',async()=>{
     const x=loadHandler('payment-link'); const r=await x.request(linkBody); expect(r.status).toBe(200); expect((await r.json()).url).toContain('infinitepay.io'); expect(x.fetchMock).toHaveBeenCalledTimes(2);
+  });
+  it('applies wholesale catalog price automatically from six units',async()=>{
+    const x=loadHandler('payment-link',{items:[{name:'Product',qty:6}],total_amount:67.9}); const r=await x.request(linkBody); expect(r.status).toBe(200); expect((await r.json()).url).toContain('infinitepay.io'); expect(x.fetchMock).toHaveBeenCalledTimes(2);
   });
   it('can reconcile a late confirmed payment for an expired order',async()=>{
     const x=loadHandler('payment-check',{payment_status:'expired'}); const r=await x.request({order_code:'FM-TEST',transaction_nsu:'transaction',slug:'invoice'}); expect((await r.json()).paid).toBe(true); expect(x.filters).toContainEqual(['neq','payment_status','paid']);

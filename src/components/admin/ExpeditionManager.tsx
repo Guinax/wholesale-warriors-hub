@@ -191,6 +191,7 @@ const ExpeditionManager = () => {
     }, "Entrega concluída");
 
   const lowStock = products.filter((p) => p.stock <= 5);
+  const allocationIssues = queue.filter((o) => !o.inventory_allocated_at);
 
   return (
     <div className="space-y-4">
@@ -212,8 +213,9 @@ const ExpeditionManager = () => {
           </p>
         </Card>
         <Card className="p-3">
-          <p className="text-xs text-muted-foreground">Estoque baixo</p>
-          <p className="text-2xl font-bold text-destructive">{lowStock.length}</p>
+          <p className="text-xs text-muted-foreground">Falha de alocação</p>
+          <p className="text-2xl font-bold text-destructive">{allocationIssues.length}</p>
+          <p className="text-[10px] text-muted-foreground">Pagos bloqueados para expedição</p>
         </Card>
       </div>
 
@@ -273,7 +275,13 @@ const ExpeditionManager = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <Select
                     value={o.expedition_status}
-                    onValueChange={(v) => patchOrder(o.id, { expedition_status: v })}
+                    onValueChange={(v) => {
+                      if (!o.inventory_allocated_at && v !== "aguardando") {
+                        toast.error("Pedido pago sem estoque alocado. Regularize o estoque antes de avançar.");
+                        return;
+                      }
+                      void patchOrder(o.id, { expedition_status: v });
+                    }}
                   >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>

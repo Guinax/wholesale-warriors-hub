@@ -105,10 +105,14 @@ const CartDrawer = () => {
                         {item.name}
                       </h4>
                       <p className="text-xs text-primary font-heading font-semibold mt-0.5">
-                        {item.wholesalePrice} /un
+                        {formatCurrency(item.priceNum)} /un
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.qty >= 6 ? "Atacado aplicado" : `Faltam ${6 - item.qty} unidade(s) deste produto para atacado`}
                       </p>
                     </div>
                     <button
+                      aria-label={`Remover ${item.name}`}
                       onClick={() => removeItem(item.name)}
                       className="p-1.5 rounded-md hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
                     >
@@ -119,6 +123,8 @@ const CartDrawer = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <button
+                        aria-label={`Diminuir quantidade de ${item.name}`}
+                        disabled={item.qty <= 1}
                         onClick={() => updateQty(item.name, item.qty - 1)}
                         className="w-8 h-8 rounded-md bg-secondary flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors"
                       >
@@ -128,6 +134,7 @@ const CartDrawer = () => {
                         {item.qty}
                       </span>
                       <button
+                        aria-label={`Aumentar quantidade de ${item.name}`}
                         onClick={() => updateQty(item.name, item.qty + 1)}
                         className="w-8 h-8 rounded-md bg-secondary flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors"
                       >

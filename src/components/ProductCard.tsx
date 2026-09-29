@@ -14,7 +14,7 @@ interface ProductCardProps {
   viewMode?: "grid" | "list";
 }
 
-const ProductCard = ({ badge, badgeColor = "bg-primary", name, unitPrice, wholesalePrice, minQty, stock, image, viewMode = "grid" }: ProductCardProps) => {
+const ProductCard = ({ badge, badgeColor = "bg-primary", name, unitPrice, wholesalePrice, stock, image, viewMode = "grid" }: ProductCardProps) => {
   const [qty, setQty] = useState(1);
   const { addItem } = useCart();
 
@@ -47,15 +47,15 @@ const ProductCard = ({ badge, badgeColor = "bg-primary", name, unitPrice, wholes
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <div className="flex items-center gap-1.5">
-              <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-7 h-7 rounded-md bg-secondary flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors">
+              <button aria-label={`Diminuir quantidade de ${name}`} disabled={qty <= 1} onClick={() => setQty((q) => Math.max(1, q - 1))} className="w-7 h-7 rounded-md bg-secondary flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors">
                 <Minus className="w-3 h-3" />
               </button>
               <span className="font-heading font-bold text-xs text-foreground min-w-[2ch] text-center">{qty}</span>
-              <button onClick={() => setQty(qty + 1)} disabled={stock !== undefined && qty >= stock} className="w-7 h-7 rounded-md bg-secondary flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors disabled:opacity-40">
+              <button aria-label={`Aumentar quantidade de ${name}`} onClick={() => setQty((q) => q + 1)} disabled={stock !== undefined && qty >= stock} className="w-7 h-7 rounded-md bg-secondary flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors disabled:opacity-40">
                 <Plus className="w-3 h-3" />
               </button>
             </div>
-            <button onClick={handleAdd} disabled={stock !== undefined && stock < 1} className="w-9 h-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-40">
+            <button aria-label={`Adicionar ${name} ao carrinho`} onClick={handleAdd} disabled={stock !== undefined && stock < qty} className="w-9 h-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-40">
               {stock !== undefined && stock < 1 ? "—" : <ShoppingCart className="w-4 h-4" />}
             </button>
           </div>
@@ -87,14 +87,15 @@ const ProductCard = ({ badge, badgeColor = "bg-primary", name, unitPrice, wholes
         </p>
         <div className="flex items-baseline gap-2">
           <span className="text-[10px] font-heading font-semibold tracking-wider text-primary">
-            ATACADO (6+ UN)
+            {qty >= 6 ? "ATACADO APLICADO" : "PREÇO UNITÁRIO"}
           </span>
           <span className="font-heading font-black text-xl text-foreground">{qty >= 6 ? wholesalePrice : unitPrice}</span>
         </div>
 
+        <p className="text-xs text-muted-foreground">Atacado: {wholesalePrice}/un a partir de 6 unidades deste produto.</p>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setQty(Math.max(1, qty - 1))}
+            aria-label={`Diminuir quantidade de ${name}`} disabled={qty <= 1} onClick={() => setQty((q) => Math.max(1, q - 1))}
             className="w-8 h-8 rounded-md bg-secondary flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors"
           >
             <Minus className="w-3.5 h-3.5" />
@@ -103,7 +104,7 @@ const ProductCard = ({ badge, badgeColor = "bg-primary", name, unitPrice, wholes
             {qty}
           </span>
           <button
-            onClick={() => setQty(qty + 1)}
+            aria-label={`Aumentar quantidade de ${name}`} onClick={() => setQty((q) => q + 1)}
             disabled={stock !== undefined && qty >= stock}
             className="w-8 h-8 rounded-md bg-secondary flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors"
           >
@@ -112,8 +113,8 @@ const ProductCard = ({ badge, badgeColor = "bg-primary", name, unitPrice, wholes
         </div>
 
         <button
-          onClick={handleAdd}
-          disabled={stock !== undefined && stock < 1}
+          aria-label={`Adicionar ${name} ao carrinho`} onClick={handleAdd}
+          disabled={stock !== undefined && stock < qty}
           className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-heading font-bold text-xs tracking-wider py-3 rounded-lg hover:opacity-90 transition-opacity hover:shadow-[0_0_20px_hsl(45_100%_50%/0.3)]"
         >
           <ShoppingCart className="w-4 h-4" />

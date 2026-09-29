@@ -49,7 +49,7 @@ const Produto = () => {
   }, [id]);
 
   const addToCart = () => {
-    if (!product) return;
+    if (!product || product.stock < 1) return;
     const safeQty = Math.max(1, Math.min(product.stock, qty));
     addItem({
       name: product.name,
@@ -107,13 +107,13 @@ const Produto = () => {
             <div>
               <p className="text-xs text-muted-foreground">{qty >= 6 ? "Preço atacado aplicado" : "Preço unitário"}</p>
               <p className="text-3xl font-black text-primary">{formatCurrency(qty >= 6 ? product.wholesale_price : product.unit_price)}</p>
-              <p className="text-xs text-muted-foreground mt-1">Mínimo: 1 unidade · Atacado automático a partir de 6 unidades</p>
+              <p className="text-xs text-muted-foreground mt-1">Mínimo: 1 unidade · Atacado automático a partir de 6 unidades deste produto</p>
             </div>
 
             <div className="flex items-center gap-3">
-              <Button variant="outline" size="icon" onClick={() => setQty((q) => Math.max(1, q - 1))}>−</Button>
+              <Button variant="outline" size="icon" aria-label="Diminuir quantidade" disabled={qty <= 1} onClick={() => setQty((q) => Math.max(1, q - 1))}>−</Button>
               <div className="min-w-16 text-center font-black text-lg">{qty}</div>
-              <Button variant="outline" size="icon" onClick={() => setQty((q) => Math.min(product.stock, q + 1))}>+</Button>
+              <Button variant="outline" size="icon" aria-label="Aumentar quantidade" disabled={qty >= product.stock} onClick={() => setQty((q) => Math.min(product.stock, q + 1))}>+</Button>
               <span className="text-xs text-muted-foreground">Estoque: {product.stock}</span>
             </div>
 

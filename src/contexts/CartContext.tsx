@@ -20,7 +20,7 @@ function readShipping(): Shipping | null {
 }
 
 function parsePrice(price: string): number {
-  return parseFloat(price.replace("R$", "").replace(".", "").replace(",", ".").trim());
+  return parseFloat(price.replace("R$", "").replace(/\./g, "").replace(",", ".").trim());
 }
 
 function normalize(raw: unknown): CartItem[] {
@@ -32,7 +32,7 @@ function normalize(raw: unknown): CartItem[] {
       const wholesalePrice = String(i.wholesalePrice ?? "R$ 0,00");
       const unitPrice = String(i.unitPrice ?? i.wholesalePrice ?? "R$ 0,00");
       const minQty = 1;
-      const qty = Number.isFinite(Number(i.qty)) ? Math.max(1, Number(i.qty)) : 1;
+      const qty = Number.isFinite(Number(i.qty)) ? Math.max(1, Math.floor(Number(i.qty))) : 1;
       const selectedPrice = qty >= 6 ? parsePrice(wholesalePrice) : parsePrice(unitPrice);
       return { name, unitPrice, wholesalePrice, priceNum: Number.isFinite(selectedPrice) ? selectedPrice : 0, qty, minQty };
     })
@@ -101,6 +101,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const closeCart = useCallback(() => setIsOpen(false), []);
 
   const addItem = useCallback((item: Omit<CartItem, "priceNum">) => {
+    if (!Number.isSafeInteger(item.qty) || item.qty < 1) return;
     setItems((prev) => {
       const existing = prev.find((i) => i.name === item.name);
       if (existing) {
@@ -123,6 +124,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateQty = useCallback((name: string, qty: number) => {
+    if (!Number.isSafeInteger(qty)) return;
     setItems((prev) =>
       prev.flatMap((i) => {
         if (i.name !== name) return [i];

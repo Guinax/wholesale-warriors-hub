@@ -30,6 +30,7 @@ import NotFound from "./pages/NotFound.tsx";
 import Compartilhar from "./pages/Compartilhar.tsx";
 import MinhaConta from "./pages/MinhaConta.tsx";
 import ProtectedRoute from "./components/ProtectedRoute";
+import PainelRevendedor from "./pages/PainelRevendedor.tsx";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,7 @@ const App = () => (
             <Route path="/pagamento" element={<ProtectedRoute><Pagamento /></ProtectedRoute>} />
             <Route path="/recibo/:code" element={<ProtectedRoute><Recibo /></ProtectedRoute>} />
             <Route path="/minha-conta" element={<ProtectedRoute><MinhaConta /></ProtectedRoute>} />
+            <Route path="/revendedor" element={<ProtectedRoute><PainelRevendedor /></ProtectedRoute>} />
             <Route path="/produto/:id" element={<Produto />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />

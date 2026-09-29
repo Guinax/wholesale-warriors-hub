@@ -32,6 +32,9 @@ jobs:
       - name: Audit dependencies
         run: npm audit --audit-level=high || true
 
+      - name: Test Vitest security upgrade
+        run: npm install --no-save vitest@5.0.2
+
       - name: Run lint
         run: npm run lint
 

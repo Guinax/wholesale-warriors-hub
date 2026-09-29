@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, CreditCard, QrCode, ShieldCheck, Wallet } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -56,6 +56,8 @@ const Pagamento = () => {
   const { items, totalPrice, clearCart } = useCart() as ReturnType<typeof useCart> & { clearCart?: () => void };
   const { isAdmin } = useAdminAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const forceCentral = Boolean((location.state as { forceCentral?: boolean } | null)?.forceCentral);
   const { toast } = useToast();
 
   const [method, setMethod] = useState<PaymentMethod>("pix");
@@ -272,7 +274,7 @@ const Pagamento = () => {
 
     // Prefer a local partner when CEP geocoding is available. Any routing failure
     // intentionally falls through to the existing central checkout.
-    if (deliveryCoords && !freeShippingTestActive) {
+    if (deliveryCoords && !freeShippingTestActive && !forceCentral) {
       const partnerItems = items.map((i) => ({ product_id: i.productId, name: i.name, qty: i.qty })).filter((i) => i.product_id);
       if (partnerItems.length === items.length) {
         const { data: routed } = await supabase.rpc("partner_command" as never, {

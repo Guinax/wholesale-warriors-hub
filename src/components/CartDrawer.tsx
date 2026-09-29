@@ -6,7 +6,6 @@ import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/orderUtils";
 import {
-  FREE_SHIPPING_FROM,
   lookupCep,
   maskCepValue,
   onlyDigitsCep,
@@ -47,7 +46,7 @@ const CartDrawer = () => {
     }
     setShipping({
       ...info,
-      cost: shippingCostFor(info.state, totalPrice),
+      cost: shippingCostFor(info.state, totalPrice, totalItems),
       eta: shippingEtaFor(info.state),
     });
     toast({ title: "Frete calculado", description: `${info.city}/${info.state} · entrega em ${shippingEtaFor(info.state)}` });
@@ -153,6 +152,28 @@ const CartDrawer = () => {
                   R$ {totalPrice.toFixed(2).replace(".", ",")}
                 </span>
               </div>
+              <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+                <div className="flex items-center gap-2 text-xs font-heading font-bold text-foreground">
+                  <Truck className="w-4 h-4 text-primary" /> CALCULAR FRETE
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    value={cep}
+                    inputMode="numeric"
+                    placeholder="00000-000"
+                    onChange={(e) => setCep(maskCepValue(e.target.value))}
+                    className="min-w-0 flex-1 rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground"
+                  />
+                  <button onClick={handleCalcFrete} disabled={calculating} className="rounded-md bg-secondary px-3 text-xs font-heading font-bold text-foreground disabled:opacity-50">
+                    {calculating ? "..." : "CALCULAR"}
+                  </button>
+                </div>
+                {shipping && (
+                  <div className="text-[11px] text-muted-foreground">
+                    {shipping.city}/{shipping.state} · {shipping.eta} · <strong className="text-foreground">{formatCurrency(shippingCost)}</strong>
+                  </div>
+                )}
+              </div>
               <button
                 onClick={closeCart}
                 className="w-full flex items-center justify-center gap-2 bg-secondary text-foreground font-heading font-bold text-xs tracking-wider py-3 rounded-lg hover:bg-secondary/70 transition-colors"
@@ -161,10 +182,7 @@ const CartDrawer = () => {
                 VOLTAR ÀS COMPRAS
               </button>
               <button
-                onClick={() => {
-                  closeCart();
-                  navigate("/pagamento");
-                }}
+                onClick={handleCheckout}
                 className="w-full bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon"
               >
                 IR PARA PAGAMENTO

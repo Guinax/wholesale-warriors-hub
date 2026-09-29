@@ -41,7 +41,7 @@ const Produto = () => {
       if (!active) return;
       const next = (data ?? null) as Product | null;
       setProduct(next);
-      setQty(next?.min_qty ?? 1);
+      setQty(1);
       setLoading(false);
       if (next) document.title = `${next.name} | Família Maromba`;
     })();
@@ -50,12 +50,13 @@ const Produto = () => {
 
   const addToCart = () => {
     if (!product) return;
-    const safeQty = Math.max(product.min_qty, Math.min(product.stock, qty));
+    const safeQty = Math.max(1, Math.min(product.stock, qty));
     addItem({
       name: product.name,
+      unitPrice: formatCurrency(product.unit_price),
       wholesalePrice: formatCurrency(product.wholesale_price),
       qty: safeQty,
-      minQty: product.min_qty,
+      minQty: 1,
     });
   };
 
@@ -104,19 +105,19 @@ const Produto = () => {
 
           <Card className="p-5 space-y-4">
             <div>
-              <p className="text-xs text-muted-foreground">Preço atacado</p>
-              <p className="text-3xl font-black text-primary">{formatCurrency(product.wholesale_price)}</p>
-              <p className="text-xs text-muted-foreground mt-1">Pedido mínimo: {product.min_qty} unidade(s)</p>
+              <p className="text-xs text-muted-foreground">{qty >= 6 ? "Preço atacado aplicado" : "Preço unitário"}</p>
+              <p className="text-3xl font-black text-primary">{formatCurrency(qty >= 6 ? product.wholesale_price : product.unit_price)}</p>
+              <p className="text-xs text-muted-foreground mt-1">Mínimo: 1 unidade · Atacado automático a partir de 6 unidades</p>
             </div>
 
             <div className="flex items-center gap-3">
-              <Button variant="outline" size="icon" onClick={() => setQty((q) => Math.max(product.min_qty, q - 1))}>−</Button>
+              <Button variant="outline" size="icon" onClick={() => setQty((q) => Math.max(1, q - 1))}>−</Button>
               <div className="min-w-16 text-center font-black text-lg">{qty}</div>
               <Button variant="outline" size="icon" onClick={() => setQty((q) => Math.min(product.stock, q + 1))}>+</Button>
               <span className="text-xs text-muted-foreground">Estoque: {product.stock}</span>
             </div>
 
-            <Button size="lg" className="w-full font-heading font-black" onClick={addToCart} disabled={product.stock < product.min_qty}>
+            <Button size="lg" className="w-full font-heading font-black" onClick={addToCart} disabled={product.stock < 1}>
               <ShoppingCart className="w-4 h-4" /> ADICIONAR AO CARRINHO
             </Button>
           </Card>

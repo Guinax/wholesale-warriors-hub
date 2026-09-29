@@ -92,7 +92,7 @@ const CadastroCNPJ = () => {
           emailRedirectTo,
           data: {
             full_name: registration.responsavel.trim(),
-            phone: registration.telefone,
+            phone: registration.whatsapp || registration.telefone,
             cpf: registration.cpfResponsavel,
             cnpj: registration.cnpj,
             address_street: registration.endereco.trim(),

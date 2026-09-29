@@ -28,6 +28,8 @@ export default function PainelRevendedor() {
   const [weightKg, setWeightKg] = useState<Record<string, string>>({});
   const [eta, setEta] = useState<Record<string, string>>({});
   const [deliveryCode, setDeliveryCode] = useState<Record<string, string>>({});
+  const [registering, setRegistering] = useState(false);
+  const [newStore, setNewStore] = useState({ name:"", document:"", phone:"", address:"", lat:"", lng:"", radius_km:"15", terms:false });
 
   const load = async () => {
     const { data, error } = await supabase
@@ -67,6 +69,24 @@ export default function PainelRevendedor() {
     const result = data as unknown as { error?: string };
     if (result?.error) return toast.error(result.error);
     toast.success(success);
+    await load();
+  };
+
+  const registerStore = async () => {
+    const document = newStore.document.replace(/\D/g, "");
+    if (newStore.name.trim().length < 2 || document.length !== 14 || newStore.phone.trim().length < 8 || newStore.address.trim().length < 5) {
+      return toast.error("Preencha corretamente nome, CNPJ, telefone e endereço.");
+    }
+    const lat = Number(newStore.lat), lng = Number(newStore.lng), radius = Number(newStore.radius_km);
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng) || lng < -180 || lng > 180) return toast.error("Informe coordenadas válidas da loja.");
+    if (!Number.isFinite(radius) || radius < 1 || radius > 50) return toast.error("O raio deve ficar entre 1 e 50 km.");
+    if (!newStore.terms) return toast.error("Aceite as condições de participação.");
+    setRegistering(true);
+    const { error } = await supabase.rpc("partner_command" as never, { p_action:"register", p_payload:{ ...newStore, document, lat, lng, radius_km:radius, terms:true } } as never);
+    setRegistering(false);
+    if (error) return toast.error(error.message);
+    toast.success("Loja enviada para aprovação.");
+    setNewStore({ name:"", document:"", phone:"", address:"", lat:"", lng:"", radius_km:"15", terms:false });
     await load();
   };
 
@@ -110,7 +130,21 @@ export default function PainelRevendedor() {
           </CardContent></Card>)}
         </section>}
 
-        {stores.length === 0 && <Card><CardContent className="py-8">Nenhuma loja vinculada à sua conta.</CardContent></Card>}
+        {stores.length === 0 && <Card>
+          <CardHeader><CardTitle>Ativar operação como revendedor</CardTitle></CardHeader>
+          <CardContent className="grid gap-3 md:grid-cols-2">
+            <input className="h-10 rounded-md border bg-background px-3" placeholder="Nome da loja" value={newStore.name} onChange={(e)=>setNewStore({...newStore,name:e.target.value})}/>
+            <input className="h-10 rounded-md border bg-background px-3" placeholder="CNPJ" inputMode="numeric" value={newStore.document} onChange={(e)=>setNewStore({...newStore,document:e.target.value})}/>
+            <input className="h-10 rounded-md border bg-background px-3" placeholder="Telefone / WhatsApp" value={newStore.phone} onChange={(e)=>setNewStore({...newStore,phone:e.target.value})}/>
+            <input className="h-10 rounded-md border bg-background px-3" placeholder="Endereço completo" value={newStore.address} onChange={(e)=>setNewStore({...newStore,address:e.target.value})}/>
+            <input className="h-10 rounded-md border bg-background px-3" placeholder="Latitude" inputMode="decimal" value={newStore.lat} onChange={(e)=>setNewStore({...newStore,lat:e.target.value})}/>
+            <input className="h-10 rounded-md border bg-background px-3" placeholder="Longitude" inputMode="decimal" value={newStore.lng} onChange={(e)=>setNewStore({...newStore,lng:e.target.value})}/>
+            <div className="space-y-1"><Label>Raio de atendimento (km)</Label><input className="h-10 w-full rounded-md border bg-background px-3" inputMode="decimal" value={newStore.radius_km} onChange={(e)=>setNewStore({...newStore,radius_km:e.target.value})}/></div>
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={newStore.terms} onChange={(e)=>setNewStore({...newStore,terms:e.target.checked})}/> Aceito as condições da operação parceira.</label>
+            <div className="md:col-span-2"><Button disabled={registering} onClick={()=>void registerStore()}>{registering ? "Enviando..." : "Enviar loja para aprovação"}</Button></div>
+            <p className="md:col-span-2 text-xs text-muted-foreground">A loja só recebe pedidos depois da aprovação administrativa, aceite das condições vigentes, configuração de estoque e abertura da operação.</p>
+          </CardContent>
+        </Card>}
         {stores.map((store) => (
           <Card key={store.id}>
             <CardHeader><CardTitle>{store.name}</CardTitle></CardHeader>

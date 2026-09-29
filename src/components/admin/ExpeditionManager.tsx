@@ -144,7 +144,7 @@ const ExpeditionManager = () => {
 
   const adjustStock = async (p: StockProduct, delta: number) => {
     const next = Math.max(0, p.stock + delta);
-    const { error } = await supabase.from("products").update({ stock: next }).eq("id", p.id);
+    const { error } = await supabase.rpc("admin_adjust_central_stock" as never, { _product_id: p.id, _delta: next - p.stock } as never);
     if (error) { toast.error("Erro ao ajustar estoque"); return; }
     await supabase.from("stock_movements").insert({
       product_id: p.id, product_name: p.name, qty: next - p.stock, reason: "ajuste manual",
@@ -170,26 +170,10 @@ const ExpeditionManager = () => {
       toast.error("A expedição só pode começar após a confirmação do pagamento.");
       return;
     }
-    const items = orderItems(o);
-    const missing = shortages(o);
-    if (missing.length) {
-      toast.error(`Estoque insuficiente: ${missing.map((m: OrderItem) => m.name).join(", ")}`);
-      return;
-    }
-    for (const it of items) {
-      const p = stockByName.get(String(it.name ?? "").trim().toLowerCase());
-      const qty = itemQty(it);
-      if (!p || qty <= 0) continue;
-      await supabase.from("products").update({ stock: Math.max(0, p.stock - qty) }).eq("id", p.id);
-      await supabase.from("stock_movements").insert({
-        product_id: p.id, product_name: p.name, order_id: o.id, order_code: o.order_code,
-        qty: -qty, reason: "carregamento",
-      });
-    }
     await patchOrder(o.id, {
       expedition_status: "carregado",
       loaded_at: new Date().toISOString(),
-    }, "Carregamento confirmado e estoque baixado");
+    }, "Carregamento confirmado");
     load();
   };
 

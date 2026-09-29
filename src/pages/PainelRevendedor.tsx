@@ -27,6 +27,7 @@ export default function PainelRevendedor() {
   const [routeKm, setRouteKm] = useState<Record<string, string>>({});
   const [weightKg, setWeightKg] = useState<Record<string, string>>({});
   const [eta, setEta] = useState<Record<string, string>>({});
+  const [deliveryCode, setDeliveryCode] = useState<Record<string, string>>({});
 
   const load = async () => {
     const { data, error } = await supabase
@@ -99,7 +100,13 @@ export default function PainelRevendedor() {
             </div>}
             {r.status === "quoted" && <p className="font-medium">Frete calculado: R$ {Number(r.shipping ?? 0).toFixed(2).replace(".", ",")} • aguardando cliente/pagamento</p>}
             {r.status === "paid" && <Button onClick={() => void command("dispatch", { request_id:r.id }, "Pedido saiu para entrega.")}>Saiu para entrega</Button>}
-            {r.status === "delivering" && <p className="text-sm text-muted-foreground">Em entrega. A confirmação final exige o código do cliente e verificação de maioridade.</p>}
+            {r.status === "delivering" && <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Confirme presencialmente a maioridade do recebedor e peça o código de entrega exibido ao cliente.</p>
+              <div className="flex gap-2">
+                <input className="h-10 flex-1 rounded-md border bg-background px-3 uppercase" placeholder="Código do cliente" maxLength={8} value={deliveryCode[r.id] ?? ""} onChange={(e) => setDeliveryCode((x) => ({...x,[r.id]:e.target.value.toUpperCase()}))} />
+                <Button disabled={(deliveryCode[r.id] ?? "").length < 4 || saving === r.id} onClick={() => void command("deliver", { request_id:r.id, code:deliveryCode[r.id], adult_verified:true }, "Entrega confirmada e estoque baixado.")}>Confirmar entrega</Button>
+              </div>
+            </div>}
           </CardContent></Card>)}
         </section>}
 

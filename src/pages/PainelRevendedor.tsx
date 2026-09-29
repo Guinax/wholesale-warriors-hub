@@ -30,6 +30,7 @@ export default function PainelRevendedor() {
   const [deliveryCode, setDeliveryCode] = useState<Record<string, string>>({});
   const [registering, setRegistering] = useState(false);
   const [newStore, setNewStore] = useState({ name:"", document:"", phone:"", address:"", lat:"", lng:"", radius_km:"15", terms:false });
+  const [pix, setPix] = useState<Record<string,{pix_key_type:string;pix_key:string;holder_name:string;holder_document:string}>>({});
 
   const load = async () => {
     const { data, error } = await supabase
@@ -37,7 +38,14 @@ export default function PainelRevendedor() {
       .select("id,name,status,is_open,delivery_mode,own_driver_available")
       .order("created_at", { ascending: false });
     if (error) return toast.error("Não foi possível carregar suas lojas.");
-    setStores((data ?? []) as unknown as Store[]);
+    const loadedStores=(data ?? []) as unknown as Store[];
+    setStores(loadedStores);
+    if (loadedStores.length) {
+      const { data: accounts } = await supabase.from("partner_payout_accounts" as never).select("store_id,pix_key_type,pix_key,holder_name,holder_document");
+      const mapped: typeof pix = {};
+      ((accounts ?? []) as unknown as Array<{store_id:string;pix_key_type:string;pix_key:string;holder_name:string;holder_document:string}>).forEach(a=>{ mapped[a.store_id]={pix_key_type:a.pix_key_type,pix_key:a.pix_key,holder_name:a.holder_name,holder_document:a.holder_document}; });
+      setPix(mapped);
+    }
     const { data: dashboard, error: dashboardError } = await supabase.rpc("partner_command" as never, { p_action: "dashboard", p_payload: {} } as never);
     if (!dashboardError && dashboard) {
       const d = dashboard as unknown as { offers?: Offer[]; requests?: Request[] };
@@ -70,6 +78,16 @@ export default function PainelRevendedor() {
     if (result?.error) return toast.error(result.error);
     toast.success(success);
     await load();
+  };
+
+  const savePix = async (storeId:string) => {
+    const p=pix[storeId];
+    if (!p?.pix_key || p.holder_name.trim().length<3 || ![11,14].includes(p.holder_document.replace(/\D/g,"").length)) return toast.error("Confira os dados PIX.");
+    setSaving("pix-"+storeId);
+    const { error }=await supabase.from("partner_payout_accounts" as never).upsert({store_id:storeId,...p,holder_document:p.holder_document.replace(/\D/g,"")} as never,{onConflict:"store_id"});
+    setSaving(null);
+    if(error) return toast.error(error.message);
+    toast.success("Conta de repasse salva com segurança.");
   };
 
   const registerStore = async () => {
@@ -166,6 +184,16 @@ export default function PainelRevendedor() {
                 <div><Label>Motoqueiro disponível agora</Label><p className="text-sm text-muted-foreground">Prioriza entrega própria quando disponível.</p></div>
                 <Switch disabled={store.delivery_mode === "third_party"} checked={store.own_driver_available}
                   onCheckedChange={(checked) => setStores((prev) => prev.map((s) => s.id === store.id ? { ...s, own_driver_available: checked } : s))} />
+              </div>
+              <div className="md:col-span-2 rounded-lg border p-4 space-y-3">
+                <div><Label>Conta PIX para receber repasses</Label><p className="text-xs text-muted-foreground">O cliente paga à plataforma. Esta conta é usada somente para o repasse da sua loja.</p></div>
+                <div className="grid gap-2 md:grid-cols-2">
+                  <Select value={pix[store.id]?.pix_key_type ?? "cnpj"} onValueChange={(v)=>setPix(x=>({...x,[store.id]:{...(x[store.id]??{pix_key:"",holder_name:"",holder_document:""}),pix_key_type:v}}))}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="cpf">CPF</SelectItem><SelectItem value="cnpj">CNPJ</SelectItem><SelectItem value="email">E-mail</SelectItem><SelectItem value="phone">Telefone</SelectItem><SelectItem value="random">Aleatória</SelectItem></SelectContent></Select>
+                  <input className="h-10 rounded-md border bg-background px-3" placeholder="Chave PIX" value={pix[store.id]?.pix_key ?? ""} onChange={e=>setPix(x=>({...x,[store.id]:{...(x[store.id]??{pix_key_type:"cnpj",holder_name:"",holder_document:""}),pix_key:e.target.value}}))}/>
+                  <input className="h-10 rounded-md border bg-background px-3" placeholder="Nome do titular" value={pix[store.id]?.holder_name ?? ""} onChange={e=>setPix(x=>({...x,[store.id]:{...(x[store.id]??{pix_key_type:"cnpj",pix_key:"",holder_document:""}),holder_name:e.target.value}}))}/>
+                  <input className="h-10 rounded-md border bg-background px-3" placeholder="CPF/CNPJ do titular" value={pix[store.id]?.holder_document ?? ""} onChange={e=>setPix(x=>({...x,[store.id]:{...(x[store.id]??{pix_key_type:"cnpj",pix_key:"",holder_name:""}),holder_document:e.target.value}}))}/>
+                </div>
+                <Button variant="outline" disabled={saving==="pix-"+store.id} onClick={()=>void savePix(store.id)}>{saving==="pix-"+store.id?"Salvando...":"Salvar conta PIX"}</Button>
               </div>
               <div className="md:col-span-2 flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Cadastro: {store.status}</span>

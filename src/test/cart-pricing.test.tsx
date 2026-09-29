@@ -31,6 +31,18 @@ describe("Compra por unidade e atacado por produto", () => {
     expect(result.current.totalPrice).toBe(60);
   });
 
+
+  it("preserva productId no carrinho e separa produtos pelo UUID", () => {
+    const { result } = renderHook(() => useCart(), { wrapper: CartProvider });
+    act(() => {
+      result.current.addItem({ ...product, productId: "produto-a", qty: 1 });
+      result.current.addItem({ ...product, productId: "produto-b", qty: 1 });
+    });
+    expect(result.current.items).toHaveLength(2);
+    expect(result.current.items.map((item) => item.productId)).toEqual(["produto-a", "produto-b"]);
+    expect(JSON.parse(localStorage.getItem("fm_cart_v1") ?? "[]").map((item: { productId?: string }) => item.productId)).toEqual(["produto-a", "produto-b"]);
+  });
+
   it("ignora quantidades inválidas sem corromper o total", () => {
     const { result } = renderHook(() => useCart(), { wrapper: CartProvider });
     act(() => result.current.addItem(product));

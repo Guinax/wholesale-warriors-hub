@@ -43,6 +43,22 @@ describe("Compra por unidade e atacado por produto", () => {
     expect(JSON.parse(localStorage.getItem("fm_cart_v1") ?? "[]").map((item: { productId?: string }) => item.productId)).toEqual(["produto-a", "produto-b"]);
   });
 
+
+  it("altera e remove somente o UUID selecionado quando nomes são iguais", () => {
+    const { result } = renderHook(() => useCart(), { wrapper: CartProvider });
+    act(() => {
+      result.current.addItem({ ...product, productId: "produto-a", qty: 1 });
+      result.current.addItem({ ...product, productId: "produto-b", qty: 1 });
+    });
+    act(() => result.current.updateQty("produto-b", 6));
+    expect(result.current.items.find((item) => item.productId === "produto-a")?.qty).toBe(1);
+    expect(result.current.items.find((item) => item.productId === "produto-b")?.qty).toBe(6);
+    expect(result.current.items.find((item) => item.productId === "produto-b")?.priceNum).toBe(8);
+    act(() => result.current.removeItem("produto-a"));
+    expect(result.current.items).toHaveLength(1);
+    expect(result.current.items[0].productId).toBe("produto-b");
+  });
+
   it("ignora quantidades inválidas sem corromper o total", () => {
     const { result } = renderHook(() => useCart(), { wrapper: CartProvider });
     act(() => result.current.addItem(product));

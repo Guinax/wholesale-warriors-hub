@@ -43,7 +43,7 @@ const Auth = () => {
   const [params] = useSearchParams();
   const rawNext = params.get("next") ?? "";
   const nextPath = rawNext.startsWith("/") && !rawNext.startsWith("//") && !rawNext.includes("\\") ? rawNext : "/minha-conta";
-  const [mode, setMode] = useState<"login" | "signup" | "recovery">("login");
+  const [mode, setMode] = useState<"login" | "recovery">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -93,40 +93,9 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (mode === "signup" && !validateSignup()) return;
     setLoading(true);
     try {
-      if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({
-          email: email.trim().toLowerCase(),
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}${nextPath}`,
-            data: {
-              full_name: fullName,
-              phone,
-              cpf,
-              cnpj: cnpj || null,
-              address_street: street,
-              address_number: number,
-              address_complement: complement || null,
-              address_city: city,
-              address_state: uf.toUpperCase(),
-              address_zip: zip,
-            },
-          },
-        });
-        if (error) throw error;
-        if (!data.user || data.user.identities?.length === 0) {
-          throw new Error("Este e-mail já pode ter cadastro. Tente entrar ou recuperar sua senha.");
-        }
-        setPassword("");
-        await logAudit("signup", { details: { email } });
-        toast.success(data.session
-          ? "Cadastro realizado! Você já pode entrar na loja."
-          : "Cadastro solicitado. Confirme seu e-mail pelo link recebido antes de entrar.");
-        setMode("login");
-      } else {
+      {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         await logAudit("login", { details: { email } });
@@ -174,7 +143,7 @@ const Auth = () => {
         <div className="text-center space-y-1">
           <div className="inline-flex p-3 rounded-full bg-primary/10"><Lock className="w-6 h-6 text-primary" /></div>
           <h1 className="text-2xl font-heading font-bold">Família Maromba</h1>
-          <p className="text-sm text-muted-foreground">{mode === "login" ? "Entre com suas credenciais" : mode === "recovery" ? "Recupere sua senha" : "Crie sua conta para comprar"}</p>
+          <p className="text-sm text-muted-foreground">{mode === "recovery" ? "Recupere sua senha" : "Entre com suas credenciais"}</p>
         </div>
         {mode === "recovery" ? (
           <form onSubmit={handleForgotPassword} className="space-y-4">
@@ -185,18 +154,12 @@ const Auth = () => {
           </form>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === "signup" && <>
-              <div className="space-y-2"><Label htmlFor="name">Nome completo</Label><div className="relative"><User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} required className="pl-9" placeholder="Seu nome" /></div></div>
-              <div className="space-y-2"><Label htmlFor="phone">WhatsApp</Label><div className="relative"><Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input id="phone" value={phone} onChange={(e) => setPhone(maskPhone(e.target.value))} required inputMode="tel" className="pl-9" placeholder="(00) 00000-0000" /></div></div>
-              <div className="grid grid-cols-2 gap-3"><div className="space-y-2"><Label htmlFor="cpf">CPF</Label><Input id="cpf" value={cpf} inputMode="numeric" required placeholder="000.000.000-00" onChange={(e) => setCpf(maskCpf(e.target.value))} /></div><div className="space-y-2"><Label htmlFor="cnpj">CNPJ (opcional)</Label><Input id="cnpj" value={cnpj} inputMode="numeric" placeholder="00.000.000/0000-00" onChange={(e) => setCnpj(maskCnpj(e.target.value))} /></div></div>
-              <div className="space-y-2"><Label className="flex items-center gap-1.5 text-xs text-muted-foreground"><MapPin className="w-3.5 h-3.5" /> Endereço de entrega</Label><div className="grid grid-cols-2 gap-3"><Input value={zip} inputMode="numeric" required placeholder="CEP 00000-000" onChange={(e) => setZip(maskCep(e.target.value))} /><Input value={number} inputMode="numeric" required placeholder="Número" onChange={(e) => setNumber(e.target.value)} /></div><Input value={street} required placeholder="Rua / Avenida" onChange={(e) => setStreet(e.target.value)} /><Input value={complement} placeholder="Complemento (opcional)" onChange={(e) => setComplement(e.target.value)} /><div className="grid grid-cols-[1fr_80px] gap-3"><Input value={city} required placeholder="Cidade" onChange={(e) => setCity(e.target.value)} /><Input value={uf} required placeholder="UF" onChange={(e) => setUf(e.target.value.toUpperCase().slice(0, 2))} /></div></div>
-            </>}
             <div className="space-y-2"><Label htmlFor="email">E-mail</Label><div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="pl-9" placeholder="seu@email.com" /></div></div>
-            <div className="space-y-2"><Label htmlFor="password">Senha</Label><div className="relative"><Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={mode === "signup" ? 8 : 1} placeholder="••••••••" className="pr-10" /><button type="button" onClick={() => setShowPassword((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}>{showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button></div>{mode === "login" && <button type="button" onClick={() => { setRecoverySent(false); setMode("recovery"); }} className="text-xs text-primary hover:underline">Esqueci minha senha</button>}</div>
-            <Button type="submit" className="w-full" disabled={loading}>{loading ? "Aguarde..." : mode === "login" ? "Entrar" : "Cadastrar"}</Button>
+            <div className="space-y-2"><Label htmlFor="password">Senha</Label><div className="relative"><Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={1} placeholder="••••••••" className="pr-10" /><button type="button" onClick={() => setShowPassword((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}>{showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button></div>{mode === "login" && <button type="button" onClick={() => { setRecoverySent(false); setMode("recovery"); }} className="text-xs text-primary hover:underline">Esqueci minha senha</button>}</div>
+            <Button type="submit" className="w-full" disabled={loading}>{loading ? "Aguarde..." : "Entrar"}</Button>
           </form>
         )}
-        <div className="text-center text-sm space-y-2">{mode === "recovery" ? <button onClick={() => setMode("login")} className="text-primary hover:underline">Voltar para o login</button> : mode === "login" ? <button onClick={() => setMode("signup")} className="text-primary hover:underline">Não tem conta? Cadastre-se</button> : <button onClick={() => setMode("login")} className="text-primary hover:underline">Já tem conta? Entrar</button>}</div>
+        <div className="text-center text-sm space-y-2">{mode === "recovery" ? <button onClick={() => setMode("login")} className="text-primary hover:underline">Voltar para o login</button> : <button onClick={() => navigate("/cadastro")} className="text-primary hover:underline">Não tem conta? Cadastre-se</button>}</div>
         <button onClick={() => contactWhatsApp("Olá! Preciso de suporte com a Loja Família Maromba.")} className="w-full flex items-center justify-center gap-2 bg-[#25D366] text-white font-heading font-bold text-sm py-3 rounded-lg hover:opacity-90 transition-opacity"><MessageCircle className="w-4 h-4" />SUPORTE VIA WHATSAPP</button>
         <p className="text-[10px] text-muted-foreground text-center">(19) 97115-1107 — atendimento direto com nossa equipe</p>
       </Card>

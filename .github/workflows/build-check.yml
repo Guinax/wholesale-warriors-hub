@@ -32,11 +32,6 @@ jobs:
       - name: Audit dependencies
         run: npm audit --audit-level=high || true
 
-      - name: Trace remaining deprecated dependencies
-        run: |
-          npm ls punycode glob || true
-          npm explain punycode || true
-
       - name: Run lint
         run: npm run lint
 

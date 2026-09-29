@@ -134,8 +134,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const totalItems = items.reduce((sum, i) => sum + i.qty, 0);
   const totalPrice = items.reduce((sum, i) => sum + i.priceNum * i.qty, 0);
 
-  // Recalcula o frete quando o valor do lote muda (frete grátis acima do limite)
-  const shippingCost = shipping ? shippingCostFor(shipping.state, totalPrice) : 0;
+  // Recalcula o frete conforme a quantidade total e o número de caixas.
+  const shippingCost = shipping ? shippingCostFor(shipping.state, totalPrice, totalItems) : 0;
   const grandTotal = totalPrice + shippingCost;
 
   return (

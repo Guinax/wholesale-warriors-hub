@@ -1,4 +1,7 @@
-// Cálculo de frete por CEP (consulta ViaCEP + tabela por região)
+// Cálculo inicial de frete por CEP, peso e caixas.
+// Origem operacional: Iracemápolis/SP - CEP 13495-041.
+// Referência inicial: caixa padrão com até 6 unidades, ~12,6 kg carregada.
+// Estes parâmetros ficam centralizados para ajuste conforme os fretes reais da operação.
 
 export interface CepInfo {
   cep: string;
@@ -8,18 +11,50 @@ export interface CepInfo {
   neighborhood: string;
 }
 
+export interface ShippingLoad {
+  units: number;
+  boxes: number;
+  estimatedWeightKg: number;
+}
+
 const SUDESTE_SUL = ["SP", "RJ", "MG", "ES", "PR", "SC", "RS"];
 const CENTRO_NORDESTE = ["GO", "MT", "MS", "DF", "BA", "SE", "AL", "PE", "PB", "RN", "CE", "PI", "MA"];
 
-export const FREE_SHIPPING_FROM = 1000;
+export const SHIPPING_ORIGIN_CEP = "13495-041";
+export const UNITS_PER_BOX = 6;
+export const ESTIMATED_BOX_WEIGHT_KG = 12.6;
+export const MIN_BILLABLE_WEIGHT_KG = 1;
 
-export function shippingCostFor(state: string, subtotal: number): number {
-  if (subtotal >= FREE_SHIPPING_FROM) return 0;
+export function shippingLoadFor(totalUnits: number): ShippingLoad {
+  const units = Math.max(1, Math.ceil(totalUnits));
+  const boxes = Math.max(1, Math.ceil(units / UNITS_PER_BOX));
+  const estimatedWeightKg = Math.max(
+    MIN_BILLABLE_WEIGHT_KG,
+    Number((boxes * ESTIMATED_BOX_WEIGHT_KG).toFixed(1)),
+  );
+  return { units, boxes, estimatedWeightKg };
+}
+
+function baseRateFor(state: string): number {
   const uf = state.toUpperCase();
   if (uf === "SP") return 19.9;
   if (SUDESTE_SUL.includes(uf)) return 29.9;
   if (CENTRO_NORDESTE.includes(uf)) return 39.9;
-  return 49.9; // Norte
+  return 49.9;
+}
+
+function extraBoxRateFor(state: string): number {
+  const uf = state.toUpperCase();
+  if (uf === "SP") return 14.9;
+  if (SUDESTE_SUL.includes(uf)) return 22.9;
+  if (CENTRO_NORDESTE.includes(uf)) return 29.9;
+  return 39.9;
+}
+
+export function shippingCostFor(state: string, _subtotal: number, totalUnits = 1): number {
+  const { boxes } = shippingLoadFor(totalUnits);
+  const cost = baseRateFor(state) + Math.max(0, boxes - 1) * extraBoxRateFor(state);
+  return Number(cost.toFixed(2));
 }
 
 export function shippingEtaFor(state: string): string {

@@ -151,13 +151,22 @@ Deno.serve(async (req) => {
     return json({ error: "Não foi possível validar o CEP. Tente novamente." }, 503);
   }
 
+  // O servidor recalcula o frete com os mesmos parâmetros do checkout.
+  // Caixa padrão: até 6 unidades; pedidos maiores usam múltiplas caixas.
+  const unitsPerBox = 6;
+  const totalUnits = [...quantities.values()].reduce((sum, qty) => sum + qty, 0);
+  const boxes = Math.max(1, Math.ceil(totalUnits / unitsPerBox));
   const southSoutheast = new Set(["SP","RJ","MG","ES","PR","SC","RS"]);
   const centerNortheast = new Set(["GO","MT","MS","DF","BA","SE","AL","PE","PB","RN","CE","PI","MA"]);
-  const shippingAmount =
-    merchandiseTotal >= 1000 ? 0 :
+  const baseShipping =
     uf === "SP" ? 19.9 :
     southSoutheast.has(uf) ? 29.9 :
     centerNortheast.has(uf) ? 39.9 : 49.9;
+  const extraBoxShipping =
+    uf === "SP" ? 14.9 :
+    southSoutheast.has(uf) ? 22.9 :
+    centerNortheast.has(uf) ? 29.9 : 39.9;
+  const shippingAmount = Math.round((baseShipping + Math.max(0, boxes - 1) * extraBoxShipping) * 100) / 100;
 
   if (shippingAmount > 0) {
     items.push({ description: "Frete", price: Math.round(shippingAmount * 100), quantity: 1 });

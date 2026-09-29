@@ -96,7 +96,7 @@ const CartDrawer = () => {
             <div className="flex-1 overflow-y-auto py-4 space-y-3">
               {items.map((item) => (
                 <div
-                  key={item.name}
+                  key={item.productId ?? item.name}
                   className="bg-card border border-border rounded-xl p-4 space-y-3"
                 >
                   <div className="flex items-start justify-between">
@@ -113,7 +113,7 @@ const CartDrawer = () => {
                     </div>
                     <button
                       aria-label={`Remover ${item.name}`}
-                      onClick={() => removeItem(item.name)}
+                      onClick={() => removeItem(item.productId ?? item.name)}
                       className="p-1.5 rounded-md hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -125,7 +125,7 @@ const CartDrawer = () => {
                       <button
                         aria-label={`Diminuir quantidade de ${item.name}`}
                         disabled={item.qty <= 1}
-                        onClick={() => updateQty(item.name, item.qty - 1)}
+                        onClick={() => updateQty(item.productId ?? item.name, item.qty - 1)}
                         className="w-8 h-8 rounded-md bg-secondary flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors"
                       >
                         <Minus className="w-3.5 h-3.5" />
@@ -135,7 +135,7 @@ const CartDrawer = () => {
                       </span>
                       <button
                         aria-label={`Aumentar quantidade de ${item.name}`}
-                        onClick={() => updateQty(item.name, item.qty + 1)}
+                        onClick={() => updateQty(item.productId ?? item.name, item.qty + 1)}
                         className="w-8 h-8 rounded-md bg-secondary flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors"
                       >
                         <Plus className="w-3.5 h-3.5" />

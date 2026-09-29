@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ImagePlus, Save, ShieldCheck, Video } from "lucide-react";
+import { ArrowLeft, ImagePlus, Save, Share2, ShieldCheck, Video } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
@@ -72,6 +72,31 @@ const CampaignMediaStudio = () => {
     setVideo(media[2] ?? "");
   }, [selected]);
 
+  const shareCampaign = async () => {
+    if (!selected) {
+      toast.error("Selecione uma campanha.");
+      return;
+    }
+
+    const shareText = [selected.name, selected.headline].filter(Boolean).join("\n");
+    const shareData = {
+      title: selected.name,
+      text: shareText,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+      await navigator.clipboard.writeText(shareText);
+      toast.success("Texto da campanha copiado para compartilhar.");
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      toast.error("Não foi possível compartilhar a campanha.");
+    }
+  };
+
   const save = async () => {
     if (!selected) {
       toast.error("Selecione uma campanha.");
@@ -126,9 +151,15 @@ const CampaignMediaStudio = () => {
             </Select>
           </div>
           {selected && (
-            <div className="rounded-lg border p-3">
-              <p className="font-semibold">{selected.name}</p>
-              <p className="text-xs text-muted-foreground">{selected.headline}</p>
+            <div className="rounded-lg border p-3 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-semibold">{selected.name}</p>
+                <p className="text-xs text-muted-foreground">{selected.headline}</p>
+              </div>
+              <Button type="button" variant="outline" size="sm" onClick={shareCampaign}>
+                <Share2 className="w-4 h-4" />
+                Compartilhar
+              </Button>
             </div>
           )}
         </Card>

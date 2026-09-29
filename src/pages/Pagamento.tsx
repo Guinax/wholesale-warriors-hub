@@ -237,13 +237,22 @@ const Pagamento = () => {
       }
     }
 
-    const { data: catalog, error: catalogError } = await supabase.from("products")
-      .select("id,name,unit_price,wholesale_price,stock").eq("active", true).in("name", items.map(item => item.name));
-    if (catalogError) {
+    const productIds = [...new Set(items.map((item) => item.productId).filter((id): id is string => Boolean(id)))];
+    const legacyNames = [...new Set(items.filter((item) => !item.productId).map((item) => item.name))];
+    const [byId, byLegacyName] = await Promise.all([
+      productIds.length
+        ? supabase.from("products").select("id,name,unit_price,wholesale_price,stock").eq("active", true).in("id", productIds)
+        : Promise.resolve({ data: [], error: null }),
+      legacyNames.length
+        ? supabase.from("products").select("id,name,unit_price,wholesale_price,stock").eq("active", true).in("name", legacyNames)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+    if (byId.error || byLegacyName.error) {
       setSubmitting(false);
       toast({ title: "Não foi possível consultar o catálogo", description: "Tente novamente.", variant: "destructive" });
       return;
     }
+    const catalog = [...(byId.data ?? []), ...(byLegacyName.data ?? [])];
     const invalidItem = items.find(item => {
       const product = catalog?.find(product => item.productId ? product.id === item.productId : product.name === item.name);
       const expectedPrice = product ? (item.qty >= 6 ? product.wholesale_price : product.unit_price) : 0;

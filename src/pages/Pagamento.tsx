@@ -73,6 +73,8 @@ const Pagamento = () => {
   const [deliveryCoords, setDeliveryCoords] = useState<{latitude:number;longitude:number}|null>(null);
   const [docType, setDocType] = useState<"cpf" | "cnpj">("cpf");
   const [testWithoutShipping, setTestWithoutShipping] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [adultConfirmed, setAdultConfirmed] = useState(false);
 
   const [customer, setCustomer] = useState({
     name: "",
@@ -218,6 +220,10 @@ const Pagamento = () => {
   const handleConfirm = async () => {
     if (submitting) return;
     if (!validateCustomer()) return;
+    if (!acceptedTerms || !adultConfirmed) {
+      toast({ title: "Confirmações necessárias", description: "Aceite os termos e confirme que você tem 18 anos ou mais para continuar.", variant: "destructive" });
+      return;
+    }
     setSubmitting(true);
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
@@ -280,8 +286,8 @@ const Pagamento = () => {
         const { data: routed } = await supabase.rpc("partner_command" as never, {
           p_action: "create_request",
           p_payload: {
-            terms: true,
-            adult: true,
+            terms: acceptedTerms,
+            adult: adultConfirmed,
             lat: deliveryCoords.latitude,
             lng: deliveryCoords.longitude,
             customer: { name: customer.name, phone: customer.phone, street: customer.street, number: customer.number, complement: customer.complement, city: customer.city, state: customer.state, zip: onlyDigits(customer.zip) },
@@ -515,10 +521,19 @@ const Pagamento = () => {
             </div>
           </div>
 
-          <button disabled={submitting || checkingCep || !validCep || customer.state !== validatedState} onClick={handleConfirm} className="w-full bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon disabled:opacity-40 disabled:cursor-not-allowed">
+          <div className="space-y-2 rounded-xl border border-border bg-card p-4">
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input type="checkbox" checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} className="mt-0.5 h-4 w-4 accent-current" />
+              <span className="text-[11px] text-foreground">Li e aceito os termos e condições da compra e entrega.</span>
+            </label>
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input type="checkbox" checked={adultConfirmed} onChange={(e) => setAdultConfirmed(e.target.checked)} className="mt-0.5 h-4 w-4 accent-current" />
+              <span className="text-[11px] text-foreground">Confirmo que tenho 18 anos ou mais e estou ciente de que poderá ser exigido documento oficial com foto no recebimento de bebidas alcoólicas.</span>
+            </label>
+          </div>
+          <button disabled={submitting || checkingCep || !validCep || customer.state !== validatedState || !acceptedTerms || !adultConfirmed} onClick={handleConfirm} className="w-full bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon disabled:opacity-40 disabled:cursor-not-allowed">
             {submitting ? "ABRINDO CHECKOUT..." : "PAGAR NA INFINITEPAY"}
           </button>
-          <p className="text-[10px] text-muted-foreground text-center">Ao confirmar, você concorda com os termos de venda no atacado.</p>
         </aside>
       </main>
     </div>

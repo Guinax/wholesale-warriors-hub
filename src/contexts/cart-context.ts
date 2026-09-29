@@ -2,6 +2,7 @@ import { createContext } from "react";
 
 export interface CartItem {
   name: string;
+  unitPrice: string;
   wholesalePrice: string;
   priceNum: number;
   qty: number;

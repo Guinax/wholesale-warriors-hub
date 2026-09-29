@@ -1,0 +1,2 @@
+CREATE INDEX IF NOT EXISTS order_inventory_reservations_balance_idx ON public.order_inventory_reservations(balance_id);
+CREATE INDEX IF NOT EXISTS order_inventory_reservations_product_idx ON public.order_inventory_reservations(product_id);

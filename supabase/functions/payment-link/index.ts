@@ -193,6 +193,12 @@ Deno.serve(async (req) => {
     .eq("id", order.id);
   if (totalUpdateError) return json({ error: "Falha ao atualizar o total do pedido." }, 500);
 
+  const { error: reserveError } = await supabase.rpc("reserve_order_inventory", { _order_id: order.id });
+  if (reserveError) {
+    await supabase.from("orders").update({ payment_status: "expired" }).eq("id", order.id).eq("payment_status", "pending");
+    return json({ error: "Um dos produtos acabou de ficar indisponível. Revise o carrinho antes de pagar." }, 409);
+  }
+
   const phoneDigits = String(order.customer_phone ?? "").replace(/\D/g, "");
   const phoneNumber = phoneDigits
     ? phoneDigits.startsWith("55") ? `+${phoneDigits}` : `+55${phoneDigits}`

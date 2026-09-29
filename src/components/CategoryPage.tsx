@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Grid3X3, List } from "lucide-react";
 
 export interface CategoryProduct {
+  productId?: string;
   badge?: string;
   badgeColor?: string;
   name: string;

@@ -9,6 +9,8 @@ export interface CepInfo {
   state: string;
   street: string;
   neighborhood: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface ShippingLoad {
@@ -71,6 +73,21 @@ export const maskCepValue = (v: string) =>
   onlyDigitsCep(v).replace(/(\d{5})(\d{0,3})/, (_, a, b) => (b ? `${a}-${b}` : a));
 
 export async function lookupCep(cep: string): Promise<CepInfo | null> {
+  const digits = onlyDigitsCep(cep);
+  if (digits.length !== 8) return null;
+  try {
+    const geoRes = await fetch(`https://brasilapi.com.br/api/cep/v2/${digits}`);
+    if (geoRes.ok) {
+      const data = await geoRes.json();
+      const lat = Number(data?.location?.coordinates?.latitude);
+      const lng = Number(data?.location?.coordinates?.longitude);
+      return { cep: maskCepValue(digits), city: data.city ?? "", state: data.state ?? "", street: data.street ?? "", neighborhood: data.neighborhood ?? "", latitude: Number.isFinite(lat) ? lat : undefined, longitude: Number.isFinite(lng) ? lng : undefined };
+    }
+  } catch { /* ViaCEP fallback below */ }
+  return lookupCepViaCep(digits);
+}
+
+async function lookupCepViaCep(cep: string): Promise<CepInfo | null> {
   const digits = onlyDigitsCep(cep);
   if (digits.length !== 8) return null;
   try {

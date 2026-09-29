@@ -32,6 +32,9 @@ jobs:
       - name: Audit dependencies
         run: npm audit --audit-level=high || true
 
+      - name: Test PWA dependency cleanup
+        run: npm install --no-save vite-plugin-pwa@latest
+
       - name: Trace remaining deprecated dependencies
         run: npm ls punycode glob || true
 

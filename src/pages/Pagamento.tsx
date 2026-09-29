@@ -68,6 +68,7 @@ const Pagamento = () => {
   const [checkingCep, setCheckingCep] = useState(false);
   const [validCep, setValidCep] = useState(false);
   const [validatedState, setValidatedState] = useState("");
+  const [deliveryCoords, setDeliveryCoords] = useState<{latitude:number;longitude:number}|null>(null);
   const [docType, setDocType] = useState<"cpf" | "cnpj">("cpf");
   const [testWithoutShipping, setTestWithoutShipping] = useState(false);
 
@@ -141,6 +142,7 @@ const Pagamento = () => {
     if (digits.length !== 8) {
       setValidCep(false);
       setValidatedState("");
+      setDeliveryCoords(null);
       setShippingCost(0);
       setShippingEta("");
       return;
@@ -159,6 +161,7 @@ const Pagamento = () => {
       }
       setValidCep(true);
       setValidatedState(info.state);
+      setDeliveryCoords(typeof info.latitude==="number" && typeof info.longitude==="number" ? {latitude:info.latitude,longitude:info.longitude} : null);
       setCustomer((current) => ({
         ...current,
         zip: info.cep,
@@ -265,6 +268,32 @@ const Pagamento = () => {
         ? `${invalidItem.name}: preço, quantidade ou estoque mudou. Remova o item e adicione-o novamente pelo catálogo.`
         : "Seu carrinho está vazio.", variant: "destructive" });
       return;
+    }
+
+    // Prefer a local partner when CEP geocoding is available. Any routing failure
+    // intentionally falls through to the existing central checkout.
+    if (deliveryCoords && !freeShippingTestActive) {
+      const partnerItems = items.map((i) => ({ product_id: i.productId, name: i.name, qty: i.qty })).filter((i) => i.product_id);
+      if (partnerItems.length === items.length) {
+        const { data: routed } = await supabase.rpc("partner_command" as never, {
+          p_action: "create_request",
+          p_payload: {
+            terms: true,
+            adult: true,
+            lat: deliveryCoords.latitude,
+            lng: deliveryCoords.longitude,
+            customer: { name: customer.name, phone: customer.phone, street: customer.street, number: customer.number, complement: customer.complement, city: customer.city, state: customer.state, zip: onlyDigits(customer.zip) },
+            items: partnerItems,
+          },
+        } as never);
+        const requestId = (routed as {request_id?:string}|null)?.request_id;
+        if (requestId) {
+          setSubmitting(false);
+          toast({ title: "Pedido encaminhado para loja próxima", description: "Estamos buscando uma loja com estoque para calcular a entrega local." });
+          navigate("/revendedor");
+          return;
+        }
+      }
     }
 
     const snapshot = JSON.stringify({ customer, docType, method, items, orderTotal, freeShippingTestActive });

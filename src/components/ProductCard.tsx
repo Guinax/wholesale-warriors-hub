@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useCart } from "@/contexts/CartContext";
 
 interface ProductCardProps {
+  productId?: string;
   badge?: string;
   badgeColor?: string;
   name: string;
@@ -14,13 +15,13 @@ interface ProductCardProps {
   viewMode?: "grid" | "list";
 }
 
-const ProductCard = ({ badge, badgeColor = "bg-primary", name, unitPrice, wholesalePrice, stock, image, viewMode = "grid" }: ProductCardProps) => {
+const ProductCard = ({ productId, badge, badgeColor = "bg-primary", name, unitPrice, wholesalePrice, stock, image, viewMode = "grid" }: ProductCardProps) => {
   const [qty, setQty] = useState(1);
   const { addItem } = useCart();
 
   const handleAdd = () => {
     if (stock !== undefined && stock < qty) return;
-    addItem({ name, unitPrice, wholesalePrice, qty, minQty: 1 });
+    addItem({ productId, name, unitPrice, wholesalePrice, qty, minQty: 1 });
     setQty(1);
   };
 

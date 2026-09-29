@@ -32,8 +32,12 @@ jobs:
       - name: Audit dependencies
         run: npm audit --audit-level=high || true
 
-      - name: Test PWA dependency cleanup
-        run: npm install --no-save vite-plugin-pwa@latest
+      - name: Test latest glob override
+        run: |
+          LATEST_GLOB="$(npm view glob version)"
+          npm pkg set overrides.glob="$LATEST_GLOB"
+          npm install
+          npm ls glob
 
       - name: Trace remaining deprecated dependencies
         run: npm ls punycode glob || true

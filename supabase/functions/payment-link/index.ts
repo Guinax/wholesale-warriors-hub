@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
   const productNames = [...quantities.keys()];
   const { data: catalog, error: catalogError } = await supabase
     .from("products")
-    .select("name,wholesale_price,min_qty,stock,active")
+    .select("name,unit_price,wholesale_price,stock,active")
     .in("name", productNames)
     .eq("active", true);
 
@@ -111,8 +111,8 @@ Deno.serve(async (req) => {
   for (const [name, qty] of quantities) {
     const requestedItem = { name, qty };
     const product = priceByName.get(requestedItem.name)!;
-    const unit = Number(product.wholesale_price);
-    const minQty = Math.max(1, Number(product.min_qty ?? 1) || 1);
+    const unit = Number(requestedItem.qty >= 6 ? product.wholesale_price : product.unit_price);
+    const minQty = 1;
 
     if (!Number.isFinite(unit) || unit <= 0) {
       return json({ error: `Preço inválido no catálogo: ${requestedItem.name}` }, 409);

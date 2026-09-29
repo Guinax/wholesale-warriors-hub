@@ -72,7 +72,7 @@ const CadastroCNPJ = () => {
   const [resendAfter, setResendAfter] = useState(0);
   const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<CadastroForm>();
 
-  const emailRedirectTo = "https://wholesale-warriors-hub.lovable.app/minha-conta";
+  const emailRedirectTo = `${window.location.origin}/minha-conta`;
 
   const onSubmit = async (form: CadastroForm) => {
     try {

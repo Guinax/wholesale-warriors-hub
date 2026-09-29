@@ -11,6 +11,7 @@ function loadHandler(name: string, overrides: Record<string, unknown> = {}) {
   const catalog = [{ name: 'Product', unit_price: 10, wholesale_price: 8, min_qty: 1, stock: 20, active: true }];
   const updates: unknown[] = [];
   const filters: unknown[] = [];
+  const rpc = vi.fn(async () => ({ data: true, error: null }));
   function from(table: string) {
     let updating = false;
     const chain = { select: () => chain, in: () => chain, eq: (...args: unknown[]) => { filters.push(args); return chain; },
@@ -25,13 +26,13 @@ function loadHandler(name: string, overrides: Record<string, unknown> = {}) {
   const source = readFileSync(`supabase/functions/${name}/index.ts`, 'utf8').replace(/^import .*;\n/gm,'');
   vm.runInNewContext(ts.transpile(source, { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None }), {
     Deno: { env: { get: (key: string) => key === 'CHECKOUT_REDIRECT_ORIGINS' ? undefined : 'configured' }, serve: (fn: typeof handler) => { handler = fn; } },
-    createClient: () => ({ auth: {getUser: async () => ({data:{user:{id:'buyer'}},error:null})}, from }),
+    createClient: () => ({ auth: {getUser: async () => ({data:{user:{id:'buyer'}},error:null})}, from, rpc }),
     z, corsHeaders: {}, Response, Request, URL, AbortSignal, fetch:fetchMock, console,
   });
   const request = (body: unknown, authenticated = true) => handler(new Request('https://example.test', {
     method:'POST', headers:{'Content-Type':'application/json', ...(authenticated ? {Authorization:'Bearer test'} : {})}, body:JSON.stringify(body),
   }));
-  return {request,fetchMock,updates,filters};
+  return {request,fetchMock,updates,filters,rpc};
 }
 const linkBody = {order_code:'FM-TEST',redirect_url:'https://wholesale-warriors-hub.lovable.app/recibo/FM-TEST'};
 describe('Payment integration boundaries', () => {
@@ -51,10 +52,10 @@ describe('Payment integration boundaries', () => {
     const x=loadHandler('payment-link'); expect((await x.request({...linkBody,redirect_url:'https://other.test'})).status).toBe(400);
   });
   it('creates a checkout containing retail catalog price and shipping below six units',async()=>{
-    const x=loadHandler('payment-link'); const r=await x.request(linkBody); expect(r.status).toBe(200); expect((await r.json()).url).toContain('infinitepay.io'); expect(x.fetchMock).toHaveBeenCalledTimes(2);
+    const x=loadHandler('payment-link'); const r=await x.request(linkBody); expect(r.status).toBe(200); expect((await r.json()).url).toContain('infinitepay.io'); expect(x.fetchMock).toHaveBeenCalledTimes(2); expect(x.rpc).toHaveBeenCalledWith('reserve_order_inventory',{_order_id:'order-id'});
   });
   it('applies wholesale catalog price automatically from six units',async()=>{
-    const x=loadHandler('payment-link',{items:[{name:'Product',qty:6}],total_amount:67.9}); const r=await x.request(linkBody); expect(r.status).toBe(200); expect((await r.json()).url).toContain('infinitepay.io'); expect(x.fetchMock).toHaveBeenCalledTimes(2);
+    const x=loadHandler('payment-link',{items:[{name:'Product',qty:6}],total_amount:67.9}); const r=await x.request(linkBody); expect(r.status).toBe(200); expect((await r.json()).url).toContain('infinitepay.io'); expect(x.fetchMock).toHaveBeenCalledTimes(2); expect(x.rpc).toHaveBeenCalledWith('reserve_order_inventory',{_order_id:'order-id'});
   });
   it('can reconcile a late confirmed payment for an expired order',async()=>{
     const x=loadHandler('payment-check',{payment_status:'expired'}); const r=await x.request({order_code:'FM-TEST',transaction_nsu:'transaction',slug:'invoice'}); expect((await r.json()).paid).toBe(true); expect(x.filters).toContainEqual(['neq','payment_status','paid']);

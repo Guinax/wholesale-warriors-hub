@@ -30,13 +30,11 @@ function normalize(raw: unknown): CartItem[] {
     .map((i) => {
       const name = String(i.name ?? "");
       const wholesalePrice = String(i.wholesalePrice ?? "R$ 0,00");
-      const priceNum =
-        typeof i.priceNum === "number" && Number.isFinite(i.priceNum)
-          ? i.priceNum
-          : parsePrice(wholesalePrice);
-      const minQty = Number.isFinite(Number(i.minQty)) ? Math.max(1, Number(i.minQty)) : 1;
-      const qty = Number.isFinite(Number(i.qty)) ? Math.max(minQty, Number(i.qty)) : minQty;
-      return { name, wholesalePrice, priceNum: Number.isFinite(priceNum) ? priceNum : 0, qty, minQty };
+      const unitPrice = String(i.unitPrice ?? i.wholesalePrice ?? "R$ 0,00");
+      const minQty = 1;
+      const qty = Number.isFinite(Number(i.qty)) ? Math.max(1, Number(i.qty)) : 1;
+      const selectedPrice = qty >= 6 ? parsePrice(wholesalePrice) : parsePrice(unitPrice);
+      return { name, unitPrice, wholesalePrice, priceNum: Number.isFinite(selectedPrice) ? selectedPrice : 0, qty, minQty };
     })
     .filter((i) => i.name.length > 0);
 }
@@ -106,11 +104,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems((prev) => {
       const existing = prev.find((i) => i.name === item.name);
       if (existing) {
-        return prev.map((i) =>
-          i.name === item.name ? { ...i, qty: i.qty + item.qty } : i
-        );
+        return prev.map((i) => {
+          if (i.name !== item.name) return i;
+          const qty = i.qty + item.qty;
+          const unitPrice = item.unitPrice ?? i.unitPrice;
+          const wholesalePrice = item.wholesalePrice;
+          return { ...i, unitPrice, wholesalePrice, qty, minQty: 1, priceNum: parsePrice(qty >= 6 ? wholesalePrice : unitPrice) };
+        });
       }
-      return [...prev, { ...item, priceNum: parsePrice(item.wholesalePrice) }];
+      const qty = Math.max(1, item.qty);
+      return [...prev, { ...item, qty, minQty: 1, priceNum: parsePrice(qty >= 6 ? item.wholesalePrice : item.unitPrice) }];
     });
     setIsOpen(true);
   }, []);
@@ -123,8 +126,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems((prev) =>
       prev.flatMap((i) => {
         if (i.name !== name) return [i];
-        if (qty < i.minQty && qty <= 0) return [];
-        return [{ ...i, qty: Math.max(i.minQty, qty) }];
+        if (qty <= 0) return [];
+        const nextQty = Math.max(1, qty);
+        return [{ ...i, qty: nextQty, minQty: 1, priceNum: parsePrice(nextQty >= 6 ? i.wholesalePrice : i.unitPrice) }];
       })
     );
   }, []);

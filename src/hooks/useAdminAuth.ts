@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
+import { logAudit } from "@/lib/audit";
 
 export function useAdminAuth() {
   const [session, setSession] = useState<Session | null>(null);
@@ -47,7 +48,6 @@ export function useAdminAuth() {
 
   const signOut = async () => {
     try {
-      const { logAudit } = await import("@/lib/audit");
       await logAudit("logout");
     } catch (error) {
       console.warn("Não foi possível registrar o logout na auditoria.", error);

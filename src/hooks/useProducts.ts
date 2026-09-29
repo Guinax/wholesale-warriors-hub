@@ -40,8 +40,8 @@ export function useProducts(category?: ProductCategory) {
   const [products, setProducts] = useState<DbProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     let q = productsTable()
       .select("*")
       .eq("active", true)
@@ -49,12 +49,35 @@ export function useProducts(category?: ProductCategory) {
     if (category) q = q.eq("category", category);
     const { data } = await q;
     setProducts(((data ?? []) as unknown) as DbProduct[]);
-    setLoading(false);
+    if (showLoading) setLoading(false);
   }, [category]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`products-realtime-${category ?? "all"}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "products" },
+        () => {
+          void load(false);
+        },
+      )
+      .subscribe();
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void load(false);
+    };
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+
+    return () => {
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+      void supabase.removeChannel(channel);
+    };
+  }, [category, load]);
 
   return { products, loading, reload: load };
 }

@@ -42,9 +42,10 @@ const MaisVendidos = () => {
   const handleAdd = (b: Bestseller) => {
     addItem({
       name: b.name,
+      unitPrice: `R$ ${Number(b.unit_price ?? b.wholesale_price).toFixed(2).replace(".", ",")}`,
       wholesalePrice: `R$ ${b.wholesale_price.toFixed(2).replace(".", ",")}`,
-      qty: b.min_qty,
-      minQty: b.min_qty,
+      qty: 1,
+      minQty: 1,
     });
   };
 
@@ -131,7 +132,7 @@ const MaisVendidos = () => {
                       <p className="font-heading font-black text-base text-foreground">
                         R$ {b.wholesale_price.toFixed(2).replace(".", ",")}
                         <span className="text-[10px] font-semibold text-muted-foreground ml-1">
-                          /un ({b.min_qty}+)
+                          /un (atacado 6+)
                         </span>
                       </p>
                     </div>

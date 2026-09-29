@@ -52,6 +52,7 @@ const Produto = () => {
     if (!product || product.stock < 1) return;
     const safeQty = Math.max(1, Math.min(product.stock, qty));
     addItem({
+      productId: product.id,
       name: product.name,
       unitPrice: formatCurrency(product.unit_price),
       wholesalePrice: formatCurrency(product.wholesale_price),

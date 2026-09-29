@@ -117,7 +117,7 @@ const ProductsManager = ({ lockedCategory }: { lockedCategory?: ProductCategory 
       name: form.name,
       unit_price: Number(form.unit_price),
       wholesale_price: Number(form.wholesale_price),
-      min_qty: Number(form.min_qty) || 1,
+      min_qty: 1,
       image_url: form.image_url || null,
       badge: form.badge || null,
       badge_color: form.badge_color || null,
@@ -222,7 +222,7 @@ const ProductsManager = ({ lockedCategory }: { lockedCategory?: ProductCategory 
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm truncate">{p.name}</p>
               <p className="text-xs text-muted-foreground">
-                {p.category} · Atacado R$ {Number(p.wholesale_price).toFixed(2)} · Mín {p.min_qty}
+                {p.category} · Unitário R$ {Number(p.unit_price).toFixed(2)} · Atacado (6+) R$ {Number(p.wholesale_price).toFixed(2)} · Mín 1
                 {!p.active && " · INATIVO"}
               </p>
             </div>
@@ -290,11 +290,8 @@ const ProductsManager = ({ lockedCategory }: { lockedCategory?: ProductCategory 
               </div>
               <div>
                 <Label>Quantidade mínima</Label>
-                <Input
-                  type="number"
-                  value={form.min_qty}
-                  onChange={(e) => setForm({ ...form, min_qty: e.target.value })}
-                />
+                <Input type="number" value="1" disabled />
+                <p className="text-[10px] text-muted-foreground mt-1">Atacado automático a partir de 6 unidades.</p>
               </div>
               <div>
                 <Label>Ordem</Label>

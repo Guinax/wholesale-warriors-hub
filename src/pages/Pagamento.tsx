@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { computeDueAt, formatCurrency, generateOrderCode, generateTrackingCode } from "@/lib/orderUtils";
 import { logAudit } from "@/lib/audit";
 import { createPaymentLink } from "@/lib/payments";
-import { lookupCep, shippingCostFor, shippingEtaFor } from "@/lib/shipping";
+import { lookupCep, shippingCostFor, shippingEtaFor, shippingLoadFor } from "@/lib/shipping";
 
 type PaymentMethod = "pix" | "cartao";
 
@@ -166,16 +166,17 @@ const Pagamento = () => {
         city: info.city,
         state: info.state,
       }));
-      setShippingCost(shippingCostFor(info.state, totalPrice));
+      setShippingCost(shippingCostFor(info.state, totalPrice, items.reduce((sum, item) => sum + item.qty, 0)));
       setShippingEta(shippingEtaFor(info.state));
       setCheckingCep(false);
     });
     return () => { active = false; };
-  }, [customer.zip, totalPrice]);
+  }, [customer.zip, totalPrice, items]);
 
   const freeShippingTestActive = isAdmin && testWithoutShipping;
   const effectiveShippingCost = freeShippingTestActive ? 0 : shippingCost;
   const orderTotal = totalPrice + effectiveShippingCost;
+  const shippingLoad = shippingLoadFor(items.reduce((sum, item) => sum + item.qty, 0));
 
   const validateCustomer = () => {
     const required: (keyof typeof customer)[] = ["name", "email", "phone", "street", "number", "city", "state", "zip"];
@@ -445,6 +446,7 @@ const Pagamento = () => {
               <div className="flex justify-between text-xs"><span className="text-muted-foreground">Produtos</span><span>{formatCurrency(totalPrice)}</span></div>
               <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{freeShippingTestActive ? "Grátis (teste admin)" : checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>
               {shippingEta && <p className="text-[10px] text-muted-foreground">Prazo estimado: {shippingEta}</p>}
+              {shippingEta && <p className="text-[10px] text-muted-foreground">{shippingLoad.boxes} caixa{shippingLoad.boxes > 1 ? "s" : ""} · peso estimado {shippingLoad.estimatedWeightKg.toFixed(1).replace(".", ",")} kg</p>}
               {isAdmin && (
                 <label className="mt-3 flex items-start gap-2 rounded-lg border border-border bg-secondary/50 p-3 cursor-pointer">
                   <input type="checkbox" checked={testWithoutShipping} onChange={(e) => setTestWithoutShipping(e.target.checked)} className="mt-0.5 h-4 w-4 accent-current" />

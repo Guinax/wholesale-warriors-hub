@@ -30,6 +30,7 @@ export default function PainelRevendedor() {
   const [weightKg, setWeightKg] = useState<Record<string, string>>({});
   const [eta, setEta] = useState<Record<string, string>>({});
   const [deliveryCode, setDeliveryCode] = useState<Record<string, string>>({});
+  const [adultVerified, setAdultVerified] = useState<Record<string, boolean>>({});
   const [registering, setRegistering] = useState(false);
   const [newStore, setNewStore] = useState({ name:"", document:"", phone:"", address:"", lat:"", lng:"", radius_km:"15", terms:false });
   const [pix, setPix] = useState<Record<string,{pix_key_type:string;pix_key:string;holder_name:string;holder_document:string}>>({});
@@ -145,9 +146,13 @@ export default function PainelRevendedor() {
             {r.status === "paid" && <Button onClick={() => void command("dispatch", { request_id:r.id }, "Pedido saiu para entrega.")}>Saiu para entrega</Button>}
             {r.status === "delivering" && <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Confirme presencialmente a maioridade do recebedor e peça o código de entrega exibido ao cliente.</p>
+              <label className="flex items-start gap-2 text-sm">
+                <input type="checkbox" className="mt-1" checked={adultVerified[r.id] ?? false} onChange={(e) => setAdultVerified((x) => ({...x,[r.id]:e.target.checked}))} />
+                <span>Confirmo que conferi presencialmente documento oficial com foto e que o recebedor tem 18 anos ou mais.</span>
+              </label>
               <div className="flex gap-2">
                 <input className="h-10 flex-1 rounded-md border bg-background px-3 uppercase" placeholder="Código do cliente" maxLength={8} value={deliveryCode[r.id] ?? ""} onChange={(e) => setDeliveryCode((x) => ({...x,[r.id]:e.target.value.toUpperCase()}))} />
-                <Button disabled={(deliveryCode[r.id] ?? "").length < 4 || saving === r.id} onClick={() => void command("deliver", { request_id:r.id, code:deliveryCode[r.id], adult_verified:true }, "Entrega confirmada e estoque baixado.")}>Confirmar entrega</Button>
+                <Button disabled={(deliveryCode[r.id] ?? "").length < 4 || !(adultVerified[r.id] ?? false) || saving === r.id} onClick={() => void command("deliver", { request_id:r.id, code:deliveryCode[r.id], adult_verified:adultVerified[r.id] === true }, "Entrega confirmada e estoque baixado.")}>Confirmar entrega</Button>
               </div>
             </div>}
           </CardContent></Card>)}

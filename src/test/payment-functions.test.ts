@@ -24,7 +24,7 @@ function loadHandler(name: string, overrides: Record<string, unknown> = {}) {
   let handler!: (req: Request) => Promise<Response>;
   const source = readFileSync(`supabase/functions/${name}/index.ts`, 'utf8').replace(/^import .*;\n/gm,'');
   vm.runInNewContext(ts.transpile(source, { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None }), {
-    Deno: { env: { get: () => 'configured' }, serve: (fn: typeof handler) => { handler = fn; } },
+    Deno: { env: { get: (key: string) => key === 'CHECKOUT_REDIRECT_ORIGINS' ? undefined : 'configured' }, serve: (fn: typeof handler) => { handler = fn; } },
     createClient: () => ({ auth: {getUser: async () => ({data:{user:{id:'buyer'}},error:null})}, from }),
     z, corsHeaders: {}, Response, Request, URL, AbortSignal, fetch:fetchMock, console,
   });

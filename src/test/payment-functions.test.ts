@@ -42,7 +42,7 @@ describe('Payment integration boundaries', () => {
     const x=loadHandler('payment-link',{user_id:'someone-else'}); expect((await x.request(linkBody)).status).toBe(404); expect(x.fetchMock).not.toHaveBeenCalled();
   });
   it('rejects duplicate lines exceeding combined stock',async()=>{
-    const x=loadHandler('payment-link',{items:[{name:'Product',qty:2},{name:'Product',qty:2}]}); expect((await x.request(linkBody)).status).toBe(409); expect(x.fetchMock).not.toHaveBeenCalled();
+    const x=loadHandler('payment-link',{items:[{name:'Product',qty:11},{name:'Product',qty:10}]}); expect((await x.request(linkBody)).status).toBe(409); expect(x.fetchMock).not.toHaveBeenCalled();
   });
   it('rejects changed totals before creating a charge',async()=>{
     const x=loadHandler('payment-link',{total_amount:1}); expect((await x.request(linkBody)).status).toBe(409); expect(x.fetchMock.mock.calls.every(([u])=>u.includes('viacep'))).toBe(true);

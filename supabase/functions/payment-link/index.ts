@@ -69,7 +69,13 @@ Deno.serve(async (req) => {
     return json({ error: "Pedido encerrado. Faça um novo pedido pelo carrinho." }, 409);
   }
   const redirect = new URL(parsed.data.redirect_url);
-  if (redirect.origin !== "https://wholesale-warriors-hub.lovable.app" || redirect.pathname !== `/recibo/${order.order_code}`) {
+  const allowedRedirectOrigins = (Deno.env.get("CHECKOUT_REDIRECT_ORIGINS") ??
+    "https://wholesale-warriors-hub.lovable.app")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  if (!allowedRedirectOrigins.includes(redirect.origin) || redirect.pathname !== `/recibo/${order.order_code}`) {
     return json({ error: "Endereço de retorno inválido." }, 400);
   }
 

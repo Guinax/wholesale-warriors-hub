@@ -9,7 +9,7 @@ on:
       - Main
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -32,12 +32,17 @@ jobs:
       - name: Audit dependencies
         run: npm audit --audit-level=high || true
 
-      - name: Test latest glob override
+      - name: Refresh lockfile for glob override
+        if: github.event_name == 'push'
         run: |
-          LATEST_GLOB="$(npm view glob version)"
-          npm pkg set overrides.glob="$LATEST_GLOB"
-          npm install
-          npm ls glob
+          npm install --package-lock-only
+          if ! git diff --quiet -- package-lock.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "chore: persist glob 13 override"
+            git push
+          fi
 
       - name: Trace remaining deprecated dependencies
         run: npm ls punycode glob || true

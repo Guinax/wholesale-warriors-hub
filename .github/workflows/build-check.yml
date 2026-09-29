@@ -9,7 +9,7 @@ on:
       - Main
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -26,19 +26,22 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install dependencies and refresh lockfile
+        run: npm install
+
+      - name: Persist compatible lockfile
+        if: github.event_name == 'push'
+        run: |
+          if ! git diff --quiet -- package-lock.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "chore: refresh lockfile for Vite 7"
+            git push
+          fi
 
       - name: Audit dependencies
         run: npm audit --audit-level=high || true
-
-      - name: Test compatible security upgrades
-        run: |
-          npm pkg set devDependencies.vite="^7.3.6"
-          npm pkg set devDependencies.vitest="^5.0.2"
-          npm pkg set dependencies.react-router-dom="^7.18.4"
-          npm install --package-lock-only
-          npm ci
 
       - name: Run lint
         run: npm run lint

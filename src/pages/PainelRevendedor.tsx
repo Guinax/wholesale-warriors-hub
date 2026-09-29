@@ -10,6 +10,8 @@ import { toast } from "sonner";
 type Offer = { id: string; items: Array<{ name: string; qty: number }>; subtotal: number; city: string; distance_km: number; partner_merchandise: number };
 type Request = { id: string; status: string; store_id?: string | null; store_name?: string | null; order_code?: string | null; payment_status?: string | null; shipping?: number | null; route_km?: number | null; eta_minutes?: number | null; items: Array<{ name: string; qty: number }> };
 
+type Payout = { id:string; store_id:string; amount:number; status:string; approved_at:string|null; paid_at:string|null; receipt_reference:string|null };
+
 type Store = {
   id: string;
   name: string;
@@ -31,6 +33,7 @@ export default function PainelRevendedor() {
   const [registering, setRegistering] = useState(false);
   const [newStore, setNewStore] = useState({ name:"", document:"", phone:"", address:"", lat:"", lng:"", radius_km:"15", terms:false });
   const [pix, setPix] = useState<Record<string,{pix_key_type:string;pix_key:string;holder_name:string;holder_document:string}>>({});
+  const [payouts, setPayouts] = useState<Payout[]>([]);
 
   const load = async () => {
     const { data, error } = await supabase
@@ -45,6 +48,8 @@ export default function PainelRevendedor() {
       const mapped: typeof pix = {};
       ((accounts ?? []) as unknown as Array<{store_id:string;pix_key_type:string;pix_key:string;holder_name:string;holder_document:string}>).forEach(a=>{ mapped[a.store_id]={pix_key_type:a.pix_key_type,pix_key:a.pix_key,holder_name:a.holder_name,holder_document:a.holder_document}; });
       setPix(mapped);
+      const { data: payoutRows } = await supabase.from("partner_payouts" as never).select("id,store_id,amount,status,approved_at,paid_at,receipt_reference").order("paid_at",{ascending:false,nullsFirst:true});
+      setPayouts((payoutRows ?? []) as unknown as Payout[]);
     }
     const { data: dashboard, error: dashboardError } = await supabase.rpc("partner_command" as never, { p_action: "dashboard", p_payload: {} } as never);
     if (!dashboardError && dashboard) {
@@ -163,6 +168,15 @@ export default function PainelRevendedor() {
             <p className="md:col-span-2 text-xs text-muted-foreground">A loja só recebe pedidos depois da aprovação administrativa, aceite das condições vigentes, configuração de estoque e abertura da operação.</p>
           </CardContent>
         </Card>}
+        {payouts.length > 0 && <section className="space-y-3">
+          <h2 className="text-xl font-semibold">Meus repasses</h2>
+          <p className="text-sm text-muted-foreground">Valores liberados somente após pagamento confirmado e entrega concluída.</p>
+          {payouts.map((p) => <Card key={p.id}><CardContent className="py-4 flex flex-wrap items-center justify-between gap-3">
+            <div><strong>R$ {Number(p.amount).toFixed(2).replace(".", ",")}</strong><p className="text-xs text-muted-foreground">{stores.find(s=>s.id===p.store_id)?.name ?? "Loja parceira"}</p></div>
+            <div className="text-right"><span className="text-sm font-medium">{p.status==="eligible"?"Aguardando aprovação":p.status==="approved"?"Aprovado para pagamento":p.status==="paid"?"Pago":p.status==="cancelled"?"Cancelado":p.status}</span>{p.status==="paid"&&<p className="text-xs text-muted-foreground">{p.paid_at?new Date(p.paid_at).toLocaleString("pt-BR"):""}{p.receipt_reference?` • ${p.receipt_reference}`:""}</p>}</div>
+          </CardContent></Card>)}
+        </section>}
+
         {stores.map((store) => (
           <Card key={store.id}>
             <CardHeader><CardTitle>{store.name}</CardTitle></CardHeader>

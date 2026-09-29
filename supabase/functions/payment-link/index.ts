@@ -83,34 +83,45 @@ Deno.serve(async (req) => {
   if (rawItems.length === 0) return json({ error: "Pedido sem itens." }, 400);
 
   const requested = rawItems.map((item) => ({
+    productId: typeof item.product_id === "string" && item.product_id ? item.product_id : null,
     name: String(item.name ?? "").trim(),
     qty: Number(item.qty ?? item.quantity),
   }));
   if (requested.some((item) => !item.name || !Number.isSafeInteger(item.qty) || item.qty < 1)) return json({ error: "Item inválido no pedido." }, 400);
 
-  // Merge duplicate lines before stock checks; splitting a product must not bypass its stock limit.
-  const quantities = new Map<string, number>();
-  for (const item of requested) quantities.set(item.name, (quantities.get(item.name) ?? 0) + item.qty);
-  const productNames = [...quantities.keys()];
-  const { data: catalog, error: catalogError } = await supabase
-    .from("products")
-    .select("name,unit_price,wholesale_price,stock,active")
-    .in("name", productNames)
-    .eq("active", true);
+  // UUID is authoritative for current orders. Product name remains only for legacy orders.
+  const productIds = [...new Set(requested.flatMap((item) => item.productId ? [item.productId] : []))];
+  const legacyNames = [...new Set(requested.filter((item) => !item.productId).map((item) => item.name))];
+  const [byId, byName] = await Promise.all([
+    productIds.length
+      ? supabase.from("products").select("id,name,unit_price,wholesale_price,stock,active").in("id", productIds).eq("active", true)
+      : Promise.resolve({ data: [], error: null }),
+    legacyNames.length
+      ? supabase.from("products").select("id,name,unit_price,wholesale_price,stock,active").in("name", legacyNames).eq("active", true)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (byId.error || byName.error) return json({ error: "Falha ao validar preços do catálogo." }, 500);
 
-  if (catalogError) return json({ error: "Falha ao validar preços do catálogo." }, 500);
-
-  const priceByName = new Map((catalog ?? []).map((product) => [String(product.name), product]));
-  if (priceByName.size !== productNames.length) {
+  const catalog = [...(byId.data ?? []), ...(byName.data ?? [])];
+  const priceById = new Map(catalog.map((product) => [String(product.id), product]));
+  const priceByName = new Map(catalog.map((product) => [String(product.name), product]));
+  if (requested.some((item) => !(item.productId ? priceById.has(item.productId) : priceByName.has(item.name)))) {
     return json({ error: "Um ou mais produtos não estão disponíveis." }, 409);
+  }
+
+  // Merge only identical products before stock checks; duplicate lines cannot bypass stock.
+  const quantities = new Map<string, { productId: string | null; name: string; qty: number }>();
+  for (const item of requested) {
+    const key = item.productId ?? `legacy:${item.name}`;
+    const current = quantities.get(key);
+    quantities.set(key, { ...item, qty: (current?.qty ?? 0) + item.qty });
   }
 
   let merchandiseTotal = 0;
   const items: Array<{ description: string; price: number; quantity: number }> = [];
 
-  for (const [name, qty] of quantities) {
-    const requestedItem = { name, qty };
-    const product = priceByName.get(requestedItem.name)!;
+  for (const requestedItem of quantities.values()) {
+    const product = requestedItem.productId ? priceById.get(requestedItem.productId)! : priceByName.get(requestedItem.name)!;
     const unit = Number(requestedItem.qty >= 6 ? product.wholesale_price : product.unit_price);
     const minQty = 1;
 
@@ -154,7 +165,7 @@ Deno.serve(async (req) => {
   // O servidor recalcula o frete com os mesmos parâmetros do checkout.
   // Caixa padrão: até 6 unidades; pedidos maiores usam múltiplas caixas.
   const unitsPerBox = 6;
-  const totalUnits = [...quantities.values()].reduce((sum, qty) => sum + qty, 0);
+  const totalUnits = [...quantities.values()].reduce((sum, item) => sum + item.qty, 0);
   const boxes = Math.max(1, Math.ceil(totalUnits / unitsPerBox));
   const southSoutheast = new Set(["SP","RJ","MG","ES","PR","SC","RS"]);
   const centerNortheast = new Set(["GO","MT","MS","DF","BA","SE","AL","PE","PB","RN","CE","PI","MA"]);

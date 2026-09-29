@@ -37,11 +37,8 @@ jobs:
           npm ls punycode glob || true
           npm explain punycode || true
 
-      - name: Test coordinated ESLint dependency update
-        run: |
-          npm install --no-save eslint@latest @eslint/js@latest typescript-eslint@latest eslint-plugin-react-hooks@latest eslint-plugin-react-refresh@latest
-          npm ls eslint @eslint/js typescript-eslint eslint-plugin-react-hooks eslint-plugin-react-refresh
-          npm run lint
+      - name: Run lint
+        run: npm run lint
 
       - name: Run tests
         run: npm test

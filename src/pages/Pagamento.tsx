@@ -238,7 +238,7 @@ const Pagamento = () => {
     }
 
     const { data: catalog, error: catalogError } = await supabase.from("products")
-      .select("name,wholesale_price,min_qty,stock").eq("active", true).in("name", items.map(item => item.name));
+      .select("name,unit_price,wholesale_price,stock").eq("active", true).in("name", items.map(item => item.name));
     if (catalogError) {
       setSubmitting(false);
       toast({ title: "Não foi possível consultar o catálogo", description: "Tente novamente.", variant: "destructive" });
@@ -246,8 +246,9 @@ const Pagamento = () => {
     }
     const invalidItem = items.find(item => {
       const product = catalog?.find(product => product.name === item.name);
-      return !product || !Number.isInteger(item.qty) || item.qty < product.min_qty || item.qty > product.stock ||
-        Math.round(item.priceNum * 100) !== Math.round(product.wholesale_price * 100);
+      const expectedPrice = product ? (item.qty >= 6 ? product.wholesale_price : product.unit_price) : 0;
+      return !product || !Number.isInteger(item.qty) || item.qty < 1 || item.qty > product.stock ||
+        Math.round(item.priceNum * 100) !== Math.round(expectedPrice * 100);
     });
     if (!items.length || invalidItem) {
       setSubmitting(false);

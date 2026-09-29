@@ -32,6 +32,9 @@ jobs:
       - name: Audit dependencies
         run: npm audit --audit-level=high || true
 
+      - name: Trace deprecated dependencies
+        run: npm ls punycode glob whatwg-encoding domexception abab || true
+
       - name: Run lint
         run: npm run lint
 

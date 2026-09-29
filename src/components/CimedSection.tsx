@@ -56,12 +56,12 @@ const cimedProducts: CimedProduct[] = [
 ];
 
 const CimedProductCard = ({ product }: { product: CimedProduct }) => {
-  const [qty, setQty] = useState(product.minQty);
+  const [qty, setQty] = useState(1);
   const { addItem } = useCart();
 
   const handleAdd = () => {
-    addItem({ name: product.name, wholesalePrice: product.wholesalePrice, qty, minQty: product.minQty });
-    setQty(product.minQty);
+    addItem({ name: product.name, unitPrice: product.unitPrice, wholesalePrice: product.wholesalePrice, qty, minQty: 1 });
+    setQty(1);
   };
 
   return (
@@ -82,16 +82,16 @@ const CimedProductCard = ({ product }: { product: CimedProduct }) => {
       <div className="p-3 space-y-2">
         <h3 className="font-heading font-bold text-xs tracking-wide text-foreground leading-tight line-clamp-2">{product.name}</h3>
         <p className="text-[10px] text-muted-foreground">
-          Unit: <span className="line-through">{product.unitPrice}</span>
+          Unitário: <span>{product.unitPrice}</span>
         </p>
         <div className="flex items-baseline gap-1.5 flex-wrap">
           <span className="text-[9px] font-heading font-semibold tracking-wider text-primary">
-            ATACADO ({product.minQty}+)
+            ATACADO (6+)
           </span>
-          <span className="font-heading font-black text-lg text-foreground">{product.wholesalePrice}</span>
+          <span className="font-heading font-black text-lg text-foreground">{qty >= 6 ? product.wholesalePrice : product.unitPrice}</span>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setQty(Math.max(product.minQty, qty - 1))} className="w-7 h-7 rounded-md bg-secondary flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors">
+          <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-7 h-7 rounded-md bg-secondary flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors">
             <Minus className="w-3 h-3" />
           </button>
           <span className="font-heading font-bold text-xs text-foreground min-w-[2ch] text-center">{qty}</span>
@@ -143,6 +143,7 @@ const CimedHighlightCard = ({ product }: { product: CimedProduct }) => {
             onClick={() =>
               addItem({
                 name: `LOTE ${product.name} (${LOT_QTY} SABORES)`,
+                unitPrice: totalStr,
                 wholesalePrice: totalStr,
                 qty: 1,
                 minQty: 1,

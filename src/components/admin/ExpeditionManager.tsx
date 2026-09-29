@@ -44,6 +44,7 @@ type ExpOrder = {
   loaded_at: string | null;
   dispatched_at: string | null;
   delivered_at: string | null;
+  inventory_allocated_at: string | null;
   items: unknown;
   created_at: string;
 };
@@ -159,15 +160,13 @@ const ExpeditionManager = () => {
 
   const orderItems = (o: ExpOrder): OrderItem[] => (Array.isArray(o.items) ? o.items as OrderItem[] : []);
 
-  const shortages = (o: ExpOrder) =>
-    orderItems(o).filter((it: OrderItem) => {
-      const p = stockByName.get(String(it.name ?? "").trim().toLowerCase());
-      return p ? p.stock < itemQty(it) : false;
-    });
-
   const confirmLoad = async (o: ExpOrder) => {
     if (o.payment_status !== "paid") {
       toast.error("A expedição só pode começar após a confirmação do pagamento.");
+      return;
+    }
+    if (!o.inventory_allocated_at) {
+      toast.error("O estoque deste pedido ainda não foi alocado. Não carregue a mercadoria.");
       return;
     }
     await patchOrder(o.id, {
@@ -237,7 +236,6 @@ const ExpeditionManager = () => {
             </Card>
           )}
           {queue.map((o) => {
-            const missing = shortages(o);
             const open = expandedId === o.id;
             return (
               <Card key={o.id} className="p-3 space-y-3">
@@ -267,11 +265,9 @@ const ExpeditionManager = () => {
                       Pgto: {o.payment_status}
                     </Badge>
                   )}
-                  {missing.length > 0 && (
-                    <Badge variant="secondary" className="bg-destructive/15 text-destructive">
-                      <AlertTriangle className="w-3 h-3 mr-1" /> Estoque insuficiente
-                    </Badge>
-                  )}
+                  <Badge variant="secondary" className={o.inventory_allocated_at ? "bg-green-500/15 text-green-700 dark:text-green-300" : "bg-amber-500/15 text-amber-700 dark:text-amber-300"}>
+                    {o.inventory_allocated_at ? "Estoque alocado" : "Aguardando alocação"}
+                  </Badge>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -289,7 +285,7 @@ const ExpeditionManager = () => {
                   <Button
                     variant="outline"
                     onClick={() => confirmLoad(o)}
-                    disabled={missing.length > 0 || o.expedition_status === "carregado"}
+                    disabled={!o.inventory_allocated_at || o.expedition_status === "carregado"}
                   >
                     <PackageCheck className="w-4 h-4" /> Confirmar carregamento
                   </Button>

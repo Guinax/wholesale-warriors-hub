@@ -26,6 +26,7 @@ const formatBRL = (n: number) =>
   `R$ ${Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export const toCategoryProduct = (p: DbProduct) => ({
+  productId: p.id,
   badge: p.badge ?? undefined,
   badgeColor: p.badge_color ?? undefined,
   name: p.name,

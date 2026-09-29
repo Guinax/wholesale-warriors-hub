@@ -31,6 +31,9 @@ const CatalogManager = () => {
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [catalogTitle, setCatalogTitle] = useState("CATÁLOGO VIGENTE");
+  const [catalogSubtitle, setCatalogSubtitle] = useState("ESTILO CIMED x MAROMBA");
+  const [savingSettings, setSavingSettings] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -41,6 +44,16 @@ const CatalogManager = () => {
       .order("sort_order", { ascending: true });
     if (error) toast.error("Erro ao carregar produtos");
     else setProducts(((data ?? []) as unknown) as CatalogProduct[]);
+    const { data: settings } = await supabase
+      .from("catalog_settings" as never)
+      .select("title, subtitle")
+      .eq("id", 1)
+      .maybeSingle();
+    if (settings) {
+      const s = settings as unknown as { title: string; subtitle: string };
+      setCatalogTitle(s.title || "CATÁLOGO VIGENTE");
+      setCatalogSubtitle(s.subtitle || "ESTILO CIMED x MAROMBA");
+    }
     setLoading(false);
   };
 
@@ -67,6 +80,20 @@ const CatalogManager = () => {
     load();
   };
 
+  const saveCatalogSettings = async () => {
+    setSavingSettings(true);
+    const { error } = await supabase
+      .from("catalog_settings" as never)
+      .upsert({ id: 1, title: catalogTitle.trim(), subtitle: catalogSubtitle.trim() } as never);
+    setSavingSettings(false);
+    if (error) {
+      toast.error("Erro ao salvar apresentação do catálogo: " + error.message);
+      return;
+    }
+    logAudit("catalog_settings_updated", { entity: "catalog_settings", entity_id: "1", details: { title: catalogTitle, subtitle: catalogSubtitle } });
+    toast.success("Apresentação do catálogo atualizada");
+  };
+
   const add = (p: CatalogProduct) => {
     const nextOrder = inCatalog.length ? Math.max(...inCatalog.map((i) => i.catalog_order)) + 1 : 0;
     logAudit("catalog_product_added", { entity: "products", entity_id: p.id, details: { name: p.name } });
@@ -90,6 +117,26 @@ const CatalogManager = () => {
 
   return (
     <div className="space-y-6">
+      <Card className="p-4 space-y-3">
+        <div>
+          <h2 className="font-heading font-bold tracking-wide text-sm">EDITAR PÁGINA INICIAL — CATÁLOGO</h2>
+          <p className="text-xs text-muted-foreground mt-1">Edite os textos exibidos acima dos produtos no Catálogo Vigente da página inicial.</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="text-xs font-semibold">Título</label>
+            <Input value={catalogTitle} onChange={(e) => setCatalogTitle(e.target.value)} placeholder="CATÁLOGO VIGENTE" />
+          </div>
+          <div>
+            <label className="text-xs font-semibold">Subtítulo</label>
+            <Input value={catalogSubtitle} onChange={(e) => setCatalogSubtitle(e.target.value)} placeholder="ESTILO CIMED x MAROMBA" />
+          </div>
+        </div>
+        <Button onClick={saveCatalogSettings} disabled={savingSettings || !catalogTitle.trim()}>
+          {savingSettings ? "Salvando..." : "Salvar alterações da página inicial"}
+        </Button>
+      </Card>
+
       <div>
         <h2 className="font-heading font-bold tracking-wide text-sm mb-1">CATÁLOGO VIGENTE</h2>
         <p className="text-xs text-muted-foreground mb-3">

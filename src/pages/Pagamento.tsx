@@ -238,14 +238,14 @@ const Pagamento = () => {
     }
 
     const { data: catalog, error: catalogError } = await supabase.from("products")
-      .select("name,unit_price,wholesale_price,stock").eq("active", true).in("name", items.map(item => item.name));
+      .select("id,name,unit_price,wholesale_price,stock").eq("active", true).in("name", items.map(item => item.name));
     if (catalogError) {
       setSubmitting(false);
       toast({ title: "Não foi possível consultar o catálogo", description: "Tente novamente.", variant: "destructive" });
       return;
     }
     const invalidItem = items.find(item => {
-      const product = catalog?.find(product => product.name === item.name);
+      const product = catalog?.find(product => item.productId ? product.id === item.productId : product.name === item.name);
       const expectedPrice = product ? (item.qty >= 6 ? product.wholesale_price : product.unit_price) : 0;
       return !product || !Number.isInteger(item.qty) || item.qty < 1 || item.qty > product.stock ||
         Math.round(item.priceNum * 100) !== Math.round(expectedPrice * 100);
@@ -285,6 +285,7 @@ const Pagamento = () => {
         address_state: customer.state,
         address_zip: customer.zip,
         items: items.map((i) => ({
+          product_id: i.productId ?? null,
           name: i.name,
           qty: i.qty,
           unit_price: i.priceNum,

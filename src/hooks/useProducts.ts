@@ -31,7 +31,7 @@ export const toCategoryProduct = (p: DbProduct) => ({
   name: p.name,
   unitPrice: formatBRL(p.unit_price),
   wholesalePrice: formatBRL(p.wholesale_price),
-  minQty: p.min_qty,
+  minQty: 1,
   stock: p.stock,
   image: p.image_url ?? undefined,
 });

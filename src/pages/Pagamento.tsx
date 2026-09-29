@@ -290,7 +290,7 @@ const Pagamento = () => {
         if (requestId) {
           setSubmitting(false);
           toast({ title: "Pedido encaminhado para loja próxima", description: "Estamos buscando uma loja com estoque para calcular a entrega local." });
-          navigate("/revendedor");
+          navigate(`/pedido-local/${requestId}`);
           return;
         }
       }

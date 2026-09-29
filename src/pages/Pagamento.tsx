@@ -345,19 +345,6 @@ const Pagamento = () => {
         toast({ title: "Erro ao processar pedido", description: error.message, variant: "destructive" });
         return;
       }
-      const { data: createdOrder } = await supabase.from("orders").select("id").eq("order_code", orderCode).eq("user_id", user.id).single();
-      if (!createdOrder) {
-        setSubmitting(false);
-        toast({ title: "Erro ao reservar estoque", description: "Não foi possível localizar o pedido criado.", variant: "destructive" });
-        return;
-      }
-      const { error: reserveError } = await supabase.rpc("reserve_order_inventory" as never, { _order_id: createdOrder.id } as never);
-      if (reserveError) {
-        await supabase.from("orders").update({ payment_status: "expired" }).eq("id", createdOrder.id).eq("user_id", user.id);
-        setSubmitting(false);
-        toast({ title: "Estoque alterado", description: "Um dos produtos acabou de ficar indisponível. Revise o carrinho antes de pagar.", variant: "destructive" });
-        return;
-      }
       pendingOrder.current = { code: orderCode, snapshot };
 
       await logAudit("order_created", {

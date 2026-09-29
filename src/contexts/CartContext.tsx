@@ -120,15 +120,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setIsOpen(true);
   }, []);
 
-  const removeItem = useCallback((name: string) => {
-    setItems((prev) => prev.filter((i) => i.name !== name));
+  const removeItem = useCallback((key: string) => {
+    setItems((prev) => prev.filter((i) => (i.productId ?? i.name) !== key));
   }, []);
 
-  const updateQty = useCallback((name: string, qty: number) => {
+  const updateQty = useCallback((key: string, qty: number) => {
     if (!Number.isSafeInteger(qty)) return;
     setItems((prev) =>
       prev.flatMap((i) => {
-        if (i.name !== name) return [i];
+        if ((i.productId ?? i.name) !== key) return [i];
         if (qty <= 0) return [];
         const nextQty = Math.max(1, qty);
         return [{ ...i, qty: nextQty, minQty: 1, priceNum: parsePrice(nextQty >= 6 ? i.wholesalePrice : i.unitPrice) }];

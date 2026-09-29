@@ -28,13 +28,14 @@ function normalize(raw: unknown): CartItem[] {
   return raw
     .filter((i): i is Record<string, unknown> => !!i && typeof i === "object")
     .map((i) => {
+      const productId = typeof i.productId === "string" && i.productId ? i.productId : undefined;
       const name = String(i.name ?? "");
       const wholesalePrice = String(i.wholesalePrice ?? "R$ 0,00");
       const unitPrice = String(i.unitPrice ?? i.wholesalePrice ?? "R$ 0,00");
       const minQty = 1;
       const qty = Number.isFinite(Number(i.qty)) ? Math.max(1, Math.floor(Number(i.qty))) : 1;
       const selectedPrice = qty >= 6 ? parsePrice(wholesalePrice) : parsePrice(unitPrice);
-      return { name, unitPrice, wholesalePrice, priceNum: Number.isFinite(selectedPrice) ? selectedPrice : 0, qty, minQty };
+      return { productId, name, unitPrice, wholesalePrice, priceNum: Number.isFinite(selectedPrice) ? selectedPrice : 0, qty, minQty };
     })
     .filter((i) => i.name.length > 0);
 }
@@ -103,10 +104,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addItem = useCallback((item: Omit<CartItem, "priceNum">) => {
     if (!Number.isSafeInteger(item.qty) || item.qty < 1) return;
     setItems((prev) => {
-      const existing = prev.find((i) => i.name === item.name);
+      const existing = prev.find((i) => item.productId ? i.productId === item.productId : i.name === item.name);
       if (existing) {
         return prev.map((i) => {
-          if (i.name !== item.name) return i;
+          if (item.productId ? i.productId !== item.productId : i.name !== item.name) return i;
           const qty = i.qty + item.qty;
           const unitPrice = item.unitPrice ?? i.unitPrice;
           const wholesalePrice = item.wholesalePrice;

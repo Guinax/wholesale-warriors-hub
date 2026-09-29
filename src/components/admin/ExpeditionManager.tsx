@@ -45,6 +45,8 @@ type ExpOrder = {
   dispatched_at: string | null;
   delivered_at: string | null;
   inventory_allocated_at: string | null;
+  fulfillment_store_id: string | null;
+  delivery_mode: string | null;
   items: unknown;
   created_at: string;
 };
@@ -129,8 +131,12 @@ const ExpeditionManager = () => {
     [products, onlyDrinks]
   );
 
+  const partnerQueue = useMemo(
+    () => orders.filter((o) => o.payment_status === "paid" && o.delivery_status !== "entregue" && Boolean(o.fulfillment_store_id)),
+    [orders]
+  );
   const queue = useMemo(
-    () => orders.filter((o) => o.payment_status === "paid" && o.delivery_status !== "entregue"),
+    () => orders.filter((o) => o.payment_status === "paid" && o.delivery_status !== "entregue" && !o.fulfillment_store_id),
     [orders]
   );
 
@@ -215,9 +221,16 @@ const ExpeditionManager = () => {
         <Card className="p-3">
           <p className="text-xs text-muted-foreground">Falha de alocação</p>
           <p className="text-2xl font-bold text-destructive">{allocationIssues.length}</p>
-          <p className="text-[10px] text-muted-foreground">Pagos bloqueados para expedição</p>
+          <p className="text-[10px] text-muted-foreground">Pagos centrais bloqueados</p>
         </Card>
       </div>
+
+      {partnerQueue.length > 0 && (
+        <Card className="p-3">
+          <p className="text-sm font-semibold">Atendimento por lojas parceiras: {partnerQueue.length}</p>
+          <p className="text-xs text-muted-foreground">Esses pedidos usam estoque e entrega da loja responsável e não entram na expedição central.</p>
+        </Card>
+      )}
 
       <Tabs defaultValue="fila">
         <div className="flex items-center gap-2">

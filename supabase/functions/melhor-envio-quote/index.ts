@@ -176,32 +176,40 @@ Deno.serve(async (req) => {
     }
   }
 
+  const requestQuote = (token: string) => fetch(`${c.baseUrl}/api/v2/me/shipment/calculate`, {
+    method: "POST",
+    signal: AbortSignal.timeout(10000),
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      "User-Agent": c.userAgent,
+    },
+    body: JSON.stringify({
+      from: { postal_code: c.originCep },
+      to: { postal_code: parsed.data.destination_cep },
+      products: providerProducts,
+      options: { receipt: false, own_hand: false },
+    }),
+  });
+
   let response: Response;
   try {
-    response = await fetch(`${c.baseUrl}/api/v2/me/shipment/calculate`, {
-      method: "POST",
-      signal: AbortSignal.timeout(10000),
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-        "User-Agent": c.userAgent,
-      },
-      body: JSON.stringify({
-        from: { postal_code: c.originCep },
-        to: { postal_code: parsed.data.destination_cep },
-        products: providerProducts,
-        options: { receipt: false, own_hand: false },
-      }),
-    });
+    response = await requestQuote(accessToken);
+    if (response.status === 401) {
+      const refreshed = await refreshToken(c, admin, { ...tokenRow, access_token: accessToken });
+      if (!refreshed) {
+        return reply({ configured: true, connected: false, available: false, fallback: true, reason: "token_refresh_failed" });
+      }
+      accessToken = refreshed;
+      response = await requestQuote(accessToken);
+    }
   } catch {
     return reply({ configured: true, connected: true, available: false, fallback: true, reason: "provider_unreachable" });
   }
 
   if (response.status === 401) {
-    const refreshed = await refreshToken(c, admin, { ...tokenRow, access_token: accessToken });
-    if (!refreshed) return reply({ configured: true, connected: false, available: false, fallback: true, reason: "token_refresh_failed" });
-    return reply({ configured: true, connected: true, available: false, fallback: true, reason: "retry_quote" }, 503);
+    return reply({ configured: true, connected: false, available: false, fallback: true, reason: "provider_unauthorized_after_refresh" });
   }
 
   const result = await response.json().catch(() => null);

@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, Search, Package, RefreshCw, Eye, ShieldAlert, ArrowLeft } from "lucide-react";
+import { LogOut, Search, Package, RefreshCw, Eye, ShieldAlert, ArrowLeft, TriangleAlert } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProductsManager from "@/components/admin/ProductsManager";
 import UsersManager from "@/components/admin/UsersManager";
@@ -55,6 +55,9 @@ type Order = {
   total_amount: number;
   payment_method: string;
   payment_status: string;
+  payment_details: unknown;
+  payment_checked_at: string | null;
+  payment_nsu: string | null;
   delivery_status: string;
   address_street: string;
   address_number: string;
@@ -87,6 +90,11 @@ const deliveryColor: Record<string, string> = {
   transito: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
   saiu_entrega: "bg-purple-500/15 text-purple-700 dark:text-purple-300",
   entregue: "bg-green-500/15 text-green-700 dark:text-green-300",
+};
+
+const requiresPaymentReconciliation = (order: Order) => {
+  const details = order.payment_details;
+  return !!details && typeof details === "object" && (details as Record<string, unknown>).reconciliation_required === true;
 };
 
 const paymentColor: Record<string, string> = {
@@ -133,6 +141,12 @@ const Admin = () => {
           const next = payload.new as Order;
           const prevRow = payload.old as Partial<Order>;
           setOrders((prev) => prev.map((o) => (o.id === next.id ? { ...o, ...next } : o)));
+          if (requiresPaymentReconciliation(next) && !(prevRow.payment_details && typeof prevRow.payment_details === "object" && (prevRow.payment_details as Record<string, unknown>).reconciliation_required === true)) {
+            toast.error(`Pagamento em reconciliação — ${next.order_code}`, {
+              description: "A InfinitePay confirmou o pagamento após o encerramento do pedido. Não libere mercadoria até a conferência.",
+              duration: 15000,
+            });
+          }
           if (next.payment_status === "paid" && prevRow?.payment_status !== "paid") {
             toast.success(`Pagamento confirmado — ${next.order_code}`, {
               description: `${next.customer_name} · ${formatCurrency(Number(next.total_amount))} · o pedido já pode ser separado.`,
@@ -273,7 +287,7 @@ const Admin = () => {
             <TabsTrigger value="videos">Vídeos</TabsTrigger>
           </TabsList>
           <TabsContent value="orders" className="space-y-4 mt-4">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <Card className="p-3">
             <p className="text-xs text-muted-foreground">Total de pedidos</p>
             <p className="text-2xl font-bold">{orders.length}</p>
@@ -294,6 +308,12 @@ const Admin = () => {
             <p className="text-xs text-muted-foreground">Entregues</p>
             <p className="text-2xl font-bold">
               {orders.filter((o) => o.delivery_status === "entregue").length}
+            </p>
+          </Card>
+          <Card className="p-3 border-destructive/40">
+            <p className="text-xs text-muted-foreground">Reconciliação</p>
+            <p className="text-2xl font-bold text-destructive">
+              {orders.filter(requiresPaymentReconciliation).length}
             </p>
           </Card>
         </div>
@@ -366,6 +386,11 @@ const Admin = () => {
                 <Badge className={paymentColor[o.payment_status] ?? ""} variant="secondary">
                   Pgto: {PAYMENT_OPTIONS.find((p) => p.value === o.payment_status)?.label ?? o.payment_status}
                 </Badge>
+                {requiresPaymentReconciliation(o) && (
+                  <Badge variant="destructive" className="gap-1">
+                    <TriangleAlert className="w-3 h-3" /> Reconciliação de pagamento
+                  </Badge>
+                )}
                 <Badge variant="outline" className="font-mono text-xs">{o.tracking_code}</Badge>
               </div>
 
@@ -475,6 +500,18 @@ const Admin = () => {
                   Pagamento: {selected.payment_method}
                 </p>
               </section>
+              {requiresPaymentReconciliation(selected) && (
+                <section className="rounded-lg border border-destructive/40 bg-destructive/5 p-3">
+                  <h3 className="font-semibold text-destructive flex items-center gap-2">
+                    <TriangleAlert className="w-4 h-4" /> Pagamento exige reconciliação
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    A InfinitePay confirmou o pagamento após o encerramento deste pedido. Não libere estoque ou entrega até a conferência administrativa.
+                  </p>
+                  {selected.payment_nsu && <p className="font-mono text-xs mt-2">NSU: {selected.payment_nsu}</p>}
+                  {selected.payment_checked_at && <p className="text-xs text-muted-foreground">Verificado em {new Date(selected.payment_checked_at).toLocaleString("pt-BR")}</p>}
+                </section>
+              )}
               <section>
                 <h3 className="font-semibold mb-1">Rastreio</h3>
                 <p className="font-mono text-xs">{selected.tracking_code}</p>

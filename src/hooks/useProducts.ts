@@ -61,7 +61,11 @@ export function useProducts(category?: ProductCategory) {
       .select("*")
       .eq("active", true)
       .order("sort_order", { ascending: true });
-    if (category) q = q.eq("category", category);
+    if (category === "bebidas") {
+      q = q.in("category", ["bebidas", "Alcoólicos", "Alcoólicos + Combo", "Gin Saborizado", "Não Alcoólicos"]);
+    } else if (category) {
+      q = q.eq("category", category);
+    }
     const { data } = await q;
     setProducts(((data ?? []) as unknown) as DbProduct[]);
     if (showLoading) setLoading(false);

@@ -111,7 +111,16 @@ const Auth = () => {
             <Button type="submit" className="w-full" disabled={loading}>{loading ? "Aguarde..." : "Entrar"}</Button>
           </form>
         )}
-        <div className="text-center text-sm space-y-2">{mode === "login" && <button onClick={() => navigate("/cadastro")} className="text-primary hover:underline">Não tem conta? Cadastre-se</button>}</div>
+        <div className="text-center text-sm space-y-2">
+          {mode === "login" && (
+            <>
+              <button onClick={() => navigate("/cadastro-cliente")} className="text-primary hover:underline">Não tem conta? Cadastre-se para comprar</button>
+              <div>
+                <button onClick={() => navigate("/cadastro")} className="text-xs text-muted-foreground hover:text-foreground">Sou empresa ou revendedor — cadastro CNPJ</button>
+              </div>
+            </>
+          )}
+        </div>
         <button onClick={() => contactWhatsApp("Olá! Preciso de suporte com a Representante Oficial Família Maromba.")} className="w-full flex items-center justify-center gap-2 bg-[#25D366] text-white font-heading font-bold text-sm py-3 rounded-lg hover:opacity-90 transition-opacity"><MessageCircle className="w-4 h-4" />SUPORTE VIA WHATSAPP</button>
         <p className="text-[10px] text-muted-foreground text-center">(19) 97115-1107 — atendimento direto com nossa equipe</p>
       </Card>

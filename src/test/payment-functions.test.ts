@@ -11,7 +11,7 @@ function loadHandler(name: string, overrides: Record<string, unknown> = {}) {
   const catalog = [{ name: 'Product', unit_price: 10, wholesale_price: 8, min_qty: 1, stock: 20, active: true }];
   const updates: unknown[] = [];
   const filters: unknown[] = [];
-  const rpc = vi.fn(async () => ({ data: true, error: null }));
+  const rpc = vi.fn(async (name: string) => ({ data: name === 'partner_checkout_valid' ? overrides.partner_checkout_valid !== false : true, error: null }));
   function from(table: string) {
     let updating = false;
     const chain = { select: () => chain, in: () => chain, eq: (...args: unknown[]) => { filters.push(args); return chain; },
@@ -59,6 +59,14 @@ describe('Payment integration boundaries', () => {
     const r=await x.request(linkBody); const body=await r.json();
     expect(r.status).toBe(200); expect(body.reused).toBe(true); expect(body.url).toContain('/existing');
     expect(x.fetchMock).not.toHaveBeenCalled(); expect(x.rpc).toHaveBeenCalledWith('expire_stale_orders'); expect(x.rpc).not.toHaveBeenCalledWith('reserve_order_inventory',expect.anything());
+  });
+  it('rejects a partner checkout when its reservation is no longer valid',async()=>{
+    const x=loadHandler('payment-link',{fulfillment_store_id:'store-id',delivery_quote:19.9,total_amount:29.9,partner_checkout_valid:false});
+    const r=await x.request(linkBody); expect(r.status).toBe(409); expect(x.fetchMock).not.toHaveBeenCalled();
+  });
+  it('does not reuse a lookalike InfinitePay hostname',async()=>{
+    const x=loadHandler('payment-link',{payment_provider:'infinitepay',payment_checked_at:new Date().toISOString(),payment_details:{url:'https://evilinfinitepay.io/existing'}});
+    const r=await x.request(linkBody); expect(r.status).toBe(200); expect(x.fetchMock).toHaveBeenCalled();
   });
   it('does not reserve central inventory for a partner order',async()=>{
     const x=loadHandler('payment-link',{fulfillment_store_id:'store-id',delivery_quote:19.9,total_amount:29.9});

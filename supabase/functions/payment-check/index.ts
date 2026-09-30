@@ -63,9 +63,7 @@ Deno.serve(async (req) => {
   if (orderError) return json({ error: "Falha ao consultar o pedido." }, 500);
   if (!order || order.user_id !== user.id) return json({ error: "Pedido não encontrado." }, 404);
 
-  if (["expired", "cancelled", "canceled"].includes(order.payment_status)) {
-    return json({ paid: false, payment_status: order.payment_status, reconciliation_required: true, error: "Pedido encerrado. Se o pagamento foi debitado, ele será tratado em reconciliação." }, 409);
-  }
+  const closedOrder = ["expired", "cancelled", "canceled"].includes(order.payment_status);
 
   if (order.payment_status === "paid") {
     const { error: syncError } = await supabase.schema("private").rpc("partner_mark_order_paid", { p_order_id: order.id });
@@ -128,9 +126,25 @@ Deno.serve(async (req) => {
   const update: Record<string, unknown> = {
     payment_provider: "infinitepay",
     payment_checked_at: new Date().toISOString(),
-    payment_details: providerResponse,
+    payment_details: closedOrder
+      ? { reconciliation_required: paid, provider: providerResponse }
+      : providerResponse,
   };
   if (nsu) update.payment_nsu = nsu;
+
+  if (closedOrder) {
+    const { error: reconciliationError } = await supabase.from("orders").update(update).eq("id", order.id);
+    if (reconciliationError) return json({ error: "Falha ao registrar a reconciliação do pagamento." }, 500);
+    return json({
+      paid: false,
+      provider_paid: paid,
+      payment_status: order.payment_status,
+      reconciliation_required: paid,
+      provider: providerResponse,
+      error: paid ? "Pagamento confirmado após o encerramento do pedido. A equipe precisa reconciliar antes de liberar mercadoria." : "Pedido encerrado e pagamento não confirmado.",
+    }, 409);
+  }
+
   if (paid) {
     update.payment_status = "paid";
     update.delivery_status = "preparando";

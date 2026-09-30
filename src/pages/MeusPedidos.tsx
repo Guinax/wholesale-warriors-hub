@@ -77,7 +77,7 @@ export default function MeusPedidos() {
             {DELIVERY_STAGES.find((stage) => stage.key === order.delivery_status)?.label ?? "Preparando pedido"}
           </div>
           {deliveryInProgress.has(order.delivery_status) && trackingLabel(order.tracking_code) !== "Aguardando envio" && (
-            <p className="text-sm">Código de rastreio: <strong>{trackingLabel(order.tracking_code)}</strong></p>
+            <p className="text-sm">Rastreio do pedido: <strong>{trackingLabel(order.tracking_code)}</strong></p>
           )}
           {deliveryInProgress.has(order.delivery_status) && trackingLabel(order.tracking_code) === "Aguardando envio" && (
             <p className="text-xs text-muted-foreground">O rastreio aparecerá aqui assim que a expedição informar o código.</p>

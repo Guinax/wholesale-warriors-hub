@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
+import { isValidCnpj, isValidCpf } from "@/lib/brDocuments";
 
 interface CadastroForm {
   password: string;
@@ -231,7 +232,7 @@ const CadastroCNPJ = () => {
                     placeholder="00.000.000/0000-00"
                     {...register("cnpj", {
                       required: "Campo obrigatório",
-                      validate: (v) => v.replace(/\D/g, "").length === 14 || "CNPJ inválido",
+                      validate: (v) => isValidCnpj(v) || "CNPJ inválido",
                     })}
                     onChange={(e) => setValue("cnpj", formatCNPJ(e.target.value))}
                   />

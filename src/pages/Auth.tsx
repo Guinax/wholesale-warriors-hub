@@ -95,7 +95,7 @@ const Auth = () => {
         <div className="text-center space-y-1">
           <img src={logo} alt="Mansão Maromba" className="w-20 h-20 object-contain mx-auto" />
           <h1 className="text-2xl font-heading font-bold">Família Maromba</h1>
-          <p className="text-sm text-muted-foreground">{mode === "recovery" ? "Recupere sua senha" : "Entre na sua conta para acessar a loja"}</p>
+          <p className="text-sm text-muted-foreground">{mode === "recovery" ? "Recupere sua senha" : "Entre para finalizar compras e acessar sua conta"}</p>
         </div>
         {mode === "recovery" ? (
           <form onSubmit={handleForgotPassword} className="space-y-4">
@@ -112,7 +112,7 @@ const Auth = () => {
           </form>
         )}
         <div className="text-center text-sm space-y-2">{mode === "login" && <button onClick={() => navigate("/cadastro")} className="text-primary hover:underline">Não tem conta? Cadastre-se</button>}</div>
-        <button onClick={() => contactWhatsApp("Olá! Preciso de suporte com a Loja Família Maromba.")} className="w-full flex items-center justify-center gap-2 bg-[#25D366] text-white font-heading font-bold text-sm py-3 rounded-lg hover:opacity-90 transition-opacity"><MessageCircle className="w-4 h-4" />SUPORTE VIA WHATSAPP</button>
+        <button onClick={() => contactWhatsApp("Olá! Preciso de suporte com a Representante Oficial Família Maromba.")} className="w-full flex items-center justify-center gap-2 bg-[#25D366] text-white font-heading font-bold text-sm py-3 rounded-lg hover:opacity-90 transition-opacity"><MessageCircle className="w-4 h-4" />SUPORTE VIA WHATSAPP</button>
         <p className="text-[10px] text-muted-foreground text-center">(19) 97115-1107 — atendimento direto com nossa equipe</p>
       </Card>
     </div>

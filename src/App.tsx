@@ -29,6 +29,7 @@ import Bebidas from "./pages/Bebidas.tsx";
 import Alimentos from "./pages/Alimentos.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Compartilhar from "./pages/Compartilhar.tsx";
+import MeusPedidos from "./pages/MeusPedidos.tsx";
 import MinhaConta from "./pages/MinhaConta.tsx";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PainelRevendedor from "./pages/PainelRevendedor.tsx";
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/comissoes" element={<Comissoes />} />
             <Route path="/pagamento" element={<ProtectedRoute><Pagamento /></ProtectedRoute>} />
             <Route path="/recibo/:code" element={<ProtectedRoute><Recibo /></ProtectedRoute>} />
+            <Route path="/meus-pedidos" element={<ProtectedRoute><MeusPedidos /></ProtectedRoute>} />
             <Route path="/minha-conta" element={<ProtectedRoute><MinhaConta /></ProtectedRoute>} />
             <Route path="/revendedor" element={<ProtectedRoute><PainelRevendedor /></ProtectedRoute>} />
             <Route path="/pedido-local/:id" element={<ProtectedRoute><PedidoLocal /></ProtectedRoute>} />

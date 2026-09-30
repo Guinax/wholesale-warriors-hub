@@ -33,7 +33,8 @@ import InventoryManager from "@/components/admin/InventoryManager";
 import PayoutsManager from "@/components/admin/PayoutsManager";
 import PartnersManager from "@/components/admin/PartnersManager";
 import ShippingIntegrationManager from "@/components/admin/ShippingIntegrationManager";
-import { formatCurrency, DELIVERY_STAGES } from "@/lib/orderUtils";
+import OperationReadiness from "@/components/admin/OperationReadiness";
+import { trackingLabel, formatCurrency, DELIVERY_STAGES } from "@/lib/orderUtils";
 import { logAudit } from "@/lib/audit";
 
 type OrderItem = {
@@ -106,6 +107,7 @@ const paymentColor: Record<string, string> = {
 };
 
 const Admin = () => {
+  const [activeTab, setActiveTab] = useState("orders");
   const navigate = useNavigate();
   const { user, isAdmin, loading, signOut } = useAdminAuth();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -135,13 +137,17 @@ const Admin = () => {
     if (!isAdmin) return;
     const channel = supabase
       .channel("orders-payment-confirmed")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders" }, () => void loadOrders())
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "orders" }, () => void loadOrders())
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "orders" },
         (payload) => {
           const next = payload.new as Order;
           const prevRow = payload.old as Partial<Order>;
-          setOrders((prev) => prev.map((o) => (o.id === next.id ? { ...o, ...next } : o)));
+          setOrders((prev) => prev.some((o) => o.id === next.id)
+            ? prev.map((o) => (o.id === next.id ? { ...o, ...next } : o))
+            : [next, ...prev]);
           if (requiresPaymentReconciliation(next) && !(prevRow.payment_details && typeof prevRow.payment_details === "object" && (prevRow.payment_details as Record<string, unknown>).reconciliation_required === true)) {
             toast.error(`Pagamento em reconciliação — ${next.order_code}`, {
               description: "A InfinitePay confirmou o pagamento após o encerramento do pedido. Não libere mercadoria até a conferência.",
@@ -217,7 +223,7 @@ const Admin = () => {
         const q = search.toLowerCase();
         return (
           o.order_code.toLowerCase().includes(q) ||
-          o.tracking_code.toLowerCase().includes(q) ||
+          (o.tracking_code ?? "").toLowerCase().includes(q) ||
           o.customer_name.toLowerCase().includes(q) ||
           o.customer_email.toLowerCase().includes(q)
         );
@@ -273,8 +279,9 @@ const Admin = () => {
       </header>
 
       <main className="container py-6 space-y-4">
-        <Tabs defaultValue="orders">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="flex-wrap h-auto">
+            <TabsTrigger value="operation">Conferência</TabsTrigger>
             <TabsTrigger value="orders">Pedidos</TabsTrigger>
             <TabsTrigger value="pages">Páginas</TabsTrigger>
             <TabsTrigger value="catalog">Catálogo</TabsTrigger>
@@ -288,6 +295,7 @@ const Admin = () => {
             <TabsTrigger value="audit">Auditoria</TabsTrigger>
             <TabsTrigger value="videos">Vídeos</TabsTrigger>
           </TabsList>
+          <TabsContent value="operation" className="mt-4"><OperationReadiness onNavigate={setActiveTab} /></TabsContent>
           <TabsContent value="orders" className="space-y-4 mt-4">
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <Card className="p-3">
@@ -393,7 +401,7 @@ const Admin = () => {
                     <TriangleAlert className="w-3 h-3" /> Reconciliação de pagamento
                   </Badge>
                 )}
-                <Badge variant="outline" className="font-mono text-xs">{o.tracking_code}</Badge>
+                <Badge variant="outline" className="font-mono text-xs">{trackingLabel(o.tracking_code)}</Badge>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -519,7 +527,7 @@ const Admin = () => {
               )}
               <section>
                 <h3 className="font-semibold mb-1">Rastreio</h3>
-                <p className="font-mono text-xs">{selected.tracking_code}</p>
+                <p className="font-mono text-xs">{trackingLabel(selected.tracking_code)}</p>
                 <div className="mt-2 space-y-1">
                   {DELIVERY_STAGES.map((stage, idx) => {
                     const currentIdx = DELIVERY_STAGES.findIndex(

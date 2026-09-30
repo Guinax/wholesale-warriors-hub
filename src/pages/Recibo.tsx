@@ -4,7 +4,7 @@ import { CheckCircle2, Download, Package, Truck, MapPin, Home, MessageCircle, Re
 import jsPDF from "jspdf";
 import PageHeader from "@/components/PageHeader";
 import { supabase } from "@/integrations/supabase/client";
-import { DELIVERY_STAGES, formatCurrency, computeExpiresAt, formatCountdown, isOrderExpired } from "@/lib/orderUtils";
+import { DELIVERY_STAGES, trackingLabel, formatCurrency, computeExpiresAt, formatCountdown, isOrderExpired } from "@/lib/orderUtils";
 import { contactWhatsApp } from "@/lib/whatsapp";
 import { checkPaymentStatus, createPaymentLink } from "@/lib/payments";
 import { useToast } from "@/hooks/use-toast";
@@ -69,6 +69,22 @@ const Recibo = () => {
     })();
   }, [fetchOrder]);
 
+  useEffect(() => {
+    if (!code) return;
+    const refresh = () => { if (document.visibilityState === "visible") void fetchOrder(); };
+    const channel = supabase.channel(`receipt-${code}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders", filter: `order_code=eq.${code}` }, () => void fetchOrder())
+      .subscribe();
+    document.addEventListener("visibilitychange", refresh);
+    // Retry after disconnected mobile sessions as well as on realtime events.
+    const interval = window.setInterval(refresh, 30000);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", refresh);
+      void supabase.removeChannel(channel);
+    };
+  }, [code, fetchOrder]);
+
   const runPaymentCheck = useCallback(
     async (silent = false) => {
       if (!code) return;
@@ -96,14 +112,17 @@ const Recibo = () => {
     [code, fetchOrder, searchParams, toast]
   );
 
+  const paymentStatus = order?.payment_status;
+  const paymentDueAt = order?.due_at;
+
   // Verificação automática enquanto o pagamento estiver pendente
   useEffect(() => {
-    if (!order || order.payment_status !== "pending") return;
-    if (isOrderExpired(order.payment_status, order.due_at)) return;
+    if (paymentStatus !== "pending") return;
+    if (isOrderExpired(paymentStatus, paymentDueAt)) return;
     runPaymentCheck(true);
     const id = setInterval(() => runPaymentCheck(true), 20000);
     return () => clearInterval(id);
-  }, [order?.payment_status, order?.due_at, order, runPaymentCheck]);
+  }, [paymentStatus, paymentDueAt, runPaymentCheck]);
 
 
   const handleDownloadPDF = () => {
@@ -129,7 +148,7 @@ const Recibo = () => {
     doc.text(`Pedido: ${order.order_code}`, 15, y);
     doc.text(`Data: ${new Date(order.created_at).toLocaleString("pt-BR")}`, 195, y, { align: "right" });
     y += lh;
-    doc.text(`Rastreio: ${order.tracking_code}`, 15, y);
+    doc.text(`Rastreio: ${trackingLabel(order.tracking_code)}`, 15, y);
     doc.text(`Pagamento: ${PAYMENT_LABEL[order.payment_method] ?? order.payment_method}`, 195, y, { align: "right" });
     y += lh;
     doc.text(`Status: ${order.payment_status.toUpperCase()}`, 15, y);
@@ -171,7 +190,7 @@ const Recibo = () => {
     doc.setFontSize(9);
     doc.setFont("helvetica", "italic");
     doc.text(
-      `Acompanhe sua entrega informando o código de rastreio ${order.tracking_code}.`,
+      `Acompanhe a entrega na sua conta com o pedido ${order.order_code}.`,
       105, y, { align: "center" }
     );
 
@@ -284,7 +303,7 @@ const Recibo = () => {
               <Truck className="w-4 h-4 text-primary" /> RASTREIO DA ENTREGA
             </h3>
             <span className="font-mono text-xs bg-secondary px-2.5 py-1 rounded-md text-foreground">
-              {order.tracking_code}
+              {trackingLabel(order.tracking_code)}
             </span>
           </div>
 
@@ -367,7 +386,7 @@ const Recibo = () => {
           <button
             onClick={() =>
               contactWhatsApp(
-                `Olá! Pedido ${order.order_code} - rastreio ${order.tracking_code}. Gostaria de tirar uma dúvida.`
+                `Olá! Pedido ${order.order_code} - rastreio ${trackingLabel(order.tracking_code)}. Gostaria de tirar uma dúvida.`
               )
             }
             className="flex items-center justify-center gap-2 bg-secondary text-foreground font-heading font-black text-xs tracking-wider py-3.5 rounded-lg hover:bg-secondary/80 transition-colors border border-border"

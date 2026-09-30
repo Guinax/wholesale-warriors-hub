@@ -61,6 +61,8 @@ const TopNav = () => {
                   {user?.email ?? "Minha conta"}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/minha-conta")}>Meus dados</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/meus-pedidos")}>Meus pedidos</DropdownMenuItem>
                 {isAdmin && (
                   <DropdownMenuItem onClick={() => navigate("/admin")}>
                     Painel Admin

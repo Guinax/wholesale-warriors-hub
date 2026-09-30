@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import {
   Truck, PackageCheck, Boxes, RefreshCw, AlertTriangle, Minus, Plus, MapPin,
 } from "lucide-react";
-import { formatCurrency, DELIVERY_STAGES } from "@/lib/orderUtils";
+import { formatCurrency, trackingLabel, pendingTrackingCode, DELIVERY_STAGES } from "@/lib/orderUtils";
 import { logAudit } from "@/lib/audit";
 
 type OrderItem = {
@@ -114,6 +114,7 @@ const ExpeditionManager = () => {
   useEffect(() => {
     const channel = supabase
       .channel("expedicao-estoque")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "stock_movements" }, () => load())
       .subscribe();
@@ -140,7 +141,7 @@ const ExpeditionManager = () => {
     [orders]
   );
 
-  const patchOrder = async (id: string, patch: Partial<Pick<ExpOrder, "expedition_status" | "delivery_status" | "carrier" | "driver_name" | "vehicle_plate" | "expedition_notes" | "loaded_at" | "dispatched_at" | "delivered_at">>, msg = "Expedição atualizada") => {
+  const patchOrder = async (id: string, patch: Partial<Pick<ExpOrder, "tracking_code" | "expedition_status" | "delivery_status" | "carrier" | "driver_name" | "vehicle_plate" | "expedition_notes" | "loaded_at" | "dispatched_at" | "delivered_at">>, msg = "Expedição atualizada") => {
     const { error } = await supabase.from("orders").update(patch).eq("id", id);
     if (error) { toast.error("Erro ao atualizar pedido"); return false; }
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, ...patch } as ExpOrder : o)));
@@ -274,7 +275,7 @@ const ExpeditionManager = () => {
                   <Badge className={expColor[o.expedition_status] ?? ""} variant="secondary">
                     {EXPEDITION_STEPS.find((s) => s.value === o.expedition_status)?.label ?? o.expedition_status}
                   </Badge>
-                  <Badge variant="outline" className="font-mono text-xs">{o.tracking_code}</Badge>
+                  <Badge variant="outline" className="font-mono text-xs">{trackingLabel(o.tracking_code)}</Badge>
                   {o.payment_status !== "paid" && (
                     <Badge variant="secondary" className="bg-amber-500/15 text-amber-700 dark:text-amber-300">
                       Pgto: {o.payment_status}
@@ -334,6 +335,22 @@ const ExpeditionManager = () => {
                           );
                         })}
                       </ul>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor={`tracking-${o.id}`} className="text-xs font-semibold">Código real de rastreio</label>
+                      <Input
+                        id={`tracking-${o.id}`}
+                        key={o.tracking_code}
+                        maxLength={100}
+                        placeholder="Informe o código fornecido pela transportadora"
+                        defaultValue={trackingLabel(o.tracking_code) === "Aguardando envio" ? "" : o.tracking_code}
+                        onBlur={(e) => {
+                          const value = e.target.value.trim() || pendingTrackingCode(o.order_code);
+                          if (value !== o.tracking_code) void patchOrder(o.id, { tracking_code: value }, "Rastreio atualizado");
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground">Entregas locais podem ser acompanhadas pelo status do pedido, sem código de transportadora.</p>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">

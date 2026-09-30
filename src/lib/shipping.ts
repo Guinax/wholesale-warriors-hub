@@ -76,11 +76,11 @@ export async function lookupCep(cep: string): Promise<CepInfo | null> {
   const digits = onlyDigitsCep(cep);
   if (digits.length !== 8) return null;
   try {
-    const geoRes = await fetch(`https://brasilapi.com.br/api/cep/v2/${digits}`);
+    const geoRes = await fetch(`https://brasilapi.com.br/api/cep/v2/${digits}`, { signal: AbortSignal.timeout(7000) });
     if (geoRes.ok) {
       const data = await geoRes.json();
-      const lat = Number(data?.location?.coordinates?.latitude);
-      const lng = Number(data?.location?.coordinates?.longitude);
+      const lat = Number(data?.location?.coordinates?.latitude ?? NaN);
+      const lng = Number(data?.location?.coordinates?.longitude ?? NaN);
       return { cep: maskCepValue(digits), city: data.city ?? "", state: data.state ?? "", street: data.street ?? "", neighborhood: data.neighborhood ?? "", latitude: Number.isFinite(lat) ? lat : undefined, longitude: Number.isFinite(lng) ? lng : undefined };
     }
   } catch { /* ViaCEP fallback below */ }
@@ -91,7 +91,7 @@ async function lookupCepViaCep(cep: string): Promise<CepInfo | null> {
   const digits = onlyDigitsCep(cep);
   if (digits.length !== 8) return null;
   try {
-    const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+    const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`, { signal: AbortSignal.timeout(7000) });
     if (!res.ok) return null;
     const data = await res.json();
     if (data?.erro) return null;

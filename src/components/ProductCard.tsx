@@ -17,6 +17,7 @@ interface ProductCardProps {
 
 const ProductCard = ({ productId, badge, badgeColor = "bg-primary", name, unitPrice, wholesalePrice, stock, image, viewMode = "grid" }: ProductCardProps) => {
   const [qty, setQty] = useState(1);
+  const [failedImage, setFailedImage] = useState<string | null>(null);
   const { addItem } = useCart();
 
   const handleAdd = () => {
@@ -29,10 +30,10 @@ const ProductCard = ({ productId, badge, badgeColor = "bg-primary", name, unitPr
     return (
       <div className="bg-card rounded-xl border border-border overflow-hidden flex hover:border-primary/40 transition-all duration-300">
         <div className="relative w-24 h-24 flex-shrink-0 bg-gradient-to-br from-secondary to-surface-elevated flex items-center justify-center overflow-hidden">
-          {image ? (
-            <img src={image} alt={name} className="w-full h-full object-cover" loading="lazy" />
+          {image && image !== failedImage ? (
+            <img src={image} alt={name} onError={() => setFailedImage(image)} className="w-full h-full object-cover" loading="lazy" />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-muted/30" />
+            <span className="text-[9px] text-muted-foreground text-center px-2">Foto em atualização</span>
           )}
           {badge && (
             <span className={`absolute top-1 left-1 ${badgeColor} text-primary-foreground text-[8px] font-heading font-bold tracking-wider px-1.5 py-0.5 rounded-md`}>
@@ -68,10 +69,10 @@ const ProductCard = ({ productId, badge, badgeColor = "bg-primary", name, unitPr
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden group hover:border-primary/40 hover:shadow-[0_0_30px_hsl(45_100%_50%/0.08)] transition-all duration-300">
       <div className="relative aspect-square bg-gradient-to-br from-secondary to-surface-elevated flex items-center justify-center overflow-hidden">
-        {image ? (
-          <img src={image} alt={name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+        {image && image !== failedImage ? (
+          <img src={image} alt={name} onError={() => setFailedImage(image)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
         ) : (
-          <div className="w-20 h-20 rounded-full bg-muted/30 group-hover:scale-110 transition-transform duration-500" />
+          <span className="text-xs text-muted-foreground text-center px-4">Foto em atualização</span>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-card/50 to-transparent" />
         {badge && (

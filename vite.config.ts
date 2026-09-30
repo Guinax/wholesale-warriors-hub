@@ -1,6 +1,12 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import { execFileSync } from "node:child_process";
+
+const revision = (() => {
+  try { return execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(); }
+  catch { return "unknown"; }
+})();
 import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
@@ -13,6 +19,12 @@ export default defineConfig(({ mode }) => ({
     },
   },
   plugins: [
+    {
+      name: "build-revision",
+      generateBundle() {
+        this.emitFile({ type: "asset", fileName: "build-info.json", source: JSON.stringify({ revision }) });
+      },
+    },
     react(),
     VitePWA({
       registerType: "autoUpdate",

@@ -1,4 +1,4 @@
-// Utilitários para pedidos: gerar código de pedido e código de rastreio fictícios
+// Identificação de pedidos e apresentação do rastreio fornecido na expedição.
 
 export function generateOrderCode(): string {
   const ts = Date.now().toString(36).toUpperCase();
@@ -6,13 +6,15 @@ export function generateOrderCode(): string {
   return `FM-${ts}-${rand}`;
 }
 
-export function generateTrackingCode(): string {
-  // Padrão estilo Correios: BR + 9 dígitos + 2 letras
-  const digits = Math.floor(100000000 + Math.random() * 900000000).toString();
-  const letters = Array.from({ length: 2 }, () =>
-    String.fromCharCode(65 + Math.floor(Math.random() * 26))
-  ).join("");
-  return `BR${digits}${letters}`;
+export function pendingTrackingCode(orderCode: string): string {
+  return `AGUARDANDO-ENVIO:${orderCode}`;
+}
+
+export function trackingLabel(code?: string | null): string {
+  if (!code?.trim() || code.startsWith("AGUARDANDO-ENVIO:") || code.startsWith("FM-P-")) {
+    return "Aguardando envio";
+  }
+  return code.trim();
 }
 
 export function formatCurrency(value: number): string {

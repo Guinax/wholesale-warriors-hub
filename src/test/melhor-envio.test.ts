@@ -23,11 +23,14 @@ describe("Melhor Envio integration contracts", () => {
     expect(source).not.toContain("console.log(accessToken");
   });
 
-  it("refreshes expired tokens server-side", () => {
+  it("refreshes expired tokens server-side and retries a 401 quote once", () => {
     const source = read("supabase/functions/melhor-envio-quote/index.ts");
     expect(source).toContain('grant_type: "refresh_token"');
     expect(source).toContain("service_melhor_envio_store_token");
     expect(source).toContain("refresh_expires_at");
+    expect(source).toContain("requestQuote(accessToken)");
+    expect(source).toContain("response.status === 401");
+    expect(source).toContain("provider_unauthorized_after_refresh");
   });
 
   it("quotes against the official shipment calculate endpoint and trusts custom price", () => {

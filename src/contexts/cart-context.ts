@@ -18,6 +18,8 @@ export interface Shipping {
   neighborhood: string;
   cost: number;
   eta: string;
+  source?: "regional" | "melhor_envio";
+  itemsKey?: string;
 }
 
 export interface CartContextType {

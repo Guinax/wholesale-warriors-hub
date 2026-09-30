@@ -214,14 +214,45 @@ Deno.serve(async (req) => {
       return json({ error: "Cotação de entrega inválida." }, 409);
     }
   } else if (!adminFreeShipping) {
-    const unitsPerBox = 6;
-    const totalUnits = [...quantities.values()].reduce((sum, item) => sum + item.qty, 0);
-    const boxes = Math.max(1, Math.ceil(totalUnits / unitsPerBox));
-    const southSoutheast = new Set(["SP","RJ","MG","ES","PR","SC","RS"]);
-    const centerNortheast = new Set(["GO","MT","MS","DF","BA","SE","AL","PE","PB","RN","CE","PI","MA"]);
-    const baseShipping = uf === "SP" ? 19.9 : southSoutheast.has(uf) ? 29.9 : centerNortheast.has(uf) ? 39.9 : 49.9;
-    const extraBoxShipping = uf === "SP" ? 14.9 : southSoutheast.has(uf) ? 22.9 : centerNortheast.has(uf) ? 29.9 : 39.9;
-    shippingAmount = Math.round((baseShipping + Math.max(0, boxes - 1) * extraBoxShipping) * 100) / 100;
+    let liveQuoteApplied = false;
+    const quoteItems = [...quantities.values()].flatMap((item) =>
+      item.productId ? [{ product_id: item.productId, qty: item.qty }] : []
+    );
+
+    if (quoteItems.length === quantities.size && quoteItems.length > 0) {
+      try {
+        const quoteResponse = await fetch(`${supabaseUrl}/functions/v1/melhor-envio-quote`, {
+          method: "POST",
+          signal: AbortSignal.timeout(12000),
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            apikey: publicKey,
+            Authorization: authorization,
+          },
+          body: JSON.stringify({ destination_cep: cep, items: quoteItems }),
+        });
+        const quote = await quoteResponse.json().catch(() => ({}));
+        const livePrice = Number(quote?.price);
+        if (quoteResponse.ok && quote?.available === true && Number.isFinite(livePrice) && livePrice > 0) {
+          shippingAmount = Math.round(livePrice * 100) / 100;
+          liveQuoteApplied = true;
+        }
+      } catch {
+        // Fall back to the regional table below.
+      }
+    }
+
+    if (!liveQuoteApplied) {
+      const unitsPerBox = 6;
+      const totalUnits = [...quantities.values()].reduce((sum, item) => sum + item.qty, 0);
+      const boxes = Math.max(1, Math.ceil(totalUnits / unitsPerBox));
+      const southSoutheast = new Set(["SP","RJ","MG","ES","PR","SC","RS"]);
+      const centerNortheast = new Set(["GO","MT","MS","DF","BA","SE","AL","PE","PB","RN","CE","PI","MA"]);
+      const baseShipping = uf === "SP" ? 19.9 : southSoutheast.has(uf) ? 29.9 : centerNortheast.has(uf) ? 39.9 : 49.9;
+      const extraBoxShipping = uf === "SP" ? 14.9 : southSoutheast.has(uf) ? 22.9 : centerNortheast.has(uf) ? 29.9 : 39.9;
+      shippingAmount = Math.round((baseShipping + Math.max(0, boxes - 1) * extraBoxShipping) * 100) / 100;
+    }
   }
 
   if (shippingAmount > 0) items.push({ description: "Frete", price: Math.round(shippingAmount * 100), quantity: 1 });

@@ -23,6 +23,8 @@ type Store = {
   delivery_base: number;
   delivery_per_km: number;
   delivery_per_kg: number;
+  terms_version: number;
+  accepted_terms_version: number;
 };
 
 type InventoryItem = { store_id:string; product_id:string; on_hand:number; reserved:number; name:string };
@@ -51,7 +53,7 @@ export default function PainelRevendedor() {
   const load = async () => {
     const { data, error } = await supabase
       .from("partner_stores" as never)
-      .select("id,name,status,is_open,delivery_mode,own_driver_available,delivery_base,delivery_per_km,delivery_per_kg")
+      .select("id,name,status,is_open,delivery_mode,own_driver_available,delivery_base,delivery_per_km,delivery_per_kg,terms_version,accepted_terms_version")
       .order("created_at", { ascending: false });
     if (error) return toast.error("Não foi possível carregar suas lojas.");
     const loadedStores=(data ?? []) as unknown as Store[];
@@ -76,6 +78,13 @@ export default function PainelRevendedor() {
   };
 
   useEffect(() => { void load(); }, []);
+
+  const acceptTerms = async (store: Store) => {
+    setSaving("terms-"+store.id);
+    const {error}=await supabase.rpc("partner_command" as never,{p_action:"accept_terms",p_payload:{store_id:store.id,version:store.terms_version}} as never);
+    setSaving(null); if(error) return toast.error(error.message);
+    toast.success("Condições vigentes aceitas."); await load();
+  };
 
   const saveStoreSettings = async (store: Store) => {
     setSaving("settings-"+store.id);
@@ -232,7 +241,7 @@ export default function PainelRevendedor() {
         {stores.map((store) => (
           <Card key={store.id}>
             <CardHeader><CardTitle>{store.name}</CardTitle></CardHeader>
-            <CardContent className="grid gap-5 md:grid-cols-2">
+            <CardContent className="grid gap-5 md:grid-cols-2">{store.status==="approved"&&store.accepted_terms_version!==store.terms_version&&<div className="md:col-span-2 rounded-lg border p-4 space-y-2"><strong>Condições operacionais atualizadas</strong><p className="text-sm text-muted-foreground">Aceite a versão {store.terms_version} antes de abrir a loja ou alterar a operação.</p><Button disabled={saving==="terms-"+store.id} onClick={()=>void acceptTerms(store)}>{saving==="terms-"+store.id?"Salvando...":"Aceitar condições vigentes"}</Button></div>}
               <div className="space-y-2">
                 <Label>Modalidade de entrega</Label>
                 <Select value={store.delivery_mode} onValueChange={(value: Store["delivery_mode"]) =>

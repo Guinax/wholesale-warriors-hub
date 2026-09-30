@@ -13,6 +13,7 @@ import { computeDueAt, formatCurrency, generateOrderCode, generateTrackingCode }
 import { logAudit } from "@/lib/audit";
 import { createPaymentLink } from "@/lib/payments";
 import { lookupCep, shippingCostFor, shippingEtaFor, shippingLoadFor } from "@/lib/shipping";
+import { getLiveShippingQuote } from "@/lib/liveShipping";
 
 type PaymentMethod = "pix" | "cartao";
 
@@ -153,7 +154,7 @@ const Pagamento = () => {
     }
     let active = true;
     setCheckingCep(true);
-    lookupCep(customer.zip).then((info) => {
+    lookupCep(customer.zip).then(async (info) => {
       if (!active) return;
       if (!info) {
         setValidCep(false);
@@ -173,9 +174,28 @@ const Pagamento = () => {
         city: info.city,
         state: info.state,
       }));
-      setShippingCost(shippingCostFor(info.state, totalPrice, items.reduce((sum, item) => sum + item.qty, 0)));
-      setShippingEta(shippingEtaFor(info.state));
-      setCheckingCep(false);
+
+      const totalUnits = items.reduce((sum, item) => sum + item.qty, 0);
+      const fallbackCost = shippingCostFor(info.state, totalPrice, totalUnits);
+      const fallbackEta = shippingEtaFor(info.state);
+      setShippingCost(fallbackCost);
+      setShippingEta(fallbackEta);
+
+      const quoteItems = items.flatMap((item) =>
+        item.productId ? [{ product_id: item.productId, qty: item.qty }] : []
+      );
+      if (quoteItems.length === items.length && quoteItems.length > 0) {
+        try {
+          const live = await getLiveShippingQuote(info.cep, quoteItems);
+          if (active && live) {
+            setShippingCost(live.cost);
+            setShippingEta(`${live.etaDays} dia${live.etaDays > 1 ? "s" : ""} útil${live.etaDays > 1 ? "eis" : ""} · ${live.company || live.serviceName}`);
+          }
+        } catch {
+          // A tabela regional já foi aplicada acima como fallback.
+        }
+      }
+      if (active) setCheckingCep(false);
     });
     return () => { active = false; };
   }, [customer.zip, totalPrice, items]);

@@ -11,6 +11,7 @@ export interface CategoryProduct {
   unitPrice: string;
   wholesalePrice: string;
   minQty: number;
+  stock?: number;
   image?: string;
 }
 

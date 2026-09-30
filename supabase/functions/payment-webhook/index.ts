@@ -30,9 +30,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (orderError || !order) return reply({ success: false, message: "Pedido não encontrado" }, 400);
-    if (["expired", "cancelled", "canceled"].includes(order.payment_status)) {
-      return reply({ success: false, reconciliation_required: true, message: "Pagamento recebido para pedido encerrado; reconciliação necessária." }, 409);
-    }
+    const closedOrder = ["expired", "cancelled", "canceled"].includes(order.payment_status);
 
     if (order.payment_status === "paid") {
       const { error: syncError } = await admin.schema("private").rpc("partner_mark_order_paid", { p_order_id: order.id });
@@ -70,23 +68,37 @@ Deno.serve(async (req) => {
       return reply({ success: false, message: "Valor do pagamento não confere" }, 400);
     }
 
+    const paymentDetails = {
+      source: closedOrder ? "verified_late_payment_webhook" : "verified_webhook",
+      reconciliation_required: closedOrder,
+      success: result.success,
+      paid: result.paid,
+      amount: result.amount,
+      paid_amount: result.paid_amount,
+      installments: result.installments,
+      capture_method: result.capture_method,
+      transaction_nsu: result.transaction_nsu ?? transactionNsu ?? null,
+      slug: slug ?? null,
+    };
+
+    if (closedOrder) {
+      const { error: reconciliationError } = await admin.from("orders").update({
+        payment_checked_at: new Date().toISOString(),
+        payment_nsu: result.transaction_nsu ?? transactionNsu ?? null,
+        payment_provider: "infinitepay",
+        payment_details: paymentDetails,
+      }).eq("id", order.id);
+      if (reconciliationError) throw reconciliationError;
+      return reply({ success: true, reconciliation_required: true, message: "Pagamento confirmado para pedido encerrado e registrado para reconciliação." });
+    }
+
     const { error } = await admin.from("orders").update({
       payment_status: "paid",
       delivery_status: "preparando",
       payment_checked_at: new Date().toISOString(),
       payment_nsu: result.transaction_nsu ?? transactionNsu ?? null,
       payment_provider: "infinitepay",
-      payment_details: {
-        source: "verified_webhook",
-        success: result.success,
-        paid: result.paid,
-        amount: result.amount,
-        paid_amount: result.paid_amount,
-        installments: result.installments,
-        capture_method: result.capture_method,
-        transaction_nsu: result.transaction_nsu ?? transactionNsu ?? null,
-        slug: slug ?? null,
-      },
+      payment_details: paymentDetails,
     }).eq("id", order.id).neq("payment_status", "paid");
 
     if (error) throw error;

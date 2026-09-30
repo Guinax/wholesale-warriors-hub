@@ -21,18 +21,30 @@ export default function ShippingIntegrationManager() {
   const [status, setStatus] = useState<Status | null>(null);
   const [loading, setLoading] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [activeProducts, setActiveProducts] = useState(0);
+  const [readyProducts, setReadyProducts] = useState(0);
+  const [missingProducts, setMissingProducts] = useState<string[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase.functions.invoke("melhor-envio-callback", {
-      body: { action: "status" },
-    });
+    const [{ data, error }, { data: products, error: productsError }] = await Promise.all([
+      supabase.functions.invoke("melhor-envio-callback", { body: { action: "status" } }),
+      supabase.from("products").select("name,weight_kg,width_cm,height_cm,length_cm").eq("active", true).order("name"),
+    ]);
     setLoading(false);
     if (error) {
       toast.error("Não foi possível consultar a integração do Melhor Envio.");
       return;
     }
     setStatus(data as Status);
+    if (!productsError) {
+      const rows = (products ?? []) as Array<{name:string;weight_kg:number|null;width_cm:number|null;height_cm:number|null;length_cm:number|null}>;
+      const ready = rows.filter((p) => [p.weight_kg,p.width_cm,p.height_cm,p.length_cm].every((v) => Number(v) > 0));
+      const missing = rows.filter((p) => ![p.weight_kg,p.width_cm,p.height_cm,p.length_cm].every((v) => Number(v) > 0));
+      setActiveProducts(rows.length);
+      setReadyProducts(ready.length);
+      setMissingProducts(missing.map((p) => p.name));
+    }
   }, []);
 
   useEffect(() => {
@@ -75,6 +87,29 @@ export default function ShippingIntegrationManager() {
             </Button>
           </div>
         </div>
+
+        <div className="grid sm:grid-cols-3 gap-2">
+          <div className="rounded-lg border p-3">
+            <p className="text-[10px] text-muted-foreground">Produtos ativos</p>
+            <p className="text-xl font-bold">{activeProducts}</p>
+          </div>
+          <div className="rounded-lg border p-3">
+            <p className="text-[10px] text-muted-foreground">Prontos para frete real</p>
+            <p className="text-xl font-bold">{readyProducts}</p>
+          </div>
+          <div className="rounded-lg border p-3">
+            <p className="text-[10px] text-muted-foreground">Medidas pendentes</p>
+            <p className="text-xl font-bold">{Math.max(0, activeProducts - readyProducts)}</p>
+          </div>
+        </div>
+
+        {missingProducts.length > 0 && (
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs space-y-2">
+            <p className="font-semibold">Produtos sem peso/dimensões</p>
+            <p className="text-muted-foreground">Preencha esses dados em Admin → Produtos para habilitar cotação real:</p>
+            <p>{missingProducts.slice(0, 8).join(", ")}{missingProducts.length > 8 ? ` e mais ${missingProducts.length - 8}` : ""}.</p>
+          </div>
+        )}
 
         <div className="rounded-lg border p-3 text-xs space-y-2">
           <p><strong>Callback do aplicativo:</strong></p>

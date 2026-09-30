@@ -3,6 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { logAudit } from "@/lib/audit";
 import { RefreshCw, ExternalLink, Truck, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
@@ -24,12 +28,19 @@ export default function ShippingIntegrationManager() {
   const [activeProducts, setActiveProducts] = useState(0);
   const [readyProducts, setReadyProducts] = useState(0);
   const [missingProducts, setMissingProducts] = useState<string[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [bulkCategory, setBulkCategory] = useState("");
+  const [bulkWeight, setBulkWeight] = useState("");
+  const [bulkWidth, setBulkWidth] = useState("");
+  const [bulkHeight, setBulkHeight] = useState("");
+  const [bulkLength, setBulkLength] = useState("");
+  const [savingBulk, setSavingBulk] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     const [{ data, error }, { data: products, error: productsError }] = await Promise.all([
       supabase.functions.invoke("melhor-envio-callback", { body: { action: "status" } }),
-      supabase.from("products").select("name,weight_kg,width_cm,height_cm,length_cm").eq("active", true).order("name"),
+      supabase.from("products").select("name,category,weight_kg,width_cm,height_cm,length_cm").eq("active", true).order("name"),
     ]);
     setLoading(false);
     if (error) {
@@ -38,18 +49,48 @@ export default function ShippingIntegrationManager() {
     }
     setStatus(data as Status);
     if (!productsError) {
-      const rows = (products ?? []) as Array<{name:string;weight_kg:number|null;width_cm:number|null;height_cm:number|null;length_cm:number|null}>;
+      const rows = (products ?? []) as Array<{name:string;category:string;weight_kg:number|null;width_cm:number|null;height_cm:number|null;length_cm:number|null}>;
       const ready = rows.filter((p) => [p.weight_kg,p.width_cm,p.height_cm,p.length_cm].every((v) => Number(v) > 0));
       const missing = rows.filter((p) => ![p.weight_kg,p.width_cm,p.height_cm,p.length_cm].every((v) => Number(v) > 0));
       setActiveProducts(rows.length);
       setReadyProducts(ready.length);
       setMissingProducts(missing.map((p) => p.name));
+      const nextCategories = [...new Set(rows.map((p) => p.category).filter(Boolean))].sort((a,b) => a.localeCompare(b, "pt-BR"));
+      setCategories(nextCategories);
+      setBulkCategory((current) => current && nextCategories.includes(current) ? current : (nextCategories[0] ?? ""));
     }
   }, []);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  const applyBulkDimensions = async () => {
+    const values = [bulkWeight, bulkWidth, bulkHeight, bulkLength].map(Number);
+    if (!bulkCategory || values.some((v) => !Number.isFinite(v) || v <= 0)) {
+      toast.error("Selecione a categoria e informe peso/dimensões maiores que zero.");
+      return;
+    }
+    if (!confirm(`Aplicar estas medidas a todos os produtos ativos da categoria "${bulkCategory}"?`)) return;
+    setSavingBulk(true);
+    const [weight_kg, width_cm, height_cm, length_cm] = values;
+    const { error } = await supabase
+      .from("products")
+      .update({ weight_kg, width_cm, height_cm, length_cm })
+      .eq("category", bulkCategory)
+      .eq("active", true);
+    setSavingBulk(false);
+    if (error) {
+      toast.error("Não foi possível aplicar as medidas: " + error.message);
+      return;
+    }
+    await logAudit("shipping_dimensions_bulk_updated", {
+      entity: "products",
+      details: { category: bulkCategory, weight_kg, width_cm, height_cm, length_cm },
+    });
+    toast.success("Peso e dimensões aplicados à categoria.");
+    void load();
+  };
 
   const connect = async () => {
     setConnecting(true);
@@ -134,6 +175,45 @@ export default function ShippingIntegrationManager() {
             {status?.connected ? "Reconectar Melhor Envio" : "Conectar Melhor Envio"}
           </Button>
         </div>
+      </Card>
+
+      <Card className="p-4 space-y-4">
+        <div>
+          <h3 className="font-semibold">Preencher medidas em lote</h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            Use apenas quando os produtos da categoria compartilham a mesma embalagem física. Meça uma unidade real antes de aplicar.
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-5 gap-2">
+          <div className="sm:col-span-2">
+            <Label>Categoria</Label>
+            <Select value={bulkCategory} onValueChange={setBulkCategory}>
+              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+              <SelectContent>
+                {categories.map((category) => <SelectItem key={category} value={category}>{category}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Peso (kg)</Label>
+            <Input type="number" min="0.001" step="0.001" value={bulkWeight} onChange={(e) => setBulkWeight(e.target.value)} />
+          </div>
+          <div>
+            <Label>Largura (cm)</Label>
+            <Input type="number" min="0.1" step="0.1" value={bulkWidth} onChange={(e) => setBulkWidth(e.target.value)} />
+          </div>
+          <div>
+            <Label>Altura (cm)</Label>
+            <Input type="number" min="0.1" step="0.1" value={bulkHeight} onChange={(e) => setBulkHeight(e.target.value)} />
+          </div>
+          <div>
+            <Label>Comprimento (cm)</Label>
+            <Input type="number" min="0.1" step="0.1" value={bulkLength} onChange={(e) => setBulkLength(e.target.value)} />
+          </div>
+        </div>
+        <Button onClick={() => void applyBulkDimensions()} disabled={savingBulk || !bulkCategory}>
+          {savingBulk ? "Aplicando..." : "Aplicar à categoria"}
+        </Button>
       </Card>
 
       <Card className="p-4 flex gap-3">

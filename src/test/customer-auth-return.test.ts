@@ -28,10 +28,24 @@ describe("Customer auth return flow", () => {
     expect(signup).toContain("over_email_send_rate_limit");
   });
 
+  it("preserves the intended route through reseller signup", () => {
+    const auth = read("src/pages/Auth.tsx");
+    const reseller = read("src/pages/CadastroCNPJ.tsx");
+
+    expect(auth).toContain('/cadastro?next=');
+    expect(reseller).toContain("useSearchParams");
+    expect(reseller).toContain('rawNext.startsWith("/")');
+    expect(reseller).toContain('!rawNext.startsWith("//")');
+    expect(reseller).toContain('const emailRedirectTo = `${window.location.origin}${nextPath}`');
+    expect(reseller).toContain('/auth?next=');
+  });
+
   it("does not accept protocol-relative redirect targets", () => {
     const auth = read("src/pages/Auth.tsx");
     const signup = read("src/pages/CadastroCliente.tsx");
+    const reseller = read("src/pages/CadastroCNPJ.tsx");
     expect(auth).toContain('!rawNext.startsWith("//")');
     expect(signup).toContain('!rawNext.startsWith("//")');
+    expect(reseller).toContain('!rawNext.startsWith("//")');
   });
 });

@@ -12,6 +12,7 @@ import {
   shippingCostFor,
   shippingEtaFor,
 } from "@/lib/shipping";
+import { getLiveShippingQuote } from "@/lib/liveShipping";
 
 const CartDrawer = () => {
   const {
@@ -44,12 +45,40 @@ const CartDrawer = () => {
       toast({ title: "CEP não encontrado", description: "Confira o CEP e tente novamente.", variant: "destructive" });
       return;
     }
-    setShipping({
-      ...info,
-      cost: shippingCostFor(info.state, totalPrice, totalItems),
-      eta: shippingEtaFor(info.state),
+    const fallbackCost = shippingCostFor(info.state, totalPrice, totalItems);
+    const fallbackEta = shippingEtaFor(info.state);
+    const itemsKey = items
+      .map((item) => `${item.productId ?? item.name}:${item.qty}`)
+      .sort()
+      .join("|");
+
+    let cost = fallbackCost;
+    let eta = fallbackEta;
+    let source: "regional" | "melhor_envio" = "regional";
+
+    const quoteItems = items.flatMap((item) =>
+      item.productId ? [{ product_id: item.productId, qty: item.qty }] : []
+    );
+    if (quoteItems.length === items.length && quoteItems.length > 0) {
+      try {
+        const live = await getLiveShippingQuote(info.cep, quoteItems);
+        if (live) {
+          cost = live.cost;
+          eta = live.etaDays === 1
+            ? `1 dia útil · ${live.company || live.serviceName}`
+            : `${live.etaDays} dias úteis · ${live.company || live.serviceName}`;
+          source = "melhor_envio";
+        }
+      } catch {
+        // Mantém o fallback regional.
+      }
+    }
+
+    setShipping({ ...info, cost, eta, source, itemsKey });
+    toast({
+      title: source === "melhor_envio" ? "Frete cotado" : "Estimativa de frete",
+      description: `${info.city}/${info.state} · o valor final será confirmado no checkout.`,
     });
-    toast({ title: "Estimativa de frete", description: `${info.city}/${info.state} · o valor final será confirmado no checkout.` });
   };
 
   const handleCheckout = () => {

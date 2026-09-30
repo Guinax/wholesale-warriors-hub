@@ -54,6 +54,12 @@ describe('Payment integration boundaries', () => {
   it('creates a checkout containing retail catalog price and shipping below six units',async()=>{
     const x=loadHandler('payment-link'); const r=await x.request(linkBody); expect(r.status).toBe(200); expect((await r.json()).url).toContain('infinitepay.io'); expect(x.fetchMock).toHaveBeenCalledTimes(2); expect(x.rpc).toHaveBeenCalledWith('reserve_order_inventory',{_order_id:'order-id'});
   });
+  it('does not reserve central inventory for a partner order',async()=>{
+    const x=loadHandler('payment-link',{fulfillment_store_id:'store-id',delivery_quote:19.9,total_amount:29.9});
+    const r=await x.request(linkBody);
+    expect(r.status).toBe(200);
+    expect(x.rpc).not.toHaveBeenCalledWith('reserve_order_inventory',{_order_id:'order-id'});
+  });
   it('applies wholesale catalog price automatically from six units',async()=>{
     const x=loadHandler('payment-link',{items:[{name:'Product',qty:6}],total_amount:67.9}); const r=await x.request(linkBody); expect(r.status).toBe(200); expect((await r.json()).url).toContain('infinitepay.io'); expect(x.fetchMock).toHaveBeenCalledTimes(2); expect(x.rpc).toHaveBeenCalledWith('reserve_order_inventory',{_order_id:'order-id'});
   });

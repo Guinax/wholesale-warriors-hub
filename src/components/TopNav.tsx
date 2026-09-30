@@ -43,6 +43,14 @@ const TopNav = () => {
         </div>
 
         <div className="flex items-center gap-1">
+          {!session && (
+            <button
+              onClick={() => navigate("/auth")}
+              className="px-3 py-2 text-[11px] font-heading font-bold tracking-wider text-foreground hover:text-primary transition-colors"
+            >
+              ENTRAR
+            </button>
+          )}
           {session && (
             <DropdownMenu>
               <DropdownMenuTrigger className="p-2" aria-label="Conta do usuário">

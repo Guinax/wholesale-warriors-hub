@@ -25,6 +25,7 @@ export default function ShippingIntegrationManager() {
   const [status, setStatus] = useState<Status | null>(null);
   const [loading, setLoading] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [productReadiness, setProductReadiness] = useState({ active: 0, ready: 0 });
   const [activeProducts, setActiveProducts] = useState(0);
   const [readyProducts, setReadyProducts] = useState(0);
   const [missingProducts, setMissingProducts] = useState<string[]>([]);
@@ -153,6 +154,10 @@ export default function ShippingIntegrationManager() {
         )}
 
         <div className="rounded-lg border p-3 text-xs space-y-2">
+          <p><strong>Produtos prontos para frete real:</strong> {productReadiness.ready}/{productReadiness.active}</p>
+          {productReadiness.ready < productReadiness.active && (
+            <p className="text-muted-foreground">Complete peso e dimensões nos produtos pendentes. Enquanto isso, eles usam o frete regional.</p>
+          )}
           <p><strong>Callback do aplicativo:</strong></p>
           <p className="font-mono break-all">{status?.callback_url || EXPECTED_CALLBACK}</p>
           <p><strong>Ambiente:</strong> {status?.environment === "sandbox" ? "Sandbox" : "Produção"}</p>

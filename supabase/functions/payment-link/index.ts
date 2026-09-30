@@ -58,13 +58,29 @@ Deno.serve(async (req) => {
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, user_id, order_code, items, total_amount, customer_name, customer_email, customer_phone, address_zip, address_street, address_number, address_complement, address_city, address_state, payment_status, due_at, fulfillment_store_id, delivery_quote")
+    .select("id, user_id, order_code, items, total_amount, customer_name, customer_email, customer_phone, address_zip, address_street, address_number, address_complement, address_city, address_state, payment_status, due_at, fulfillment_store_id, delivery_quote, payment_provider, payment_details, payment_checked_at")
     .eq("order_code", parsed.data.order_code)
     .maybeSingle();
 
   if (orderError) return json({ error: "Falha ao consultar o pedido." }, 500);
   if (!order || order.user_id !== user.id) return json({ error: "Pedido não encontrado." }, 404);
   if (order.payment_status === "paid") return json({ error: "Este pedido já está pago." }, 409);
+  const previousDetails = order.payment_details && typeof order.payment_details === "object"
+    ? order.payment_details as Record<string, unknown> : null;
+  const previousNested = previousDetails?.data && typeof previousDetails.data === "object"
+    ? previousDetails.data as Record<string, unknown> : null;
+  const previousUrl = typeof previousDetails?.url === "string" ? previousDetails.url
+    : typeof previousNested?.url === "string" ? previousNested.url : null;
+  if (order.payment_provider === "infinitepay" && previousUrl) {
+    try {
+      const saved = new URL(previousUrl);
+      const checkedAt = order.payment_checked_at ? Date.parse(order.payment_checked_at) : 0;
+      const fresh = Number.isFinite(checkedAt) && Date.now() - checkedAt < 30 * 60_000;
+      if (fresh && saved.protocol === "https:" && saved.hostname.endsWith("infinitepay.io")) {
+        return json({ url: previousUrl, reused: true });
+      }
+    } catch { /* invalid saved provider URL: create a new charge */ }
+  }
   if (order.payment_status !== "pending" || (order.due_at && Date.now() > Date.parse(order.due_at) + 2 * 3600_000)) {
     return json({ error: "Pedido encerrado. Faça um novo pedido pelo carrinho." }, 409);
   }

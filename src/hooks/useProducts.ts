@@ -9,6 +9,10 @@ export interface DbProduct {
   name: string;
   unit_price: number;
   wholesale_price: number;
+  weight_kg: number | null;
+  width_cm: number | null;
+  height_cm: number | null;
+  length_cm: number | null;
   min_qty: number;
   stock: number;
   image_url: string | null;

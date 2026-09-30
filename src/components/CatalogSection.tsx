@@ -22,14 +22,13 @@ const CatalogSection = () => {
         .order("catalog_order", { ascending: true });
       setItems(((data ?? []) as unknown) as DbProduct[]);
       const { data: settings } = await supabase
-        .from("catalog_settings" as never)
+        .from("catalog_settings")
         .select("title, subtitle")
         .eq("id", 1)
         .maybeSingle();
       if (settings) {
-        const s = settings as unknown as { title: string; subtitle: string };
-        setCatalogTitle(s.title || "CATÁLOGO VIGENTE");
-        setCatalogSubtitle(s.subtitle || "ESTILO CIMED x MAROMBA");
+        setCatalogTitle(settings.title || "CATÁLOGO VIGENTE");
+        setCatalogSubtitle(settings.subtitle || "ESTILO CIMED x MAROMBA");
       }
       setLoading(false);
     };

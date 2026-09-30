@@ -5,6 +5,14 @@ import { readFileSync } from "node:fs";
 const read = (path: string) => readFileSync(path, "utf8");
 
 describe("Partner delivery and payout lifecycle contracts", () => {
+  it("allows the paid partner request state used by payment synchronization", () => {
+    const sql = read("supabase/migrations/20260930110000_sync_partner_request_when_order_paid.sql");
+    expect(sql).toContain("status='paid'");
+    expect(sql).toContain("payment_pending");
+    expect(sql).toContain("delivering");
+    expect(sql).toContain("delivered");
+  });
+
   it("keeps payout states and one payout per request constrained", () => {
     const sql = read("supabase/migrations/20260929233500_secure_partner_payout_lifecycle.sql");
     expect(sql).toContain("status in ('pending','eligible','approved','paid','cancelled')");

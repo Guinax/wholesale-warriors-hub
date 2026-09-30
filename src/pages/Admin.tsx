@@ -32,6 +32,7 @@ import ExpeditionManager from "@/components/admin/ExpeditionManager";
 import InventoryManager from "@/components/admin/InventoryManager";
 import PayoutsManager from "@/components/admin/PayoutsManager";
 import PartnersManager from "@/components/admin/PartnersManager";
+import ShippingIntegrationManager from "@/components/admin/ShippingIntegrationManager";
 import { formatCurrency, DELIVERY_STAGES } from "@/lib/orderUtils";
 import { logAudit } from "@/lib/audit";
 
@@ -281,6 +282,7 @@ const Admin = () => {
             <TabsTrigger value="inventory">Estoque unificado</TabsTrigger>
             <TabsTrigger value="payouts">Repasses</TabsTrigger>
             <TabsTrigger value="partners">Revendedores</TabsTrigger>
+            <TabsTrigger value="shipping">Logística</TabsTrigger>
             <TabsTrigger value="products">Produtos</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="audit">Auditoria</TabsTrigger>
@@ -437,6 +439,9 @@ const Admin = () => {
           </TabsContent>
           <TabsContent value="partners" className="mt-4">
             <PartnersManager />
+          </TabsContent>
+          <TabsContent value="shipping" className="mt-4">
+            <ShippingIntegrationManager />
           </TabsContent>
           <TabsContent value="products" className="mt-4">
             <ProductsManager />

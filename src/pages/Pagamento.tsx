@@ -14,6 +14,7 @@ import { logAudit } from "@/lib/audit";
 import { createPaymentLink } from "@/lib/payments";
 import { lookupCep, shippingCostFor, shippingEtaFor, shippingLoadFor } from "@/lib/shipping";
 import { getLiveShippingQuote } from "@/lib/liveShipping";
+import { isValidCnpj, isValidCpf } from "@/lib/brDocuments";
 
 type PaymentMethod = "pix" | "cartao";
 
@@ -228,12 +229,12 @@ const Pagamento = () => {
       return false;
     }
     if (docType === "cnpj") {
-      if (onlyDigits(customer.cnpj).length !== 14) {
-        toast({ title: "CNPJ inválido", description: "O CNPJ deve ter 14 dígitos.", variant: "destructive" });
+      if (!isValidCnpj(customer.cnpj)) {
+        toast({ title: "CNPJ inválido", description: "Confira os dígitos do CNPJ.", variant: "destructive" });
         return false;
       }
-    } else if (onlyDigits(customer.cpf).length !== 11) {
-      toast({ title: "CPF inválido", description: "O CPF deve ter 11 dígitos.", variant: "destructive" });
+    } else if (!isValidCpf(customer.cpf)) {
+      toast({ title: "CPF inválido", description: "Confira os dígitos do CPF.", variant: "destructive" });
       return false;
     }
     return true;

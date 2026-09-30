@@ -19,6 +19,15 @@ describe("Customer auth return flow", () => {
     expect(signup).toContain('/auth?next=');
   });
 
+  it("resends signup confirmation to the same intended destination", () => {
+    const signup = read("src/pages/CadastroCliente.tsx");
+    expect(signup).toContain('supabase.auth.resend');
+    expect(signup).toContain('type: "signup"');
+    expect(signup).toContain('emailRedirectTo: `${window.location.origin}${nextPath}`');
+    expect(signup).toContain("Date.now() + 60_000");
+    expect(signup).toContain("over_email_send_rate_limit");
+  });
+
   it("does not accept protocol-relative redirect targets", () => {
     const auth = read("src/pages/Auth.tsx");
     const signup = read("src/pages/CadastroCliente.tsx");

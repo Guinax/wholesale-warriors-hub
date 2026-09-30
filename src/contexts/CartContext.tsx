@@ -141,8 +141,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const totalItems = items.reduce((sum, i) => sum + i.qty, 0);
   const totalPrice = items.reduce((sum, i) => sum + i.priceNum * i.qty, 0);
 
-  // Recalcula o frete conforme a quantidade total e o número de caixas.
-  const shippingCost = shipping ? shippingCostFor(shipping.state, totalPrice, totalItems) : 0;
+  const currentItemsKey = items
+    .map((item) => `${item.productId ?? item.name}:${item.qty}`)
+    .sort()
+    .join("|");
+  // Cotação ao vivo só é reutilizada enquanto as quantidades do carrinho forem idênticas.
+  // Qualquer alteração invalida a cotação e volta automaticamente para a tabela regional.
+  const shippingCost = shipping
+    ? shipping.source === "melhor_envio" && shipping.itemsKey === currentItemsKey
+      ? shipping.cost
+      : shippingCostFor(shipping.state, totalPrice, totalItems)
+    : 0;
   const grandTotal = totalPrice + shippingCost;
 
   return (

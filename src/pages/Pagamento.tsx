@@ -189,7 +189,9 @@ const Pagamento = () => {
           const live = await getLiveShippingQuote(info.cep, quoteItems);
           if (active && live) {
             setShippingCost(live.cost);
-            setShippingEta(`${live.etaDays} dia${live.etaDays > 1 ? "s" : ""} útil${live.etaDays > 1 ? "eis" : ""} · ${live.company || live.serviceName}`);
+            setShippingEta(live.etaDays === 1
+              ? `1 dia útil · ${live.company || live.serviceName}`
+              : `${live.etaDays} dias úteis · ${live.company || live.serviceName}`);
           }
         } catch {
           // A tabela regional já foi aplicada acima como fallback.

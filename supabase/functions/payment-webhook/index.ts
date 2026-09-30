@@ -30,7 +30,11 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (orderError || !order) return reply({ success: false, message: "Pedido não encontrado" }, 400);
-    if (order.payment_status === "paid") return reply({ success: true, message: null });
+    if (order.payment_status === "paid") {
+      const { error: syncError } = await admin.schema("private").rpc("partner_mark_order_paid", { p_order_id: order.id });
+      if (syncError) throw syncError;
+      return reply({ success: true, message: null });
+    }
 
     const transactionNsu = typeof payload?.transaction_nsu === "string" ? payload.transaction_nsu : undefined;
     const slug = typeof payload?.invoice_slug === "string"
@@ -82,6 +86,8 @@ Deno.serve(async (req) => {
     }).eq("id", order.id).neq("payment_status", "paid");
 
     if (error) throw error;
+    const { error: syncError } = await admin.schema("private").rpc("partner_mark_order_paid", { p_order_id: order.id });
+    if (syncError) throw syncError;
     return reply({ success: true, message: null });
   } catch (error) {
     return reply({ success: false, message: error instanceof Error ? error.message : "Erro interno" }, 400);

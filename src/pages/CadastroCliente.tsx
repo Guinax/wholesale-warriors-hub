@@ -28,6 +28,8 @@ export default function CadastroCliente() {
   const [confirmSecret, setConfirmSecret] = useState("");
   const [loading, setLoading] = useState(false);
   const [sentTo, setSentTo] = useState("");
+  const [resending, setResending] = useState(false);
+  const [resendAfter, setResendAfter] = useState(0);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -57,11 +59,40 @@ export default function CadastroCliente() {
       setSecret("");
       setConfirmSecret("");
       if (data.session) window.location.href = nextPath;
-      else setSentTo(normalizedEmail);
+      else {
+        setSentTo(normalizedEmail);
+        setResendAfter(Date.now() + 60_000);
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível criar sua conta.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const resendConfirmation = async () => {
+    if (resending) return;
+    if (Date.now() < resendAfter) {
+      toast.info("Aguarde um minuto entre os envios.");
+      return;
+    }
+    setResending(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: sentTo,
+        options: { emailRedirectTo: `${window.location.origin}${nextPath}` },
+      });
+      if (error) throw error;
+      setResendAfter(Date.now() + 60_000);
+      toast.success("Confirmação reenviada. Confira sua caixa de entrada e o spam.");
+    } catch (error) {
+      const code = (error as { code?: string })?.code;
+      toast.error(code === "over_email_send_rate_limit" || code === "over_request_rate_limit"
+        ? "Muitas tentativas. Aguarde alguns minutos e tente novamente."
+        : "Não foi possível reenviar o e-mail agora.");
+    } finally {
+      setResending(false);
     }
   };
 
@@ -73,6 +104,9 @@ export default function CadastroCliente() {
           <p className="text-sm text-muted-foreground">
             Enviamos um link para <strong>{sentTo}</strong>. Confirme sua conta e depois entre para continuar.
           </p>
+          <Button variant="outline" className="w-full" disabled={resending} onClick={() => void resendConfirmation()}>
+            {resending ? "REENVIANDO..." : "REENVIAR CONFIRMAÇÃO"}
+          </Button>
           <Button className="w-full" onClick={() => navigate(`/auth?next=${encodeURIComponent(nextPath)}`)}>IR PARA O LOGIN</Button>
         </Card>
       </div>

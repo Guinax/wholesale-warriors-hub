@@ -45,7 +45,7 @@ const App = () => (
           <CartDrawer />
           <CommandCenterLauncher />
           <Routes>
-            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/" element={<Index />} />
             <Route path="/cadastro" element={<CadastroCNPJ />} />
             <Route path="/mais-vendidos" element={<MaisVendidos />} />
             <Route path="/avaliacoes" element={<Avaliacoes />} />

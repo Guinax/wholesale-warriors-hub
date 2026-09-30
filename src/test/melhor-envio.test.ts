@@ -55,6 +55,14 @@ describe("Melhor Envio integration contracts", () => {
     expect(source).toContain("weight_kg,width_cm,height_cm,length_cm");
   });
 
+  it("invalidates a live cart quote when cart quantities change", () => {
+    const context = read("src/contexts/CartContext.tsx");
+    const drawer = read("src/components/CartDrawer.tsx");
+    expect(context).toContain('shipping.source === "melhor_envio" && shipping.itemsKey === currentItemsKey');
+    expect(drawer).toContain('source = "melhor_envio"');
+    expect(drawer).toContain("itemsKey");
+  });
+
   it("keeps provider credentials out of the browser integration client", () => {
     const source = read("src/lib/liveShipping.ts");
     expect(source).not.toContain("MELHOR_ENVIO_CLIENT_SECRET");

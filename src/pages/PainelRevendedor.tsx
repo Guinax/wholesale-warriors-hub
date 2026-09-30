@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,7 +50,7 @@ export default function PainelRevendedor() {
   const [pix, setPix] = useState<Record<string,{pix_key_type:string;pix_key:string;holder_name:string;holder_document:string}>>({});
   const [payouts, setPayouts] = useState<Payout[]>([]);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const { data, error } = await supabase
       .from("partner_stores" as never)
       .select("id,name,status,is_open,delivery_mode,own_driver_available,delivery_base,delivery_per_km,delivery_per_kg,terms_version,accepted_terms_version")
@@ -75,9 +75,24 @@ export default function PainelRevendedor() {
       setRequests(d.requests ?? []);
       setInventory(d.inventory ?? []);
     }
-  };
+  }, []);
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    const channel = supabase.channel("partner-operations-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "partner_stores" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "partner_inventory" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "partner_requests" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "partner_offers" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "partner_payouts" }, () => void load())
+      .subscribe();
+    const fallback = window.setInterval(() => void load(), 30000);
+    return () => {
+      window.clearInterval(fallback);
+      void supabase.removeChannel(channel);
+    };
+  }, [load]);
 
   const acceptTerms = async (store: Store) => {
     setSaving("terms-"+store.id);

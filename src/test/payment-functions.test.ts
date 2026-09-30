@@ -77,15 +77,30 @@ describe('Payment integration boundaries', () => {
   it('applies wholesale catalog price automatically from six units',async()=>{
     const x=loadHandler('payment-link',{items:[{name:'Product',qty:6}],total_amount:67.9}); const r=await x.request(linkBody); expect(r.status).toBe(200); expect((await r.json()).url).toContain('infinitepay.io'); expect(x.fetchMock).toHaveBeenCalledTimes(2); expect(x.rpc).toHaveBeenCalledWith('reserve_order_inventory',{_order_id:'order-id'});
   });
-  it('routes a late confirmed payment for an expired order to reconciliation without contacting provider',async()=>{
+  it('verifies and records a late confirmed payment for an expired order without reopening it',async()=>{
     const x=loadHandler('payment-check',{payment_status:'expired'});
     const r=await x.request({order_code:'FM-TEST',transaction_nsu:'transaction',slug:'invoice'});
     const body=await r.json();
     expect(r.status).toBe(409);
     expect(body.paid).toBe(false);
+    expect(body.provider_paid).toBe(true);
     expect(body.reconciliation_required).toBe(true);
-    expect(x.fetchMock).not.toHaveBeenCalled();
-    expect(x.updates).toEqual([]);
+    expect(x.fetchMock).toHaveBeenCalledTimes(1);
+    expect(x.updates).toHaveLength(1);
+    expect(x.updates[0]).not.toHaveProperty('payment_status');
+    expect(x.updates[0]).toMatchObject({payment_provider:'infinitepay'});
+  });
+  it('acknowledges a verified late-payment webhook without reopening the order',async()=>{
+    const x=loadHandler('payment-webhook',{payment_status:'expired'});
+    const r=await x.request({order_nsu:'FM-TEST',transaction_nsu:'transaction',slug:'invoice'});
+    const body=await r.json();
+    expect(r.status).toBe(200);
+    expect(body.success).toBe(true);
+    expect(body.reconciliation_required).toBe(true);
+    expect(x.fetchMock).toHaveBeenCalledTimes(1);
+    expect(x.updates).toHaveLength(1);
+    expect(x.updates[0]).not.toHaveProperty('payment_status');
+    expect(x.updates[0]).toMatchObject({payment_provider:'infinitepay'});
   });
   it('rejects a provider confirmation with the wrong amount',async()=>{
     const x=loadHandler('payment-check',{total_amount:100}); expect((await x.request({order_code:'FM-TEST'})).status).toBe(409); expect(x.updates).toEqual([]);

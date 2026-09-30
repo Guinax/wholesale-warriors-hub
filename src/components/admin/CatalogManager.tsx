@@ -49,14 +49,13 @@ const CatalogManager = () => {
     if (error) toast.error("Erro ao carregar produtos");
     else setProducts(((data ?? []) as unknown) as CatalogProduct[]);
     const { data: settings } = await supabase
-      .from("catalog_settings" as never)
+      .from("catalog_settings")
       .select("title, subtitle")
       .eq("id", 1)
       .maybeSingle();
     if (settings) {
-      const s = settings as unknown as { title: string; subtitle: string };
-      setCatalogTitle(s.title || "CATÁLOGO VIGENTE");
-      setCatalogSubtitle(s.subtitle || "ESTILO CIMED x MAROMBA");
+      setCatalogTitle(settings.title || "CATÁLOGO VIGENTE");
+      setCatalogSubtitle(settings.subtitle || "ESTILO CIMED x MAROMBA");
     }
     setLoading(false);
   };
@@ -87,8 +86,8 @@ const CatalogManager = () => {
   const saveCatalogSettings = async () => {
     setSavingSettings(true);
     const { error } = await supabase
-      .from("catalog_settings" as never)
-      .upsert({ id: 1, title: catalogTitle.trim(), subtitle: catalogSubtitle.trim() } as never);
+      .from("catalog_settings")
+      .upsert({ id: 1, title: catalogTitle.trim(), subtitle: catalogSubtitle.trim(), updated_at: new Date().toISOString() });
     setSavingSettings(false);
     if (error) {
       toast.error("Erro ao salvar apresentação do catálogo: " + error.message);

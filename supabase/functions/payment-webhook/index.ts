@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
     const closedOrder = ["expired", "cancelled", "canceled"].includes(order.payment_status);
 
     if (order.payment_status === "paid") {
-      const { error: syncError } = await admin.schema("private").rpc("partner_mark_order_paid", { p_order_id: order.id });
+      const { error: syncError } = await admin.rpc("service_partner_mark_order_paid", { p_order_id: order.id });
       if (syncError) throw syncError;
       return reply({ success: true, message: null });
     }
@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
     }).eq("id", order.id).neq("payment_status", "paid");
 
     if (error) throw error;
-    const { error: syncError } = await admin.schema("private").rpc("partner_mark_order_paid", { p_order_id: order.id });
+    const { error: syncError } = await admin.rpc("service_partner_mark_order_paid", { p_order_id: order.id });
     if (syncError) throw syncError;
     return reply({ success: true, message: null });
   } catch (error) {

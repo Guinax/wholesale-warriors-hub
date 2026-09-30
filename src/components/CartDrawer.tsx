@@ -49,7 +49,7 @@ const CartDrawer = () => {
       cost: shippingCostFor(info.state, totalPrice, totalItems),
       eta: shippingEtaFor(info.state),
     });
-    toast({ title: "Frete calculado", description: `${info.city}/${info.state} · entrega em ${shippingEtaFor(info.state)}` });
+    toast({ title: "Estimativa de frete", description: `${info.city}/${info.state} · o valor final será confirmado no checkout.` });
   };
 
   const handleCheckout = () => {
@@ -161,7 +161,7 @@ const CartDrawer = () => {
               </div>
               <div className="rounded-xl border border-border bg-card p-3 space-y-2">
                 <div className="flex items-center gap-2 text-xs font-heading font-bold text-foreground">
-                  <Truck className="w-4 h-4 text-primary" /> CALCULAR FRETE
+                  <Truck className="w-4 h-4 text-primary" /> ESTIMAR FRETE
                 </div>
                 <div className="flex gap-2">
                   <input
@@ -178,6 +178,7 @@ const CartDrawer = () => {
                 {shipping && (
                   <div className="text-[11px] text-muted-foreground">
                     {shipping.city}/{shipping.state} · {shipping.eta} · <strong className="text-foreground">{formatCurrency(shippingCost)}</strong>
+                    <span className="block mt-1">Estimativa. O checkout confirma a cotação disponível antes da cobrança.</span>
                   </div>
                 )}
               </div>

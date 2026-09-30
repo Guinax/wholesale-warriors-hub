@@ -124,7 +124,6 @@ export default function ShippingIntegrationManager() {
             <p className="font-semibold">Faltam os secrets no Supabase:</p>
             <p className="font-mono break-all">MELHOR_ENVIO_CLIENT_ID</p>
             <p className="font-mono break-all">MELHOR_ENVIO_CLIENT_SECRET</p>
-            <p className="font-mono break-all">MELHOR_ENVIO_REDIRECT_URI</p>
             <p className="font-mono break-all">MELHOR_ENVIO_USER_AGENT</p>
           </div>
         )}

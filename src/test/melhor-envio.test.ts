@@ -41,6 +41,13 @@ describe("Melhor Envio integration contracts", () => {
     expect(source).toContain("provider_unauthorized_after_refresh");
   });
 
+  it("handles browser CORS preflight for live quotes", () => {
+    const source = read("supabase/functions/melhor-envio-quote/index.ts");
+    expect(source).toContain('req.method === "OPTIONS"');
+    expect(source).toContain('"Access-Control-Allow-Origin": "*"');
+    expect(source).toContain('"Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"');
+  });
+
   it("quotes against the official shipment calculate endpoint and trusts custom price", () => {
     const source = read("supabase/functions/melhor-envio-quote/index.ts");
     expect(source).toContain("/api/v2/me/shipment/calculate");

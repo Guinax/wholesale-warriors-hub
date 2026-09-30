@@ -113,7 +113,11 @@ const Comissoes = () => {
                 {currentTier?.label ?? "—"}
               </p>
               <p className="text-xs text-primary font-heading font-bold mt-0.5">
-                {currentTier ? `${currentTier.commission_pct}% margem` : "Mínimo R$ 2.500"}
+                {currentTier
+                  ? `${currentTier.commission_pct}% margem`
+                  : tiers.length
+                    ? "Valor fora das faixas configuradas"
+                    : "Faixas em configuração"}
               </p>
             </div>
             <div className="bg-primary text-primary-foreground rounded-xl p-4">
@@ -128,6 +132,15 @@ const Comissoes = () => {
             </div>
           </div>
         </section>
+
+        {!loading && tiers.length === 0 && (
+          <section className="rounded-2xl border border-border bg-card p-6 text-center">
+            <p className="font-heading font-bold text-sm text-foreground">PROGRAMA EM CONFIGURAÇÃO</p>
+            <p className="text-xs text-muted-foreground mt-2">
+              As faixas de margem ainda não foram cadastradas. Nenhum percentual é exibido até existir uma regra comercial válida.
+            </p>
+          </section>
+        )}
 
         {/* Tabela de faixas */}
         <section className="space-y-3">

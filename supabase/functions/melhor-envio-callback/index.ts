@@ -24,7 +24,7 @@ const envConfig = () => {
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   const clientId = Deno.env.get("MELHOR_ENVIO_CLIENT_ID") ?? "";
   const clientSecret = Deno.env.get("MELHOR_ENVIO_CLIENT_SECRET") ?? "";
-  const redirectUri = Deno.env.get("MELHOR_ENVIO_REDIRECT_URI") ?? "";
+  const redirectUri = Deno.env.get("MELHOR_ENVIO_REDIRECT_URI") ?? (supabaseUrl ? `${supabaseUrl}/functions/v1/melhor-envio-callback` : "");
   const userAgent = Deno.env.get("MELHOR_ENVIO_USER_AGENT") ?? "";
   const baseUrl = (Deno.env.get("MELHOR_ENVIO_BASE_URL") ?? "https://melhorenvio.com.br").replace(/\/$/, "");
   return { supabaseUrl, anonKey, serviceKey, clientId, clientSecret, redirectUri, userAgent, baseUrl };

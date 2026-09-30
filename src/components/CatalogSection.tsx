@@ -1,5 +1,5 @@
 import { Grid3X3, List } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ProductCard from "./ProductCard";
 import { supabase } from "@/integrations/supabase/client";
 import { toCategoryProduct, type DbProduct } from "@/hooks/useProducts";
@@ -13,27 +13,51 @@ const CatalogSection = () => {
   const [catalogTitle, setCatalogTitle] = useState("CATÁLOGO VIGENTE");
   const [catalogSubtitle, setCatalogSubtitle] = useState("ESTILO CIMED x MAROMBA");
 
-  useEffect(() => {
-    const load = async () => {
-      const { data } = await productsTable()
+  const load = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
+    const [{ data: products }, { data: settings }] = await Promise.all([
+      productsTable()
         .select("*")
         .eq("active", true)
         .eq("in_catalog", true)
-        .order("catalog_order", { ascending: true });
-      setItems(((data ?? []) as unknown) as DbProduct[]);
-      const { data: settings } = await supabase
+        .order("catalog_order", { ascending: true }),
+      supabase
         .from("catalog_settings")
         .select("title, subtitle")
         .eq("id", 1)
-        .maybeSingle();
-      if (settings) {
-        setCatalogTitle(settings.title || "CATÁLOGO VIGENTE");
-        setCatalogSubtitle(settings.subtitle || "ESTILO CIMED x MAROMBA");
-      }
-      setLoading(false);
-    };
-    load();
+        .maybeSingle(),
+    ]);
+    setItems(((products ?? []) as unknown) as DbProduct[]);
+    if (settings) {
+      setCatalogTitle(settings.title || "CATÁLOGO VIGENTE");
+      setCatalogSubtitle(settings.subtitle || "ESTILO CIMED x MAROMBA");
+    }
+    if (showLoading) setLoading(false);
   }, []);
+
+  useEffect(() => {
+    void load();
+
+    const channel = supabase
+      .channel("home-catalog-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => {
+        void load(false);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "catalog_settings" }, () => {
+        void load(false);
+      })
+      .subscribe();
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void load(false);
+    };
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+
+    return () => {
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+      void supabase.removeChannel(channel);
+    };
+  }, [load]);
 
   return (
     <section id="catalogo" className="py-6 scroll-mt-20">

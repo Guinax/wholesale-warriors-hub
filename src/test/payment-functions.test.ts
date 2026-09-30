@@ -16,12 +16,12 @@ function loadHandler(name: string, overrides: Record<string, unknown> = {}) {
     let updating = false;
     const chain = { select: () => chain, in: () => chain, eq: (...args: unknown[]) => { filters.push(args); return chain; },
       neq: (...args: unknown[]) => { filters.push(['neq',...args]); return chain; },
-      maybeSingle: async () => ({ data: order, error: null }),
+      maybeSingle: async () => ({ data: table === 'user_roles' ? (overrides.admin === true ? {role:'admin'} : null) : order, error: null }),
       update: (value: unknown) => { updating = true; updates.push(value); return chain; },
       then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data: updating ? null : table === 'products' ? catalog : order, error: null }).then(resolve) };
     return chain;
   }
-  const fetchMock = vi.fn(async (url: string) => new Response(JSON.stringify(url.includes('viacep') ? { uf:'SP' } : { url:'https://checkout.infinitepay.io/test', paid:true, amount:2990 }), {status:200}));
+  const fetchMock = vi.fn(async (url: string, _init?: RequestInit) => new Response(JSON.stringify(url.includes('viacep') ? { uf:'SP' } : { url:'https://checkout.infinitepay.io/test', paid:true, amount:2990 }), {status:200}));
   let handler!: (req: Request) => Promise<Response>;
   const source = readFileSync(`supabase/functions/${name}/index.ts`, 'utf8').replace(/^import .*;\n/gm,'');
   vm.runInNewContext(ts.transpile(source, { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None }), {
@@ -53,6 +53,24 @@ describe('Payment integration boundaries', () => {
   });
   it('creates a checkout containing retail catalog price and shipping below six units',async()=>{
     const x=loadHandler('payment-link'); const r=await x.request(linkBody); expect(r.status).toBe(200); expect((await r.json()).url).toContain('infinitepay.io'); expect(x.fetchMock).toHaveBeenCalledTimes(2); expect(x.rpc).toHaveBeenCalledWith('reserve_order_inventory',{_order_id:'order-id'});
+  });
+  it('allows zero shipping only for an authenticated admin test order',async()=>{
+    const x=loadHandler('payment-link',{total_amount:10,admin:true});
+    const r=await x.request(linkBody);
+    expect(r.status).toBe(200);
+    expect((await r.json()).url).toContain('infinitepay.io');
+    expect(x.fetchMock).toHaveBeenCalledTimes(2);
+    const providerInit=x.fetchMock.mock.calls[1]?.[1] as RequestInit|undefined;
+    const providerPayload=JSON.parse(String(providerInit?.body??'{}'));
+    expect(providerPayload.items).toHaveLength(1);
+    expect(providerPayload.items[0]).toMatchObject({description:'Product',price:1000,quantity:1});
+  });
+  it('rejects zero shipping when the buyer is not an admin',async()=>{
+    const x=loadHandler('payment-link',{total_amount:10});
+    const r=await x.request(linkBody);
+    expect(r.status).toBe(409);
+    expect(x.fetchMock).toHaveBeenCalledTimes(1);
+    expect(x.rpc).not.toHaveBeenCalledWith('reserve_order_inventory',{_order_id:'order-id'});
   });
   it('reuses a recent trusted InfinitePay link without creating another charge',async()=>{
     const x=loadHandler('payment-link',{payment_provider:'infinitepay',payment_checked_at:new Date().toISOString(),payment_details:{url:'https://checkout.infinitepay.io/existing'}});

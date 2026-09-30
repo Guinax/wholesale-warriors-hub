@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, user_id, order_code, items, total_amount, customer_name, customer_email, customer_phone, address_zip, address_street, address_number, address_complement, address_city, address_state, payment_status, due_at")
+    .select("id, user_id, order_code, items, total_amount, customer_name, customer_email, customer_phone, address_zip, address_street, address_number, address_complement, address_city, address_state, payment_status, due_at, fulfillment_store_id, delivery_quote")
     .eq("order_code", parsed.data.order_code)
     .maybeSingle();
 
@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
     if (requestedItem.qty < minQty) {
       return json({ error: `Quantidade mínima de ${requestedItem.name}: ${minQty}` }, 409);
     }
-    if (requestedItem.qty > Number(product.stock ?? 0)) {
+    if (!order.fulfillment_store_id && requestedItem.qty > Number(product.stock ?? 0)) {
       return json({ error: `Estoque indisponível para ${requestedItem.name}.` }, 409);
     }
 
@@ -162,41 +162,38 @@ Deno.serve(async (req) => {
     return json({ error: "Não foi possível validar o CEP. Tente novamente." }, 503);
   }
 
-  // O servidor recalcula o frete com os mesmos parâmetros do checkout.
-  // Caixa padrão: até 6 unidades; pedidos maiores usam múltiplas caixas.
-  const unitsPerBox = 6;
-  const totalUnits = [...quantities.values()].reduce((sum, item) => sum + item.qty, 0);
-  const boxes = Math.max(1, Math.ceil(totalUnits / unitsPerBox));
-  const southSoutheast = new Set(["SP","RJ","MG","ES","PR","SC","RS"]);
-  const centerNortheast = new Set(["GO","MT","MS","DF","BA","SE","AL","PE","PB","RN","CE","PI","MA"]);
-  const baseShipping =
-    uf === "SP" ? 19.9 :
-    southSoutheast.has(uf) ? 29.9 :
-    centerNortheast.has(uf) ? 39.9 : 49.9;
-  const extraBoxShipping =
-    uf === "SP" ? 14.9 :
-    southSoutheast.has(uf) ? 22.9 :
-    centerNortheast.has(uf) ? 29.9 : 39.9;
-  const shippingAmount = Math.round((baseShipping + Math.max(0, boxes - 1) * extraBoxShipping) * 100) / 100;
-
-  if (shippingAmount > 0) {
-    items.push({ description: "Frete", price: Math.round(shippingAmount * 100), quantity: 1 });
+  // Pedidos parceiros já possuem estoque reservado e cotação de entrega aceita.
+  // Pedidos da central continuam recalculando frete e reservando o estoque central.
+  let shippingAmount = 0;
+  if (order.fulfillment_store_id) {
+    shippingAmount = Math.round(Number(order.delivery_quote ?? 0) * 100) / 100;
+    if (!Number.isFinite(shippingAmount) || shippingAmount < 0) {
+      return json({ error: "Cotação de entrega inválida." }, 409);
+    }
+  } else {
+    const unitsPerBox = 6;
+    const totalUnits = [...quantities.values()].reduce((sum, item) => sum + item.qty, 0);
+    const boxes = Math.max(1, Math.ceil(totalUnits / unitsPerBox));
+    const southSoutheast = new Set(["SP","RJ","MG","ES","PR","SC","RS"]);
+    const centerNortheast = new Set(["GO","MT","MS","DF","BA","SE","AL","PE","PB","RN","CE","PI","MA"]);
+    const baseShipping = uf === "SP" ? 19.9 : southSoutheast.has(uf) ? 29.9 : centerNortheast.has(uf) ? 39.9 : 49.9;
+    const extraBoxShipping = uf === "SP" ? 14.9 : southSoutheast.has(uf) ? 22.9 : centerNortheast.has(uf) ? 29.9 : 39.9;
+    shippingAmount = Math.round((baseShipping + Math.max(0, boxes - 1) * extraBoxShipping) * 100) / 100;
   }
+
+  if (shippingAmount > 0) items.push({ description: "Frete", price: Math.round(shippingAmount * 100), quantity: 1 });
 
   const trustedTotal = Math.round((merchandiseTotal + shippingAmount) * 100) / 100;
   if (Math.round(Number(order.total_amount) * 100) !== Math.round(trustedTotal * 100)) {
     return json({ error: "O preço ou o frete mudou. Atualize seu carrinho antes de pagar." }, 409);
   }
-  const { error: totalUpdateError } = await supabase
-    .from("orders")
-    .update({ total_amount: trustedTotal })
-    .eq("id", order.id);
-  if (totalUpdateError) return json({ error: "Falha ao atualizar o total do pedido." }, 500);
 
-  const { error: reserveError } = await supabase.rpc("reserve_order_inventory", { _order_id: order.id });
-  if (reserveError) {
-    await supabase.from("orders").update({ payment_status: "expired" }).eq("id", order.id).eq("payment_status", "pending");
-    return json({ error: "Um dos produtos acabou de ficar indisponível. Revise o carrinho antes de pagar." }, 409);
+  if (!order.fulfillment_store_id) {
+    const { error: reserveError } = await supabase.rpc("reserve_order_inventory", { _order_id: order.id });
+    if (reserveError) {
+      await supabase.from("orders").update({ payment_status: "expired" }).eq("id", order.id).eq("payment_status", "pending");
+      return json({ error: "Um dos produtos acabou de ficar indisponível. Revise o carrinho antes de pagar." }, 409);
+    }
   }
 
   const phoneDigits = String(order.customer_phone ?? "").replace(/\D/g, "");

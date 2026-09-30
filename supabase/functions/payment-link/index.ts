@@ -59,6 +59,7 @@ Deno.serve(async (req) => {
   // Opportunistic maintenance: every real checkout request clears stale pending
   // orders first. The order lifecycle trigger releases central reservations.
   await supabase.schema("private").rpc("expire_stale_orders");
+  await supabase.schema("private").rpc("expire_stale_partner_requests");
 
   const { data: order, error: orderError } = await supabase
     .from("orders")

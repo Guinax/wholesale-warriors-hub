@@ -13,6 +13,12 @@ describe("Melhor Envio integration contracts", () => {
     expect(sql).toContain("service_melhor_envio_consume_oauth_state");
   });
 
+  it("expires OAuth state after a short authorization window", () => {
+    const sql = read("supabase/migrations/20260930123000_expire_melhor_envio_oauth_state.sql");
+    expect(sql).toContain("interval '15 minutes'");
+    expect(sql).toContain("oauth_state=p_state");
+  });
+
   it("uses OAuth authorization code flow with anti-CSRF state and minimum shipping scope", () => {
     const source = read("supabase/functions/melhor-envio-callback/index.ts");
     expect(source).toContain('scope: "shipping-calculate"');

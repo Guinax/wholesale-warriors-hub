@@ -61,6 +61,10 @@ export type Database = {
           unit_price: number | null
           units_sold: number
           wholesale_price: number
+          weight_kg: number | null
+          width_cm: number | null
+          height_cm: number | null
+          length_cm: number | null
         }
         Insert: {
           created_at?: string
@@ -72,6 +76,10 @@ export type Database = {
           unit_price?: number | null
           units_sold?: number
           wholesale_price: number
+          weight_kg?: number | null
+          width_cm?: number | null
+          height_cm?: number | null
+          length_cm?: number | null
         }
         Update: {
           created_at?: string
@@ -83,6 +91,10 @@ export type Database = {
           unit_price?: number | null
           units_sold?: number
           wholesale_price?: number
+          weight_kg?: number | null
+          width_cm?: number | null
+          height_cm?: number | null
+          length_cm?: number | null
         }
         Relationships: []
       }

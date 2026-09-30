@@ -11,7 +11,7 @@ function loadHandler(name: string, overrides: Record<string, unknown> = {}) {
   const catalog = [{ name: 'Product', unit_price: 10, wholesale_price: 8, min_qty: 1, stock: 20, active: true }];
   const updates: unknown[] = [];
   const filters: unknown[] = [];
-  const rpc = vi.fn(async (name: string) => ({ data: name === 'partner_checkout_valid' ? overrides.partner_checkout_valid !== false : true, error: null }));
+  const rpc = vi.fn(async (name: string) => ({ data: name === 'service_partner_checkout_valid' ? overrides.partner_checkout_valid !== false : true, error: null }));
   function from(table: string) {
     let updating = false;
     const chain = { select: () => chain, in: () => chain, eq: (...args: unknown[]) => { filters.push(args); return chain; },
@@ -36,6 +36,15 @@ function loadHandler(name: string, overrides: Record<string, unknown> = {}) {
 }
 const linkBody = {order_code:'FM-TEST',redirect_url:'https://wholesale-warriors-hub.lovable.app/recibo/FM-TEST'};
 describe('Payment integration boundaries', () => {
+  it('keeps payment Edge Functions on service-only public RPC wrappers', () => {
+    for (const name of ['payment-link','payment-check','payment-webhook']) {
+      const source=readFileSync(`supabase/functions/${name}/index.ts`,'utf8');
+      expect(source).not.toContain('.schema("private")');
+    }
+    expect(readFileSync('supabase/functions/payment-link/index.ts','utf8')).toContain('service_partner_checkout_valid');
+    expect(readFileSync('supabase/functions/payment-check/index.ts','utf8')).toContain('service_partner_mark_order_paid');
+    expect(readFileSync('supabase/functions/payment-webhook/index.ts','utf8')).toContain('service_partner_mark_order_paid');
+  });
   it('rejects anonymous callers without contacting provider', async () => {
     const x=loadHandler('payment-link'); expect((await x.request(linkBody,false)).status).toBe(401); expect(x.fetchMock).not.toHaveBeenCalled();
   });
@@ -76,7 +85,7 @@ describe('Payment integration boundaries', () => {
     const x=loadHandler('payment-link',{payment_provider:'infinitepay',payment_checked_at:new Date().toISOString(),payment_details:{url:'https://checkout.infinitepay.io/existing'}});
     const r=await x.request(linkBody); const body=await r.json();
     expect(r.status).toBe(200); expect(body.reused).toBe(true); expect(body.url).toContain('/existing');
-    expect(x.fetchMock).not.toHaveBeenCalled(); expect(x.rpc).toHaveBeenCalledWith('expire_stale_orders'); expect(x.rpc).not.toHaveBeenCalledWith('reserve_order_inventory',expect.anything());
+    expect(x.fetchMock).not.toHaveBeenCalled(); expect(x.rpc).toHaveBeenCalledWith('service_expire_stale_orders'); expect(x.rpc).not.toHaveBeenCalledWith('reserve_order_inventory',expect.anything());
   });
   it('rejects a partner checkout when its reservation is no longer valid',async()=>{
     const x=loadHandler('payment-link',{fulfillment_store_id:'store-id',delivery_quote:19.9,total_amount:29.9,partner_checkout_valid:false});

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -18,6 +18,9 @@ const formatPhone = (value: string) => {
 
 export default function CadastroCliente() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const rawNext = params.get("next") ?? "";
+  const nextPath = rawNext.startsWith("/") && !rawNext.startsWith("//") && !rawNext.includes("\\") ? rawNext : "/minha-conta";
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -41,7 +44,7 @@ export default function CadastroCliente() {
         email: normalizedEmail,
         password: secret,
         options: {
-          emailRedirectTo: `${window.location.origin}/minha-conta`,
+          emailRedirectTo: `${window.location.origin}${nextPath}`,
           data: { full_name: name.trim(), phone },
         },
       });
@@ -53,7 +56,7 @@ export default function CadastroCliente() {
       }
       setSecret("");
       setConfirmSecret("");
-      if (data.session) navigate("/minha-conta");
+      if (data.session) window.location.href = nextPath;
       else setSentTo(normalizedEmail);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível criar sua conta.");
@@ -70,7 +73,7 @@ export default function CadastroCliente() {
           <p className="text-sm text-muted-foreground">
             Enviamos um link para <strong>{sentTo}</strong>. Confirme sua conta e depois entre para continuar.
           </p>
-          <Button className="w-full" onClick={() => navigate("/auth")}>IR PARA O LOGIN</Button>
+          <Button className="w-full" onClick={() => navigate(`/auth?next=${encodeURIComponent(nextPath)}`)}>IR PARA O LOGIN</Button>
         </Card>
       </div>
     );

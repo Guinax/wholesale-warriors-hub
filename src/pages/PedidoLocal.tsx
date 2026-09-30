@@ -14,6 +14,14 @@ export default function PedidoLocal(){
  const {id}=useParams(); const navigate=useNavigate(); const { clearCart } = useCart() as ReturnType<typeof useCart> & { clearCart?: () => void }; const [request,setRequest]=useState<RequestData|null>(null); const [loaded,setLoaded]=useState(false); const [busy,setBusy]=useState(false);
  const load=useCallback(async()=>{const {data,error}=await supabase.rpc("partner_command" as never,{p_action:"dashboard",p_payload:{}} as never);setLoaded(true);if(error){toast.error("Não foi possível acompanhar o pedido.");return}const row=((data as {requests?:RequestData[]}|null)?.requests??[]).find(x=>x.id===id);setRequest(row??null)},[id]);
  useEffect(()=>{void load()},[load]);
+ useEffect(()=>{
+  if(!id)return;
+  const channel=supabase.channel(`customer-local-order-${id}`)
+   .on("postgres_changes",{event:"*",schema:"public",table:"partner_requests",filter:`id=eq.${id}`},()=>void load())
+   .on("postgres_changes",{event:"*",schema:"public",table:"partner_offers"},()=>void load())
+   .subscribe();
+  return()=>{void supabase.removeChannel(channel)};
+ },[id,load]);
  useEffect(()=>{if(!request||["expired","delivered","cancelled","canceled"].includes(request.status))return;const t=setInterval(()=>void load(),15000);return()=>clearInterval(t)},[load,request?.status]);
  useEffect(()=>{if(request?.status==="expired"){toast.info("Nenhuma loja local confirmou a tempo. Vamos continuar pela central.");navigate("/pagamento",{replace:true,state:{forceCentral:true}})}},[request?.status,navigate]);
  const cancel=async()=>{if(!id)return;setBusy(true);const {error}=await supabase.rpc("partner_command" as never,{p_action:"cancel",p_payload:{request_id:id}} as never);setBusy(false);if(error)toast.error(error.message);else{toast.success("Solicitação cancelada.");navigate("/pagamento")}};

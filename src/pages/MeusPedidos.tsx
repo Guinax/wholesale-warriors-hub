@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Package, RefreshCw } from "lucide-react";
+import { Package, RefreshCw, Truck, CheckCircle2 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/database";
 import { DELIVERY_STAGES, formatCurrency, trackingLabel } from "@/lib/orderUtils";
+
+const deliveryInProgress = new Set(["postado", "transito", "saiu_entrega"]);
 
 type Order = Pick<Database["public"]["Tables"]["orders"]["Row"], "id" | "order_code" | "payment_status" | "delivery_status" | "total_amount" | "tracking_code" | "created_at">;
 const statusLabels: Record<string, string> = { pending: "Aguardando pagamento", paid: "Pagamento confirmado", expired: "Pagamento expirado", cancelled: "Cancelado", canceled: "Cancelado", refunded: "Reembolsado" };
@@ -56,7 +58,7 @@ export default function MeusPedidos() {
   }, [load, userId]);
 
   return <div className="min-h-screen bg-background">
-    <PageHeader eyebrow="MINHA CONTA" title="MEUS PEDIDOS" subtitle="Consulte seus pagamentos, recibos e entregas." />
+    <PageHeader eyebrow="MINHA CONTA" title="MEUS PEDIDOS" subtitle="Seu histórico de compras, pagamentos e entregas em um só lugar." />
     <main className="container max-w-3xl py-6 space-y-4">
       <div className="flex justify-between items-center gap-3">
         <Link to="/" className="text-sm text-primary underline">Continuar comprando</Link>
@@ -69,8 +71,20 @@ export default function MeusPedidos() {
         <div className="flex justify-between flex-wrap gap-2"><strong>{order.order_code}</strong><strong>{formatCurrency(order.total_amount)}</strong></div>
         <p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleString("pt-BR")}</p>
         <p className="text-sm">{statusLabels[order.payment_status] ?? order.payment_status}</p>
-        {order.payment_status === "paid" && <p className="text-sm text-muted-foreground">{DELIVERY_STAGES.find((stage) => stage.key === order.delivery_status)?.label ?? "Preparando entrega"} · {trackingLabel(order.tracking_code)}</p>}
-        <Button asChild className="w-full sm:w-auto"><Link to={`/recibo/${encodeURIComponent(order.order_code)}`}>{order.payment_status === "pending" ? "Ver pedido e pagamento" : "Ver recibo e entrega"}</Link></Button>
+        {order.payment_status === "paid" && <div className="rounded-xl border border-border p-3 space-y-2">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            {order.delivery_status === "entregue" ? <CheckCircle2 className="w-4 h-4 text-primary" /> : <Truck className="w-4 h-4 text-primary" />}
+            {DELIVERY_STAGES.find((stage) => stage.key === order.delivery_status)?.label ?? "Preparando pedido"}
+          </div>
+          {deliveryInProgress.has(order.delivery_status) && trackingLabel(order.tracking_code) !== "Aguardando envio" && (
+            <p className="text-sm">Código de rastreio: <strong>{trackingLabel(order.tracking_code)}</strong></p>
+          )}
+          {deliveryInProgress.has(order.delivery_status) && trackingLabel(order.tracking_code) === "Aguardando envio" && (
+            <p className="text-xs text-muted-foreground">O rastreio aparecerá aqui assim que a expedição informar o código.</p>
+          )}
+          {order.delivery_status === "entregue" && <p className="text-xs text-muted-foreground">Pedido entregue. Ele continuará salvo no seu histórico.</p>}
+        </div>}
+        <Button asChild variant="outline" className="w-full sm:w-auto"><Link to={`/recibo/${encodeURIComponent(order.order_code)}`}>Ver detalhes do pedido</Link></Button>
       </Card>)}
       {orders.length === limit && <Button variant="outline" disabled={loading} onClick={() => setLimit((value) => value + 20)}>Carregar mais pedidos</Button>}
     </main>

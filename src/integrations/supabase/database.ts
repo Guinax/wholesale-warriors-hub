@@ -1,5 +1,27 @@
 import type { Database as GeneratedDatabase } from "./types";
 
+type CatalogSettingsTable = {
+  Row: {
+    id: number;
+    title: string;
+    subtitle: string;
+    updated_at: string;
+  };
+  Insert: {
+    id?: number;
+    title?: string;
+    subtitle?: string;
+    updated_at?: string;
+  };
+  Update: {
+    id?: number;
+    title?: string;
+    subtitle?: string;
+    updated_at?: string;
+  };
+  Relationships: [];
+};
+
 type AdminCampaignsTable = {
   Row: {
     id: string;
@@ -53,6 +75,7 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
   public: Omit<GeneratedDatabase["public"], "Tables"> & {
     Tables: GeneratedDatabase["public"]["Tables"] & {
       admin_campaigns: AdminCampaignsTable;
+      catalog_settings: CatalogSettingsTable;
     };
   };
 };

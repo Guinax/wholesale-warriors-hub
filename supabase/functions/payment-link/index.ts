@@ -220,6 +220,10 @@ Deno.serve(async (req) => {
     },
   };
 
+  const releaseCentralReservation = async () => {
+    if (!order.fulfillment_store_id) await supabase.rpc("release_order_inventory", { _order_id: order.id });
+  };
+
   let providerResponse: Record<string, unknown> = {};
   try {
     const response = await fetch(INFINITEPAY_LINKS, {
@@ -237,6 +241,7 @@ Deno.serve(async (req) => {
     }
 
     if (!response.ok) {
+      await releaseCentralReservation();
       return json({
         error: "Não foi possível gerar a cobrança.",
         provider_status: response.status,
@@ -244,6 +249,7 @@ Deno.serve(async (req) => {
       }, 502);
     }
   } catch {
+    await releaseCentralReservation();
     return json({ error: "Não foi possível contatar o provedor de pagamento." }, 502);
   }
 
@@ -254,7 +260,10 @@ Deno.serve(async (req) => {
       ? nestedData.url
       : null;
 
-  if (!url) return json({ error: "Resposta sem link de pagamento.", provider: providerResponse }, 502);
+  if (!url) {
+    await releaseCentralReservation();
+    return json({ error: "Resposta sem link de pagamento.", provider: providerResponse }, 502);
+  }
 
   const { error: paymentUpdateError } = await supabase
     .from("orders")

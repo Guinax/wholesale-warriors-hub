@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { ArrowLeft, Building2, User, MapPin, Phone, FileText, CheckCircle2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -66,6 +66,9 @@ const formatCEP = (value: string) => {
 
 const CadastroCNPJ = () => {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const rawNext = params.get("next") ?? "";
+  const nextPath = rawNext.startsWith("/") && !rawNext.startsWith("//") && !rawNext.includes("\\") ? rawNext : "/minha-conta";
   const [submitted, setSubmitted] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState("");
@@ -73,7 +76,7 @@ const CadastroCNPJ = () => {
   const [resendAfter, setResendAfter] = useState(0);
   const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<CadastroForm>();
 
-  const emailRedirectTo = `${window.location.origin}/minha-conta`;
+  const emailRedirectTo = `${window.location.origin}${nextPath}`;
 
   const onSubmit = async (form: CadastroForm) => {
     try {
@@ -172,8 +175,11 @@ const CadastroCNPJ = () => {
           {!confirmed && <Button variant="outline" className="w-full" disabled={resending} onClick={resendConfirmation}>
             {resending ? "REENVIANDO..." : "REENVIAR CONFIRMAÇÃO"}
           </Button>}
-          <Button onClick={() => navigate(confirmed ? "/minha-conta" : "/auth")} className="w-full font-heading font-bold tracking-wider">
-            ACESSAR MINHA CONTA
+          <Button onClick={() => confirmed
+            ? (window.location.href = nextPath)
+            : navigate(`/auth?next=${encodeURIComponent(nextPath)}`)
+          } className="w-full font-heading font-bold tracking-wider">
+            {nextPath === "/minha-conta" ? "ACESSAR MINHA CONTA" : "CONTINUAR"}
           </Button>
         </div>
       </div>

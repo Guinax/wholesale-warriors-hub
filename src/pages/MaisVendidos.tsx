@@ -7,13 +7,14 @@ import { toast } from "@/hooks/use-toast";
 
 interface Bestseller {
   id: string;
+  product_id: string;
   rank: number;
   name: string;
   image_url: string | null;
   units_sold: number;
   wholesale_price: number;
-  unit_price: number | null;
-  min_qty: number;
+  unit_price: number;
+  stock: number;
 }
 
 const MaisVendidos = () => {
@@ -23,26 +24,82 @@ const MaisVendidos = () => {
 
   useEffect(() => {
     document.title = "Mais Vendidos — Família Maromba";
-    supabase
-      .from("bestsellers")
-      .select("*")
-      .order("rank", { ascending: true })
-      .then(({ data, error }) => {
-        if (error) {
+    let active = true;
+
+    (async () => {
+      const { data: ranking, error } = await supabase
+        .from("bestsellers")
+        .select("id,rank,name,units_sold")
+        .order("rank", { ascending: true });
+
+      if (error) {
+        if (active) {
           toast({ title: "Erro ao carregar", description: error.message, variant: "destructive" });
-        } else {
-          setItems(data ?? []);
+          setLoading(false);
         }
-        setLoading(false);
+        return;
+      }
+
+      const names = [...new Set((ranking ?? []).map((row) => row.name))];
+      if (!names.length) {
+        if (active) {
+          setItems([]);
+          setLoading(false);
+        }
+        return;
+      }
+
+      const { data: products, error: productsError } = await supabase
+        .from("products")
+        .select("id,name,image_url,unit_price,wholesale_price,stock,active")
+        .in("name", names)
+        .eq("active", true);
+
+      if (productsError) {
+        if (active) {
+          toast({ title: "Erro ao carregar catálogo", description: productsError.message, variant: "destructive" });
+          setLoading(false);
+        }
+        return;
+      }
+
+      const byName = new Map((products ?? []).map((product) => [product.name, product]));
+      const merged = (ranking ?? []).flatMap((row) => {
+        const product = byName.get(row.name);
+        if (!product) return [];
+        return [{
+          id: row.id,
+          product_id: product.id,
+          rank: row.rank,
+          name: product.name,
+          image_url: product.image_url,
+          units_sold: row.units_sold,
+          wholesale_price: Number(product.wholesale_price),
+          unit_price: Number(product.unit_price),
+          stock: Number(product.stock ?? 0),
+        }];
       });
+
+      if (active) {
+        setItems(merged);
+        setLoading(false);
+      }
+    })();
+
+    return () => { active = false; };
   }, []);
 
   const maxUnits = items[0]?.units_sold ?? 1;
 
   const handleAdd = (b: Bestseller) => {
+    if (b.stock < 1) {
+      toast({ title: "Produto indisponível", description: "Este item está sem estoque no momento.", variant: "destructive" });
+      return;
+    }
     addItem({
+      productId: b.product_id,
       name: b.name,
-      unitPrice: `R$ ${Number(b.unit_price ?? b.wholesale_price).toFixed(2).replace(".", ",")}`,
+      unitPrice: `R$ ${b.unit_price.toFixed(2).replace(".", ",")}`,
       wholesalePrice: `R$ ${b.wholesale_price.toFixed(2).replace(".", ",")}`,
       qty: 1,
       minQty: 1,
@@ -60,6 +117,13 @@ const MaisVendidos = () => {
       <main className="container py-6 space-y-3">
         {loading && (
           <p className="text-sm text-muted-foreground text-center py-12">Carregando ranking...</p>
+        )}
+
+        {!loading && items.length === 0 && (
+          <div className="rounded-2xl border border-border bg-card p-8 text-center">
+            <p className="font-heading font-bold text-sm text-foreground">RANKING EM FORMAÇÃO</p>
+            <p className="text-xs text-muted-foreground mt-2">Ainda não há vendas suficientes neste período para montar o ranking.</p>
+          </div>
         )}
 
         {items.map((b) => {
@@ -124,11 +188,9 @@ const MaisVendidos = () => {
 
                   <div className="flex items-center justify-between gap-2 pt-1">
                     <div>
-                      {b.unit_price && (
-                        <p className="text-[10px] text-muted-foreground line-through">
-                          R$ {b.unit_price.toFixed(2).replace(".", ",")}
-                        </p>
-                      )}
+                      <p className="text-[10px] text-muted-foreground">
+                        Unitário R$ {b.unit_price.toFixed(2).replace(".", ",")}
+                      </p>
                       <p className="font-heading font-black text-base text-foreground">
                         R$ {b.wholesale_price.toFixed(2).replace(".", ",")}
                         <span className="text-[10px] font-semibold text-muted-foreground ml-1">
@@ -138,8 +200,9 @@ const MaisVendidos = () => {
                     </div>
                     <button
                       onClick={() => handleAdd(b)}
-                      className="bg-primary text-primary-foreground rounded-lg p-2.5 hover:opacity-90 transition-opacity"
-                      aria-label="Adicionar ao lote"
+                      disabled={b.stock < 1}
+                      className="bg-primary text-primary-foreground rounded-lg p-2.5 hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                      aria-label={b.stock < 1 ? "Produto indisponível" : "Adicionar ao lote"}
                     >
                       <ShoppingCart className="w-4 h-4" />
                     </button>

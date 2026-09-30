@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { lookupCep, maskCepValue, onlyDigitsCep } from "@/lib/shipping";
 
 type Offer = { id: string; items: Array<{ name: string; qty: number }>; subtotal: number; city: string; distance_km: number; partner_merchandise: number };
 type Request = { id: string; status: string; store_id?: string | null; store_name?: string | null; order_code?: string | null; payment_status?: string | null; shipping?: number | null; route_km?: number | null; eta_minutes?: number | null; items: Array<{ name: string; qty: number }> };
@@ -32,7 +33,8 @@ export default function PainelRevendedor() {
   const [deliveryCode, setDeliveryCode] = useState<Record<string, string>>({});
   const [adultVerified, setAdultVerified] = useState<Record<string, boolean>>({});
   const [registering, setRegistering] = useState(false);
-  const [newStore, setNewStore] = useState({ name:"", document:"", phone:"", address:"", lat:"", lng:"", radius_km:"15", terms:false });
+  const [newStore, setNewStore] = useState({ name:"", document:"", phone:"", cep:"", address:"", city:"", state:"", lat:"", lng:"", radius_km:"15", terms:false });
+  const [locatingStore, setLocatingStore] = useState(false);
   const [pix, setPix] = useState<Record<string,{pix_key_type:string;pix_key:string;holder_name:string;holder_document:string}>>({});
   const [payouts, setPayouts] = useState<Payout[]>([]);
 
@@ -96,21 +98,34 @@ export default function PainelRevendedor() {
     toast.success("Conta de repasse salva com segurança.");
   };
 
+  const locateStore = async () => {
+    const cep = onlyDigitsCep(newStore.cep);
+    if (cep.length !== 8) return toast.error("Informe um CEP válido.");
+    setLocatingStore(true);
+    const info = await lookupCep(cep);
+    setLocatingStore(false);
+    if (!info) return toast.error("CEP não encontrado.");
+    if (info.latitude == null || info.longitude == null) return toast.error("O CEP foi encontrado, mas não possui coordenadas suficientes. Confira o endereço ou tente outro CEP.");
+    const address = [info.street, info.neighborhood].filter(Boolean).join(", ");
+    setNewStore((x) => ({...x, cep:info.cep, address:address || x.address, city:info.city, state:info.state, lat:String(info.latitude), lng:String(info.longitude)}));
+    toast.success("Endereço localizado automaticamente.");
+  };
+
   const registerStore = async () => {
     const document = newStore.document.replace(/\D/g, "");
-    if (newStore.name.trim().length < 2 || document.length !== 14 || newStore.phone.trim().length < 8 || newStore.address.trim().length < 5) {
-      return toast.error("Preencha corretamente nome, CNPJ, telefone e endereço.");
+    if (newStore.name.trim().length < 2 || document.length !== 14 || newStore.phone.trim().length < 8 || onlyDigitsCep(newStore.cep).length !== 8 || newStore.address.trim().length < 5 || !newStore.city || !newStore.state) {
+      return toast.error("Preencha corretamente nome, CNPJ, telefone, CEP e endereço.");
     }
     const lat = Number(newStore.lat), lng = Number(newStore.lng), radius = Number(newStore.radius_km);
     if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng) || lng < -180 || lng > 180) return toast.error("Informe coordenadas válidas da loja.");
     if (!Number.isFinite(radius) || radius < 1 || radius > 50) return toast.error("O raio deve ficar entre 1 e 50 km.");
     if (!newStore.terms) return toast.error("Aceite as condições de participação.");
     setRegistering(true);
-    const { error } = await supabase.rpc("partner_command" as never, { p_action:"register", p_payload:{ ...newStore, document, lat, lng, radius_km:radius, terms:true } } as never);
+    const { error } = await supabase.rpc("partner_command" as never, { p_action:"register", p_payload:{ ...newStore, document, cep:onlyDigitsCep(newStore.cep), lat, lng, radius_km:radius, terms:true } } as never);
     setRegistering(false);
     if (error) return toast.error(error.message);
     toast.success("Loja enviada para aprovação.");
-    setNewStore({ name:"", document:"", phone:"", address:"", lat:"", lng:"", radius_km:"15", terms:false });
+    setNewStore({ name:"", document:"", phone:"", cep:"", address:"", city:"", state:"", lat:"", lng:"", radius_km:"15", terms:false });
     await load();
   };
 
@@ -164,9 +179,9 @@ export default function PainelRevendedor() {
             <input className="h-10 rounded-md border bg-background px-3" placeholder="Nome da loja" value={newStore.name} onChange={(e)=>setNewStore({...newStore,name:e.target.value})}/>
             <input className="h-10 rounded-md border bg-background px-3" placeholder="CNPJ" inputMode="numeric" value={newStore.document} onChange={(e)=>setNewStore({...newStore,document:e.target.value})}/>
             <input className="h-10 rounded-md border bg-background px-3" placeholder="Telefone / WhatsApp" value={newStore.phone} onChange={(e)=>setNewStore({...newStore,phone:e.target.value})}/>
-            <input className="h-10 rounded-md border bg-background px-3" placeholder="Endereço completo" value={newStore.address} onChange={(e)=>setNewStore({...newStore,address:e.target.value})}/>
-            <input className="h-10 rounded-md border bg-background px-3" placeholder="Latitude" inputMode="decimal" value={newStore.lat} onChange={(e)=>setNewStore({...newStore,lat:e.target.value})}/>
-            <input className="h-10 rounded-md border bg-background px-3" placeholder="Longitude" inputMode="decimal" value={newStore.lng} onChange={(e)=>setNewStore({...newStore,lng:e.target.value})}/>
+            <div className="flex gap-2"><input className="h-10 min-w-0 flex-1 rounded-md border bg-background px-3" placeholder="CEP da loja" inputMode="numeric" value={newStore.cep} onChange={(e)=>setNewStore({...newStore,cep:maskCepValue(e.target.value),lat:"",lng:""})}/><Button type="button" variant="outline" disabled={locatingStore} onClick={()=>void locateStore()}>{locatingStore?"Localizando...":"Buscar CEP"}</Button></div>
+            <input className="h-10 rounded-md border bg-background px-3" placeholder="Endereço da loja" value={newStore.address} onChange={(e)=>setNewStore({...newStore,address:e.target.value})}/>
+            <input className="h-10 rounded-md border bg-muted px-3" aria-label="Cidade e estado" readOnly value={[newStore.city,newStore.state].filter(Boolean).join(" / ")} placeholder="Cidade / UF (automático)"/>
             <div className="space-y-1"><Label>Raio de atendimento (km)</Label><input className="h-10 w-full rounded-md border bg-background px-3" inputMode="decimal" value={newStore.radius_km} onChange={(e)=>setNewStore({...newStore,radius_km:e.target.value})}/></div>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={newStore.terms} onChange={(e)=>setNewStore({...newStore,terms:e.target.checked})}/> Aceito as condições da operação parceira.</label>
             <div className="md:col-span-2"><Button disabled={registering} onClick={()=>void registerStore()}>{registering ? "Enviando..." : "Enviar loja para aprovação"}</Button></div>

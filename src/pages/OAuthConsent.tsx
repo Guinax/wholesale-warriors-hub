@@ -101,7 +101,7 @@ export default function OAuthConsent() {
             <div className="space-y-3 text-sm">
               <p>
                 <span className="font-semibold">{details.client?.name ?? "Um aplicativo"}</span>
-                {" "}quer se conectar à sua conta na Loja Oficial Família Maromba.
+                {" "}quer se conectar à sua conta na Representante Oficial Família Maromba.
               </p>
               <p className="text-muted-foreground">
                 Isso permite que ele use as ferramentas do app como você — consultar produtos, seus pedidos e status de entrega.

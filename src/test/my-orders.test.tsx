@@ -56,6 +56,6 @@ describe("Customer order history", () => {
     api.query.limit.mockResolvedValue({ data: [{ id: "order-1", order_code: "FM-1", payment_status: "paid", delivery_status: "transito", total_amount: 99, tracking_code: "AB123456789BR", created_at: "2026-09-30T12:00:00Z" }], error: null });
     api.channel.on.mock.calls[0][2]();
     await waitFor(() => expect(screen.getByText(/AB123456789BR/)).toBeInTheDocument());
-    expect(screen.getByRole("link", { name: "Ver recibo e entrega" })).toHaveAttribute("href", "/recibo/FM-1");
+    expect(screen.getByRole("link", { name: "Ver detalhes do pedido" })).toHaveAttribute("href", "/recibo/FM-1");
   });
 });

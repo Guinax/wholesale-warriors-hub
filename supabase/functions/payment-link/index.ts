@@ -58,8 +58,8 @@ Deno.serve(async (req) => {
 
   // Opportunistic maintenance: every real checkout request clears stale pending
   // orders first. The order lifecycle trigger releases central reservations.
-  await supabase.schema("private").rpc("expire_stale_orders");
-  await supabase.schema("private").rpc("expire_stale_partner_requests");
+  await supabase.rpc("service_expire_stale_orders");
+  await supabase.rpc("service_expire_stale_partner_requests");
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
@@ -72,8 +72,7 @@ Deno.serve(async (req) => {
   if (order.payment_status === "paid") return json({ error: "Este pedido já está pago." }, 409);
   if (order.fulfillment_store_id) {
     const { data: partnerCheckoutValid, error: partnerCheckoutError } = await supabase
-      .schema("private")
-      .rpc("partner_checkout_valid", { p_order_id: order.id });
+      .rpc("service_partner_checkout_valid", { p_order_id: order.id });
     if (partnerCheckoutError) return json({ error: "Não foi possível validar a reserva da loja." }, 500);
     if (!partnerCheckoutValid) {
       return json({ error: "A reserva desta loja expirou ou não está mais disponível. Refaça o pedido para localizar uma loja disponível." }, 409);

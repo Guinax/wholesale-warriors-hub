@@ -26,6 +26,7 @@ type Store = {
 };
 
 type InventoryItem = { store_id:string; product_id:string; on_hand:number; reserved:number; name:string };
+type CatalogProduct = { id:string; name:string };
 
 export default function PainelRevendedor() {
   const [stores, setStores] = useState<Store[]>([]);
@@ -34,6 +35,7 @@ export default function PainelRevendedor() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [stockDraft, setStockDraft] = useState<Record<string,string>>({});
   const [stockReason, setStockReason] = useState<Record<string,string>>({});
+  const [catalogProducts,setCatalogProducts]=useState<CatalogProduct[]>([]);
   const [requests, setRequests] = useState<Request[]>([]);
   const [routeKm, setRouteKm] = useState<Record<string, string>>({});
   const [weightKg, setWeightKg] = useState<Record<string, string>>({});
@@ -54,6 +56,8 @@ export default function PainelRevendedor() {
     if (error) return toast.error("Não foi possível carregar suas lojas.");
     const loadedStores=(data ?? []) as unknown as Store[];
     setStores(loadedStores);
+    const {data:catalog}=await supabase.from("products").select("id,name").eq("active",true).order("name");
+    setCatalogProducts((catalog??[]) as CatalogProduct[]);
     if (loadedStores.length) {
       const { data: accounts } = await supabase.from("partner_payout_accounts" as never).select("store_id,pix_key_type,pix_key,holder_name,holder_document");
       const mapped: typeof pix = {};
@@ -248,7 +252,7 @@ export default function PainelRevendedor() {
                   onCheckedChange={(checked) => setStores((prev) => prev.map((s) => s.id === store.id ? { ...s, own_driver_available: checked } : s))} />
               </div>
               <div className="md:col-span-2 rounded-lg border p-4 space-y-3"><div className="flex items-center justify-between gap-3"><div><Label>Loja recebendo pedidos</Label><p className="text-xs text-muted-foreground">Só abra quando estoque e operação estiverem prontos.</p></div><Switch disabled={store.status!=="approved"} checked={store.is_open} onCheckedChange={(checked)=>setStores(prev=>prev.map(s=>s.id===store.id?{...s,is_open:checked}:s))}/></div><div className="grid gap-2 md:grid-cols-3"><input className="h-10 rounded-md border bg-background px-3" type="number" min="0" step="0.01" aria-label="Taxa base" value={store.delivery_base} onChange={e=>setStores(prev=>prev.map(s=>s.id===store.id?{...s,delivery_base:Number(e.target.value)}:s))}/><input className="h-10 rounded-md border bg-background px-3" type="number" min="0" step="0.01" aria-label="Valor por km" value={store.delivery_per_km} onChange={e=>setStores(prev=>prev.map(s=>s.id===store.id?{...s,delivery_per_km:Number(e.target.value)}:s))}/><input className="h-10 rounded-md border bg-background px-3" type="number" min="0" step="0.01" aria-label="Valor por kg" value={store.delivery_per_kg} onChange={e=>setStores(prev=>prev.map(s=>s.id===store.id?{...s,delivery_per_kg:Number(e.target.value)}:s))}/></div><Button variant="outline" disabled={saving==="settings-"+store.id||store.status!=="approved"} onClick={()=>void saveStoreSettings(store)}>{saving==="settings-"+store.id?"Salvando...":"Salvar abertura e tarifas"}</Button></div>
-              <div className="md:col-span-2 rounded-lg border p-4 space-y-3"><div><Label>Estoque desta loja</Label><p className="text-xs text-muted-foreground">Disponível = físico menos reservado em pedidos.</p></div>{inventory.filter(i=>i.store_id===store.id).length===0?<p className="text-sm text-muted-foreground">Nenhum produto configurado para esta loja ainda.</p>:inventory.filter(i=>i.store_id===store.id).map(i=>{const key=i.store_id+":"+i.product_id;return <div key={key} className="grid gap-2 border-t pt-3 md:grid-cols-[1fr_110px_1fr_auto] md:items-center"><div><strong className="text-sm">{i.name}</strong><p className="text-xs text-muted-foreground">Físico {i.on_hand} • reservado {i.reserved} • disponível {i.on_hand-i.reserved}</p></div><input className="h-9 rounded-md border bg-background px-2" type="number" min="0" step="1" placeholder={String(i.on_hand)} value={stockDraft[key]??""} onChange={e=>setStockDraft(x=>({...x,[key]:e.target.value}))}/><input className="h-9 rounded-md border bg-background px-2" placeholder="Motivo do ajuste" value={stockReason[key]??""} onChange={e=>setStockReason(x=>({...x,[key]:e.target.value}))}/><Button size="sm" variant="outline" disabled={saving==="stock-"+key} onClick={()=>void saveStock(i.store_id,i.product_id,i.on_hand)}>Atualizar</Button></div>})}</div>
+              <div className="md:col-span-2 rounded-lg border p-4 space-y-3"><div><Label>Estoque desta loja</Label><p className="text-xs text-muted-foreground">Disponível = físico menos reservado em pedidos.</p></div>{catalogProducts.length===0?<p className="text-sm text-muted-foreground">Nenhum produto ativo no catálogo.</p>:catalogProducts.map(p=>{const i=inventory.find(x=>x.store_id===store.id&&x.product_id===p.id)??{store_id:store.id,product_id:p.id,on_hand:0,reserved:0,name:p.name};const key=i.store_id+":"+i.product_id;return <div key={key} className="grid gap-2 border-t pt-3 md:grid-cols-[1fr_110px_1fr_auto] md:items-center"><div><strong className="text-sm">{i.name}</strong><p className="text-xs text-muted-foreground">Físico {i.on_hand} • reservado {i.reserved} • disponível {i.on_hand-i.reserved}</p></div><input className="h-9 rounded-md border bg-background px-2" type="number" min="0" step="1" placeholder={String(i.on_hand)} value={stockDraft[key]??""} onChange={e=>setStockDraft(x=>({...x,[key]:e.target.value}))}/><input className="h-9 rounded-md border bg-background px-2" placeholder="Motivo do ajuste" value={stockReason[key]??""} onChange={e=>setStockReason(x=>({...x,[key]:e.target.value}))}/><Button size="sm" variant="outline" disabled={saving==="stock-"+key} onClick={()=>void saveStock(i.store_id,i.product_id,i.on_hand)}>Atualizar</Button></div>})}</div>
               <div className="md:col-span-2 rounded-lg border p-4 space-y-3">
                 <div><Label>Conta PIX para receber repasses</Label><p className="text-xs text-muted-foreground">O cliente paga à plataforma. Esta conta é usada somente para o repasse da sua loja.</p></div>
                 <div className="grid gap-2 md:grid-cols-2">

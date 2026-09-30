@@ -1,7 +1,17 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-export type ProductCategory = "suplementos" | "roupas" | "acessorios" | "equipamento" | "bebidas" | "alimentos";
+export type ProductCategory =
+  | "suplementos"
+  | "roupas"
+  | "acessorios"
+  | "equipamento"
+  | "bebidas"
+  | "alimentos"
+  | "Alcoólicos"
+  | "Alcoólicos + Combo"
+  | "Gin Saborizado"
+  | "Não Alcoólicos";
 
 export interface DbProduct {
   id: string;

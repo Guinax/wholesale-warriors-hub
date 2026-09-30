@@ -42,6 +42,10 @@ type FormState = {
   unit_price: string;
   wholesale_price: string;
   min_qty: string;
+  weight_kg: string;
+  width_cm: string;
+  height_cm: string;
+  length_cm: string;
   image_url: string;
   badge: string;
   badge_color: string;
@@ -55,6 +59,10 @@ const emptyForm: FormState = {
   unit_price: "",
   wholesale_price: "",
   min_qty: "1",
+  weight_kg: "",
+  width_cm: "",
+  height_cm: "",
+  length_cm: "",
   image_url: "",
   badge: "",
   badge_color: "",
@@ -98,6 +106,10 @@ const ProductsManager = ({ lockedCategory }: { lockedCategory?: ProductCategory 
       unit_price: String(p.unit_price),
       wholesale_price: String(p.wholesale_price),
       min_qty: String(p.min_qty),
+      weight_kg: p.weight_kg == null ? "" : String(p.weight_kg),
+      width_cm: p.width_cm == null ? "" : String(p.width_cm),
+      height_cm: p.height_cm == null ? "" : String(p.height_cm),
+      length_cm: p.length_cm == null ? "" : String(p.length_cm),
       image_url: p.image_url ?? "",
       badge: p.badge ?? "",
       badge_color: p.badge_color ?? "",
@@ -112,12 +124,27 @@ const ProductsManager = ({ lockedCategory }: { lockedCategory?: ProductCategory 
       toast.error("Preencha nome e preços");
       return;
     }
+    const shippingValues = [form.weight_kg, form.width_cm, form.height_cm, form.length_cm];
+    const hasAnyShipping = shippingValues.some((value) => value.trim() !== "");
+    const hasAllShipping = shippingValues.every((value) => value.trim() !== "");
+    if (hasAnyShipping && !hasAllShipping) {
+      toast.error("Para cotação real, preencha peso e todas as dimensões ou deixe todos em branco.");
+      return;
+    }
+    if (hasAllShipping && shippingValues.some((value) => !Number.isFinite(Number(value)) || Number(value) <= 0)) {
+      toast.error("Peso e dimensões devem ser maiores que zero.");
+      return;
+    }
     const payload = {
       category: form.category,
       name: form.name,
       unit_price: Number(form.unit_price),
       wholesale_price: Number(form.wholesale_price),
       min_qty: 1,
+      weight_kg: hasAllShipping ? Number(form.weight_kg) : null,
+      width_cm: hasAllShipping ? Number(form.width_cm) : null,
+      height_cm: hasAllShipping ? Number(form.height_cm) : null,
+      length_cm: hasAllShipping ? Number(form.length_cm) : null,
       image_url: form.image_url || null,
       badge: form.badge || null,
       badge_color: form.badge_color || null,
@@ -223,6 +250,9 @@ const ProductsManager = ({ lockedCategory }: { lockedCategory?: ProductCategory 
               <p className="font-semibold text-sm truncate">{p.name}</p>
               <p className="text-xs text-muted-foreground">
                 {p.category} · Unitário R$ {Number(p.unit_price).toFixed(2)} · Atacado (6+) R$ {Number(p.wholesale_price).toFixed(2)} · Mín 1
+                {p.weight_kg && p.width_cm && p.height_cm && p.length_cm
+                  ? ` · Frete real: ${p.weight_kg} kg · ${p.width_cm}×${p.height_cm}×${p.length_cm} cm`
+                  : " · Frete real: medidas pendentes"}
                 {!p.active && " · INATIVO"}
               </p>
             </div>
@@ -309,6 +339,32 @@ const ProductsManager = ({ lockedCategory }: { lockedCategory?: ProductCategory 
               kind="image"
               folder="produtos"
             />
+
+            <div className="space-y-2 rounded-lg border p-3">
+              <div>
+                <Label>Dados para cotação de frete real</Label>
+                <p className="text-[10px] text-muted-foreground">Preencha todos os campos abaixo para habilitar a cotação pelo Melhor Envio. Deixe todos vazios para usar o frete regional atual.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label>Peso (kg)</Label>
+                  <Input type="number" min="0.001" step="0.001" value={form.weight_kg} onChange={(e) => setForm({ ...form, weight_kg: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Largura (cm)</Label>
+                  <Input type="number" min="0.1" step="0.1" value={form.width_cm} onChange={(e) => setForm({ ...form, width_cm: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Altura (cm)</Label>
+                  <Input type="number" min="0.1" step="0.1" value={form.height_cm} onChange={(e) => setForm({ ...form, height_cm: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Comprimento (cm)</Label>
+                  <Input type="number" min="0.1" step="0.1" value={form.length_cm} onChange={(e) => setForm({ ...form, length_cm: e.target.value })} />
+                </div>
+              </div>
+            </div>
+
 
             <div className="grid grid-cols-2 gap-2">
               <div>

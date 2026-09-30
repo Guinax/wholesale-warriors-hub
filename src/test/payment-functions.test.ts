@@ -8,7 +8,7 @@ import { z } from 'zod';
 function loadHandler(name: string, overrides: Record<string, unknown> = {}) {
   const order = { id: 'order-id', user_id: 'buyer', order_code: 'FM-TEST', payment_status: 'pending', total_amount: 29.9,
     items: [{ name: 'Product', qty: 1 }], address_state: 'SP', address_zip: '01001000', due_at: new Date(Date.now()+86400000).toISOString(), ...overrides };
-  const catalog = [{ name: 'Product', unit_price: 10, wholesale_price: 8, min_qty: 1, stock: 20, active: true }];
+  const catalog = [{ id:'11111111-1111-4111-8111-111111111111', name: 'Product', unit_price: 10, wholesale_price: 8, min_qty: 1, stock: 20, active: true, weight_kg:1, width_cm:10, height_cm:10, length_cm:10 }];
   const updates: unknown[] = [];
   const filters: unknown[] = [];
   const rpc = vi.fn(async (name: string) => ({ data: name === 'service_partner_checkout_valid' ? overrides.partner_checkout_valid !== false : true, error: null }));
@@ -21,7 +21,16 @@ function loadHandler(name: string, overrides: Record<string, unknown> = {}) {
       then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data: updating ? null : table === 'products' ? catalog : order, error: null }).then(resolve) };
     return chain;
   }
-  const fetchMock = vi.fn(async (url: string, _init?: RequestInit) => new Response(JSON.stringify(url.includes('viacep') ? { uf:'SP' } : { url:'https://checkout.infinitepay.io/test', paid:true, amount:2990 }), {status:200}));
+  const fetchMock = vi.fn(async (url: string, _init?: RequestInit) => {
+    if (url.includes('viacep')) return new Response(JSON.stringify({uf:'SP'}),{status:200});
+    if (url.includes('melhor-envio-quote')) {
+      const livePrice=Number(overrides.liveShippingPrice);
+      return new Response(JSON.stringify(Number.isFinite(livePrice)&&livePrice>0
+        ? {available:true,price:livePrice,eta_days:2,service:{service_name:'SEDEX',company:'Correios'}}
+        : {available:false,fallback:true}),{status:200});
+    }
+    return new Response(JSON.stringify({url:'https://checkout.infinitepay.io/test',paid:true,amount:2990}),{status:200});
+  });
   let handler!: (req: Request) => Promise<Response>;
   const source = readFileSync(`supabase/functions/${name}/index.ts`, 'utf8').replace(/^import .*;\n/gm,'');
   vm.runInNewContext(ts.transpile(source, { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None }), {
@@ -62,6 +71,19 @@ describe('Payment integration boundaries', () => {
   });
   it('creates a checkout containing retail catalog price and shipping below six units',async()=>{
     const x=loadHandler('payment-link'); const r=await x.request(linkBody); expect(r.status).toBe(200); expect((await r.json()).url).toContain('infinitepay.io'); expect(x.fetchMock).toHaveBeenCalledTimes(2); expect(x.rpc).toHaveBeenCalledWith('reserve_order_inventory',{_order_id:'order-id'});
+  });
+  it('uses a live Melhor Envio quote in the trusted payment total when product ids are present',async()=>{
+    const x=loadHandler('payment-link',{
+      items:[{product_id:'11111111-1111-4111-8111-111111111111',name:'Product',qty:1}],
+      total_amount:27.5,
+      liveShippingPrice:17.5,
+    });
+    const r=await x.request(linkBody);
+    expect(r.status).toBe(200);
+    expect(x.fetchMock).toHaveBeenCalledTimes(3);
+    const providerInit=x.fetchMock.mock.calls[2]?.[1] as RequestInit|undefined;
+    const payload=JSON.parse(String(providerInit?.body??'{}'));
+    expect(payload.items).toContainEqual({description:'Frete',price:1750,quantity:1});
   });
   it('allows zero shipping only for an authenticated admin test order',async()=>{
     const x=loadHandler('payment-link',{total_amount:10,admin:true});

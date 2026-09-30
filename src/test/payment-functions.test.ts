@@ -77,8 +77,15 @@ describe('Payment integration boundaries', () => {
   it('applies wholesale catalog price automatically from six units',async()=>{
     const x=loadHandler('payment-link',{items:[{name:'Product',qty:6}],total_amount:67.9}); const r=await x.request(linkBody); expect(r.status).toBe(200); expect((await r.json()).url).toContain('infinitepay.io'); expect(x.fetchMock).toHaveBeenCalledTimes(2); expect(x.rpc).toHaveBeenCalledWith('reserve_order_inventory',{_order_id:'order-id'});
   });
-  it('can reconcile a late confirmed payment for an expired order',async()=>{
-    const x=loadHandler('payment-check',{payment_status:'expired'}); const r=await x.request({order_code:'FM-TEST',transaction_nsu:'transaction',slug:'invoice'}); expect((await r.json()).paid).toBe(true); expect(x.filters).toContainEqual(['neq','payment_status','paid']);
+  it('routes a late confirmed payment for an expired order to reconciliation without contacting provider',async()=>{
+    const x=loadHandler('payment-check',{payment_status:'expired'});
+    const r=await x.request({order_code:'FM-TEST',transaction_nsu:'transaction',slug:'invoice'});
+    const body=await r.json();
+    expect(r.status).toBe(409);
+    expect(body.paid).toBe(false);
+    expect(body.reconciliation_required).toBe(true);
+    expect(x.fetchMock).not.toHaveBeenCalled();
+    expect(x.updates).toEqual([]);
   });
   it('rejects a provider confirmation with the wrong amount',async()=>{
     const x=loadHandler('payment-check',{total_amount:100}); expect((await x.request({order_code:'FM-TEST'})).status).toBe(409); expect(x.updates).toEqual([]);

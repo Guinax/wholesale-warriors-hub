@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ImagePlus, Save, Share2, ShieldCheck, Video } from "lucide-react";
+import { ArrowLeft, Facebook, ImagePlus, Instagram, MessageCircle, Save, Share2, ShieldCheck, Video } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
@@ -97,6 +97,35 @@ const CampaignMediaStudio = () => {
     }
   };
 
+  const campaignShareText = () => selected ? [selected.name, selected.headline].filter(Boolean).join("\n") : "";
+
+  const shareWhatsApp = () => {
+    if (!selected) return toast.error("Selecione uma campanha.");
+    window.open(`https://wa.me/?text=${encodeURIComponent(campaignShareText())}`, "_blank", "noopener,noreferrer");
+  };
+
+  const shareFacebook = () => {
+    if (!selected) return toast.error("Selecione uma campanha.");
+    const url = window.location.origin;
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(campaignShareText())}`, "_blank", "noopener,noreferrer");
+  };
+
+  const shareInstagram = async () => {
+    if (!selected) return toast.error("Selecione uma campanha.");
+    const text = campaignShareText();
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: selected.name, text });
+        return;
+      }
+      await navigator.clipboard.writeText(text);
+      toast.success("Texto copiado. Abra o Instagram e cole na publicação ou story.");
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      toast.error("Não foi possível preparar o compartilhamento no Instagram.");
+    }
+  };
+
   const save = async () => {
     if (!selected) {
       toast.error("Selecione uma campanha.");
@@ -156,10 +185,20 @@ const CampaignMediaStudio = () => {
                 <p className="font-semibold">{selected.name}</p>
                 <p className="text-xs text-muted-foreground">{selected.headline}</p>
               </div>
-              <Button type="button" variant="outline" size="sm" onClick={shareCampaign}>
-                <Share2 className="w-4 h-4" />
-                Compartilhar
-              </Button>
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={shareWhatsApp} aria-label="Compartilhar no WhatsApp">
+                  <MessageCircle className="w-4 h-4" /> WhatsApp
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={shareFacebook} aria-label="Compartilhar no Facebook">
+                  <Facebook className="w-4 h-4" /> Facebook
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={shareInstagram} aria-label="Compartilhar no Instagram">
+                  <Instagram className="w-4 h-4" /> Instagram
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={shareCampaign} aria-label="Mais opções de compartilhamento">
+                  <Share2 className="w-4 h-4" /> Mais opções
+                </Button>
+              </div>
             </div>
           )}
         </Card>

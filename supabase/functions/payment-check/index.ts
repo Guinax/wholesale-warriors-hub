@@ -63,6 +63,10 @@ Deno.serve(async (req) => {
   if (orderError) return json({ error: "Falha ao consultar o pedido." }, 500);
   if (!order || order.user_id !== user.id) return json({ error: "Pedido não encontrado." }, 404);
 
+  if (["expired", "cancelled", "canceled"].includes(order.payment_status)) {
+    return json({ paid: false, payment_status: order.payment_status, reconciliation_required: true, error: "Pedido encerrado. Se o pagamento foi debitado, ele será tratado em reconciliação." }, 409);
+  }
+
   if (order.payment_status === "paid") {
     const { error: syncError } = await supabase.schema("private").rpc("partner_mark_order_paid", { p_order_id: order.id });
     if (syncError) return json({ error: "Falha ao sincronizar o pedido local." }, 500);

@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import { ArrowDown, ArrowUp, Plus, Star, X } from "lucide-react";
 import type { DbProduct, ProductCategory } from "@/hooks/useProducts";
+import type { Database } from "@/integrations/supabase/database";
 import { logAudit } from "@/lib/audit";
 
 const CATEGORIES: { value: ProductCategory; label: string }[] = [
@@ -73,7 +74,7 @@ const CatalogManager = () => {
     .filter((p) => (category === "all" ? true : p.category === category))
     .filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
 
-  const update = async (id: string, patch: Record<string, unknown>, msg?: string) => {
+  const update = async (id: string, patch: Database["public"]["Tables"]["products"]["Update"], msg?: string) => {
     const { error } = await supabase.from("products").update(patch).eq("id", id);
     if (error) {
       toast.error("Erro ao salvar: " + error.message);

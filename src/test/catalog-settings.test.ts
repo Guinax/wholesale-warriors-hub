@@ -1,5 +1,6 @@
 // @vitest-environment node
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
+import type { Database } from "@/integrations/supabase/database";
 import { readFileSync } from "node:fs";
 
 const read = (path: string) => readFileSync(path, "utf8");
@@ -30,10 +31,9 @@ describe("Catalog settings and home realtime contracts", () => {
   });
 
   it("uses typed catalog settings instead of bypassing the client type system", () => {
-    const db = read("src/integrations/supabase/database.ts");
     const section = read("src/components/CatalogSection.tsx");
     const manager = read("src/components/admin/CatalogManager.tsx");
-    expect(db).toContain("catalog_settings: CatalogSettingsTable");
+    expectTypeOf<Database["public"]["Tables"]["catalog_settings"]["Row"]["title"]>().toEqualTypeOf<string>();
     expect(section).not.toContain('"catalog_settings" as never');
     expect(manager).not.toContain('"catalog_settings" as never');
   });

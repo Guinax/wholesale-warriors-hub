@@ -20,12 +20,20 @@ type Store = {
   is_open: boolean;
   delivery_mode: "own" | "third_party" | "hybrid";
   own_driver_available: boolean;
+  delivery_base: number;
+  delivery_per_km: number;
+  delivery_per_kg: number;
 };
+
+type InventoryItem = { store_id:string; product_id:string; on_hand:number; reserved:number; name:string };
 
 export default function PainelRevendedor() {
   const [stores, setStores] = useState<Store[]>([]);
   const [saving, setSaving] = useState<string | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [stockDraft, setStockDraft] = useState<Record<string,string>>({});
+  const [stockReason, setStockReason] = useState<Record<string,string>>({});
   const [requests, setRequests] = useState<Request[]>([]);
   const [routeKm, setRouteKm] = useState<Record<string, string>>({});
   const [weightKg, setWeightKg] = useState<Record<string, string>>({});
@@ -41,7 +49,7 @@ export default function PainelRevendedor() {
   const load = async () => {
     const { data, error } = await supabase
       .from("partner_stores" as never)
-      .select("id,name,status,is_open,delivery_mode,own_driver_available")
+      .select("id,name,status,is_open,delivery_mode,own_driver_available,delivery_base,delivery_per_km,delivery_per_kg")
       .order("created_at", { ascending: false });
     if (error) return toast.error("Não foi possível carregar suas lojas.");
     const loadedStores=(data ?? []) as unknown as Store[];
@@ -56,13 +64,33 @@ export default function PainelRevendedor() {
     }
     const { data: dashboard, error: dashboardError } = await supabase.rpc("partner_command" as never, { p_action: "dashboard", p_payload: {} } as never);
     if (!dashboardError && dashboard) {
-      const d = dashboard as unknown as { offers?: Offer[]; requests?: Request[] };
+      const d = dashboard as unknown as { offers?: Offer[]; requests?: Request[]; inventory?: InventoryItem[] };
       setOffers(d.offers ?? []);
       setRequests(d.requests ?? []);
+      setInventory(d.inventory ?? []);
     }
   };
 
   useEffect(() => { void load(); }, []);
+
+  const saveStoreSettings = async (store: Store) => {
+    setSaving("settings-"+store.id);
+    const { error } = await supabase.rpc("partner_command" as never,{p_action:"settings",p_payload:{store_id:store.id,is_open:store.is_open,delivery_base:Number(store.delivery_base),delivery_per_km:Number(store.delivery_per_km),delivery_per_kg:Number(store.delivery_per_kg)}} as never);
+    setSaving(null);
+    if(error) return toast.error(error.message);
+    toast.success(store.is_open ? "Loja aberta para receber pedidos." : "Operação da loja atualizada.");
+    void load();
+  };
+
+  const saveStock = async (storeId:string, productId:string, current:number) => {
+    const key=storeId+":"+productId; const qty=Number(stockDraft[key]); const reason=(stockReason[key]??"").trim();
+    if(!Number.isInteger(qty)||qty<0||qty>1000000) return toast.error("Informe uma quantidade válida.");
+    if(reason.length<3) return toast.error("Informe o motivo do ajuste de estoque.");
+    setSaving("stock-"+key);
+    const {error}=await supabase.rpc("partner_command" as never,{p_action:"stock",p_payload:{store_id:storeId,product_id:productId,on_hand:qty,reason}} as never);
+    setSaving(null); if(error) return toast.error(error.message);
+    toast.success(`Estoque atualizado de ${current} para ${qty}.`); setStockDraft(x=>({...x,[key]:""})); setStockReason(x=>({...x,[key]:""})); await load();
+  };
 
   const saveDelivery = async (store: Store) => {
     setSaving(store.id);
@@ -219,6 +247,8 @@ export default function PainelRevendedor() {
                 <Switch disabled={store.delivery_mode === "third_party"} checked={store.own_driver_available}
                   onCheckedChange={(checked) => setStores((prev) => prev.map((s) => s.id === store.id ? { ...s, own_driver_available: checked } : s))} />
               </div>
+              <div className="md:col-span-2 rounded-lg border p-4 space-y-3"><div className="flex items-center justify-between gap-3"><div><Label>Loja recebendo pedidos</Label><p className="text-xs text-muted-foreground">Só abra quando estoque e operação estiverem prontos.</p></div><Switch disabled={store.status!=="approved"} checked={store.is_open} onCheckedChange={(checked)=>setStores(prev=>prev.map(s=>s.id===store.id?{...s,is_open:checked}:s))}/></div><div className="grid gap-2 md:grid-cols-3"><input className="h-10 rounded-md border bg-background px-3" type="number" min="0" step="0.01" aria-label="Taxa base" value={store.delivery_base} onChange={e=>setStores(prev=>prev.map(s=>s.id===store.id?{...s,delivery_base:Number(e.target.value)}:s))}/><input className="h-10 rounded-md border bg-background px-3" type="number" min="0" step="0.01" aria-label="Valor por km" value={store.delivery_per_km} onChange={e=>setStores(prev=>prev.map(s=>s.id===store.id?{...s,delivery_per_km:Number(e.target.value)}:s))}/><input className="h-10 rounded-md border bg-background px-3" type="number" min="0" step="0.01" aria-label="Valor por kg" value={store.delivery_per_kg} onChange={e=>setStores(prev=>prev.map(s=>s.id===store.id?{...s,delivery_per_kg:Number(e.target.value)}:s))}/></div><Button variant="outline" disabled={saving==="settings-"+store.id||store.status!=="approved"} onClick={()=>void saveStoreSettings(store)}>{saving==="settings-"+store.id?"Salvando...":"Salvar abertura e tarifas"}</Button></div>
+              <div className="md:col-span-2 rounded-lg border p-4 space-y-3"><div><Label>Estoque desta loja</Label><p className="text-xs text-muted-foreground">Disponível = físico menos reservado em pedidos.</p></div>{inventory.filter(i=>i.store_id===store.id).length===0?<p className="text-sm text-muted-foreground">Nenhum produto configurado para esta loja ainda.</p>:inventory.filter(i=>i.store_id===store.id).map(i=>{const key=i.store_id+":"+i.product_id;return <div key={key} className="grid gap-2 border-t pt-3 md:grid-cols-[1fr_110px_1fr_auto] md:items-center"><div><strong className="text-sm">{i.name}</strong><p className="text-xs text-muted-foreground">Físico {i.on_hand} • reservado {i.reserved} • disponível {i.on_hand-i.reserved}</p></div><input className="h-9 rounded-md border bg-background px-2" type="number" min="0" step="1" placeholder={String(i.on_hand)} value={stockDraft[key]??""} onChange={e=>setStockDraft(x=>({...x,[key]:e.target.value}))}/><input className="h-9 rounded-md border bg-background px-2" placeholder="Motivo do ajuste" value={stockReason[key]??""} onChange={e=>setStockReason(x=>({...x,[key]:e.target.value}))}/><Button size="sm" variant="outline" disabled={saving==="stock-"+key} onClick={()=>void saveStock(i.store_id,i.product_id,i.on_hand)}>Atualizar</Button></div>})}</div>
               <div className="md:col-span-2 rounded-lg border p-4 space-y-3">
                 <div><Label>Conta PIX para receber repasses</Label><p className="text-xs text-muted-foreground">O cliente paga à plataforma. Esta conta é usada somente para o repasse da sua loja.</p></div>
                 <div className="grid gap-2 md:grid-cols-2">

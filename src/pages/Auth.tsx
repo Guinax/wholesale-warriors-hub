@@ -114,7 +114,7 @@ const Auth = () => {
         <div className="text-center text-sm space-y-2">
           {mode === "login" && (
             <>
-              <button onClick={() => navigate("/cadastro-cliente")} className="text-primary hover:underline">Não tem conta? Cadastre-se para comprar</button>
+              <button onClick={() => navigate(`/cadastro-cliente?next=${encodeURIComponent(nextPath)}`)} className="text-primary hover:underline">Não tem conta? Cadastre-se para comprar</button>
               <div>
                 <button onClick={() => navigate("/cadastro")} className="text-xs text-muted-foreground hover:text-foreground">Sou empresa ou revendedor — cadastro CNPJ</button>
               </div>

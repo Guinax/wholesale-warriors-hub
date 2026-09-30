@@ -54,6 +54,12 @@ describe('Payment integration boundaries', () => {
   it('creates a checkout containing retail catalog price and shipping below six units',async()=>{
     const x=loadHandler('payment-link'); const r=await x.request(linkBody); expect(r.status).toBe(200); expect((await r.json()).url).toContain('infinitepay.io'); expect(x.fetchMock).toHaveBeenCalledTimes(2); expect(x.rpc).toHaveBeenCalledWith('reserve_order_inventory',{_order_id:'order-id'});
   });
+  it('reuses a recent trusted InfinitePay link without creating another charge',async()=>{
+    const x=loadHandler('payment-link',{payment_provider:'infinitepay',payment_checked_at:new Date().toISOString(),payment_details:{url:'https://checkout.infinitepay.io/existing'}});
+    const r=await x.request(linkBody); const body=await r.json();
+    expect(r.status).toBe(200); expect(body.reused).toBe(true); expect(body.url).toContain('/existing');
+    expect(x.fetchMock).not.toHaveBeenCalled(); expect(x.rpc).not.toHaveBeenCalled();
+  });
   it('does not reserve central inventory for a partner order',async()=>{
     const x=loadHandler('payment-link',{fulfillment_store_id:'store-id',delivery_quote:19.9,total_amount:29.9});
     const r=await x.request(linkBody);

@@ -30,6 +30,10 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (orderError || !order) return reply({ success: false, message: "Pedido não encontrado" }, 400);
+    if (["expired", "cancelled", "canceled"].includes(order.payment_status)) {
+      return reply({ success: false, reconciliation_required: true, message: "Pagamento recebido para pedido encerrado; reconciliação necessária." }, 409);
+    }
+
     if (order.payment_status === "paid") {
       const { error: syncError } = await admin.schema("private").rpc("partner_mark_order_paid", { p_order_id: order.id });
       if (syncError) throw syncError;

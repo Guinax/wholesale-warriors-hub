@@ -25,12 +25,12 @@ export default function ShippingIntegrationManager() {
   const [status, setStatus] = useState<Status | null>(null);
   const [loading, setLoading] = useState(false);
   const [connecting, setConnecting] = useState(false);
-  const [productReadiness, setProductReadiness] = useState({ active: 0, ready: 0 });
   const [activeProducts, setActiveProducts] = useState(0);
   const [readyProducts, setReadyProducts] = useState(0);
   const [missingProducts, setMissingProducts] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [bulkCategory, setBulkCategory] = useState("");
+  const [bulkTarget, setBulkTarget] = useState<"category" | "750ml" | "1l">("category");
   const [bulkWeight, setBulkWeight] = useState("");
   const [bulkWidth, setBulkWidth] = useState("");
   const [bulkHeight, setBulkHeight] = useState("");
@@ -68,28 +68,69 @@ export default function ShippingIntegrationManager() {
 
   const applyBulkDimensions = async () => {
     const values = [bulkWeight, bulkWidth, bulkHeight, bulkLength].map(Number);
-    if (!bulkCategory || values.some((v) => !Number.isFinite(v) || v <= 0)) {
-      toast.error("Selecione a categoria e informe peso/dimensões maiores que zero.");
+    if ((bulkTarget === "category" && !bulkCategory) || values.some((v) => !Number.isFinite(v) || v <= 0)) {
+      toast.error("Selecione o alvo e informe peso/dimensões maiores que zero.");
       return;
     }
-    if (!confirm(`Aplicar estas medidas a todos os produtos ativos da categoria "${bulkCategory}"?`)) return;
+
+    let targetLabel = bulkCategory;
+    let targetQuery = supabase
+      .from("products")
+      .select("id,name,weight_kg,width_cm,height_cm,length_cm")
+      .eq("active", true);
+
+    if (bulkTarget === "750ml") {
+      targetLabel = "todas as garrafas 750 mL";
+      targetQuery = targetQuery.ilike("name", "%750mL%");
+    } else if (bulkTarget === "1l") {
+      targetLabel = "todas as garrafas 1 L";
+      targetQuery = targetQuery.ilike("name", "%1L%");
+    } else {
+      targetQuery = targetQuery.eq("category", bulkCategory);
+    }
+
+    const { data: targetRows, error: targetError } = await targetQuery;
+    if (targetError) {
+      toast.error("Não foi possível localizar os produtos: " + targetError.message);
+      return;
+    }
+
+    const pending = (targetRows ?? []).filter((p) =>
+      ![p.weight_kg, p.width_cm, p.height_cm, p.length_cm].every((v) => Number(v) > 0)
+    );
+    if (!pending.length) {
+      toast.info("Todos os produtos desse grupo já possuem medidas completas.");
+      return;
+    }
+
+    if (!confirm(`Aplicar estas medidas a ${pending.length} produto(s) pendente(s) de ${targetLabel}? Produtos já completos não serão alterados.`)) return;
+
     setSavingBulk(true);
     const [weight_kg, width_cm, height_cm, length_cm] = values;
     const { error } = await supabase
       .from("products")
       .update({ weight_kg, width_cm, height_cm, length_cm })
-      .eq("category", bulkCategory)
-      .eq("active", true);
+      .in("id", pending.map((p) => p.id));
     setSavingBulk(false);
+
     if (error) {
       toast.error("Não foi possível aplicar as medidas: " + error.message);
       return;
     }
+
     await logAudit("shipping_dimensions_bulk_updated", {
       entity: "products",
-      details: { category: bulkCategory, weight_kg, width_cm, height_cm, length_cm },
+      details: {
+        target: bulkTarget,
+        category: bulkTarget === "category" ? bulkCategory : null,
+        updated_products: pending.length,
+        weight_kg,
+        width_cm,
+        height_cm,
+        length_cm,
+      },
     });
-    toast.success("Peso e dimensões aplicados à categoria.");
+    toast.success(`Peso e dimensões aplicados a ${pending.length} produto(s).`);
     void load();
   };
 
@@ -154,10 +195,6 @@ export default function ShippingIntegrationManager() {
         )}
 
         <div className="rounded-lg border p-3 text-xs space-y-2">
-          <p><strong>Produtos prontos para frete real:</strong> {productReadiness.ready}/{productReadiness.active}</p>
-          {productReadiness.ready < productReadiness.active && (
-            <p className="text-muted-foreground">Complete peso e dimensões nos produtos pendentes. Enquanto isso, eles usam o frete regional.</p>
-          )}
           <p><strong>Callback do aplicativo:</strong></p>
           <p className="font-mono break-all">{status?.callback_url || EXPECTED_CALLBACK}</p>
           <p><strong>Ambiente:</strong> {status?.environment === "sandbox" ? "Sandbox" : "Produção"}</p>
@@ -191,14 +228,27 @@ export default function ShippingIntegrationManager() {
         </div>
         <div className="grid sm:grid-cols-5 gap-2">
           <div className="sm:col-span-2">
-            <Label>Categoria</Label>
-            <Select value={bulkCategory} onValueChange={setBulkCategory}>
-              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+            <Label>Aplicar em</Label>
+            <Select value={bulkTarget} onValueChange={(value) => setBulkTarget(value as "category" | "750ml" | "1l")}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {categories.map((category) => <SelectItem key={category} value={category}>{category}</SelectItem>)}
+                <SelectItem value="category">Categoria específica</SelectItem>
+                <SelectItem value="750ml">Todas as garrafas 750 mL</SelectItem>
+                <SelectItem value="1l">Todas as garrafas 1 L</SelectItem>
               </SelectContent>
             </Select>
           </div>
+          {bulkTarget === "category" && (
+            <div className="sm:col-span-2">
+              <Label>Categoria</Label>
+              <Select value={bulkCategory} onValueChange={setBulkCategory}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => <SelectItem key={category} value={category}>{category}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div>
             <Label>Peso (kg)</Label>
             <Input type="number" min="0.001" step="0.001" value={bulkWeight} onChange={(e) => setBulkWeight(e.target.value)} />
@@ -216,7 +266,7 @@ export default function ShippingIntegrationManager() {
             <Input type="number" min="0.1" step="0.1" value={bulkLength} onChange={(e) => setBulkLength(e.target.value)} />
           </div>
         </div>
-        <Button onClick={() => void applyBulkDimensions()} disabled={savingBulk || !bulkCategory}>
+        <Button onClick={() => void applyBulkDimensions()} disabled={savingBulk || (bulkTarget === "category" && !bulkCategory)}>
           {savingBulk ? "Aplicando..." : "Aplicar à categoria"}
         </Button>
       </Card>

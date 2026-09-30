@@ -194,13 +194,27 @@ Deno.serve(async (req) => {
 
   // Pedidos parceiros já possuem estoque reservado e cotação de entrega aceita.
   // Pedidos da central continuam recalculando frete e reservando o estoque central.
+  // O único frete zero aceito é o modo de teste de um usuário administrador,
+  // reconhecido novamente no servidor; nunca confiamos só no estado do frontend.
   let shippingAmount = 0;
+  let adminFreeShipping = false;
+  if (!order.fulfillment_store_id &&
+      Math.round(Number(order.total_amount) * 100) === Math.round(merchandiseTotal * 100)) {
+    const { data: adminRole, error: adminRoleError } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+    adminFreeShipping = !adminRoleError && Boolean(adminRole);
+  }
+
   if (order.fulfillment_store_id) {
     shippingAmount = Math.round(Number(order.delivery_quote ?? 0) * 100) / 100;
     if (!Number.isFinite(shippingAmount) || shippingAmount < 0) {
       return json({ error: "Cotação de entrega inválida." }, 409);
     }
-  } else {
+  } else if (!adminFreeShipping) {
     const unitsPerBox = 6;
     const totalUnits = [...quantities.values()].reduce((sum, item) => sum + item.qty, 0);
     const boxes = Math.max(1, Math.ceil(totalUnits / unitsPerBox));

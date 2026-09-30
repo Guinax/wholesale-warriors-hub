@@ -69,6 +69,15 @@ Deno.serve(async (req) => {
   if (orderError) return json({ error: "Falha ao consultar o pedido." }, 500);
   if (!order || order.user_id !== user.id) return json({ error: "Pedido não encontrado." }, 404);
   if (order.payment_status === "paid") return json({ error: "Este pedido já está pago." }, 409);
+  if (order.fulfillment_store_id) {
+    const { data: partnerCheckoutValid, error: partnerCheckoutError } = await supabase
+      .schema("private")
+      .rpc("partner_checkout_valid", { p_order_id: order.id });
+    if (partnerCheckoutError) return json({ error: "Não foi possível validar a reserva da loja." }, 500);
+    if (!partnerCheckoutValid) {
+      return json({ error: "A reserva desta loja expirou ou não está mais disponível. Refaça o pedido para localizar uma loja disponível." }, 409);
+    }
+  }
   const previousDetails = order.payment_details && typeof order.payment_details === "object"
     ? order.payment_details as Record<string, unknown> : null;
   const previousNested = previousDetails?.data && typeof previousDetails.data === "object"
@@ -80,7 +89,7 @@ Deno.serve(async (req) => {
       const saved = new URL(previousUrl);
       const checkedAt = order.payment_checked_at ? Date.parse(order.payment_checked_at) : 0;
       const fresh = Number.isFinite(checkedAt) && Date.now() - checkedAt < 30 * 60_000;
-      if (fresh && saved.protocol === "https:" && saved.hostname.endsWith("infinitepay.io")) {
+      if (fresh && saved.protocol === "https:" && (saved.hostname === "infinitepay.io" || saved.hostname.endsWith(".infinitepay.io"))) {
         return json({ url: previousUrl, reused: true });
       }
     } catch { /* invalid saved provider URL: create a new charge */ }

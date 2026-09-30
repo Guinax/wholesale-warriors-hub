@@ -22,6 +22,10 @@ const CATEGORIES: { value: ProductCategory; label: string }[] = [
   { value: "equipamento", label: "Equipamento" },
   { value: "bebidas", label: "Bebidas" },
   { value: "alimentos", label: "Alimentar" },
+  { value: "Alcoólicos", label: "Alcoólicos" },
+  { value: "Alcoólicos + Combo", label: "Alcoólicos + Combo" },
+  { value: "Gin Saborizado", label: "Gin Saborizado" },
+  { value: "Não Alcoólicos", label: "Não Alcoólicos" },
 ];
 
 type CatalogProduct = DbProduct & { in_catalog: boolean; catalog_order: number };

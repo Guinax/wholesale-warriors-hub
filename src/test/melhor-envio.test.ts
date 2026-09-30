@@ -20,6 +20,7 @@ describe("Melhor Envio integration contracts", () => {
     expect(source).toContain("service_melhor_envio_consume_oauth_state");
     expect(source).toContain('grant_type: "authorization_code"');
     expect(source).toContain("/oauth/token");
+    expect(source).toContain('/functions/v1/melhor-envio-callback');
     expect(source).toContain("/functions/v1/melhor-envio-callback");
     expect(source).not.toContain("console.log(accessToken");
   });

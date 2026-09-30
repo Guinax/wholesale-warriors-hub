@@ -58,7 +58,7 @@ describe('Payment integration boundaries', () => {
     const x=loadHandler('payment-link',{payment_provider:'infinitepay',payment_checked_at:new Date().toISOString(),payment_details:{url:'https://checkout.infinitepay.io/existing'}});
     const r=await x.request(linkBody); const body=await r.json();
     expect(r.status).toBe(200); expect(body.reused).toBe(true); expect(body.url).toContain('/existing');
-    expect(x.fetchMock).not.toHaveBeenCalled(); expect(x.rpc).not.toHaveBeenCalled();
+    expect(x.fetchMock).not.toHaveBeenCalled(); expect(x.rpc).toHaveBeenCalledWith('expire_stale_orders'); expect(x.rpc).not.toHaveBeenCalledWith('reserve_order_inventory',expect.anything());
   });
   it('does not reserve central inventory for a partner order',async()=>{
     const x=loadHandler('payment-link',{fulfillment_store_id:'store-id',delivery_quote:19.9,total_amount:29.9});

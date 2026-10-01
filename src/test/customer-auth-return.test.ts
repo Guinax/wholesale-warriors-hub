@@ -52,7 +52,7 @@ describe("Customer auth return flow", () => {
     expect(auth).toContain("navigate(nextPath, { replace: true })");
     expect(auth).not.toContain("window.location.href = nextPath");
     expect(signup).toContain("navigate(nextPath, { replace: true })");
-    expect(reseller).toContain("navigate(nextPath, { replace: true })");
+    expect(reseller).toContain('navigate(`/auth?next=${encodeURIComponent(nextPath)}`, { replace: true })');
     expect(account).toContain('backTo="/"');
     expect(header).toContain("backTo ? navigate(backTo) : navigate(-1)");
   });

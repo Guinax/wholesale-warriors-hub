@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
   }
   const redirect = new URL(parsed.data.redirect_url);
   const allowedRedirectOrigins = (Deno.env.get("CHECKOUT_REDIRECT_ORIGINS") ??
-    "https://wholesale-warriors-hub.lovable.app")
+    "https://wholesale-warriors-hub.vercel.app")
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean);

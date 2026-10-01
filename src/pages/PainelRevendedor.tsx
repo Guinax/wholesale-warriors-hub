@@ -335,27 +335,116 @@ export default function PainelRevendedor() {
 
             {hasApprovedStore && <>
             {activeTab==="inicio" && <section id="visao-geral" className="space-y-4">
-              <div className="md:hidden">
-                <h1 className="text-2xl font-black">Visão geral</h1>
-                <p className="text-sm text-zinc-400">Operação local em tempo real.</p>
+              <div className="relative overflow-hidden rounded-3xl border border-yellow-400/20 bg-gradient-to-br from-[#2a090b] via-[#15100c] to-[#090a0c] p-5 shadow-[0_28px_90px_rgba(0,0,0,0.5)] sm:p-6 lg:p-7">
+                <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-red-600/20 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-28 left-1/3 h-60 w-60 rounded-full bg-yellow-400/10 blur-3xl" />
+                <div className="pointer-events-none absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-yellow-400/[0.04] to-transparent" />
+                <div className="relative grid gap-6 lg:grid-cols-[1.3fr_.7fr] lg:items-end">
+                  <div>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-yellow-400/25 bg-black/25 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-yellow-300">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Painel do parceiro
+                    </div>
+                    <p className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">Operação local Mansão Maromba</p>
+                    <h1 className="mt-1 max-w-2xl text-3xl font-black leading-tight sm:text-4xl">{store.name}</h1>
+                    <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-300 sm:text-base">Pedidos próximos, estoque, entregas e repasses reunidos em uma operação rápida e visual. Use os atalhos abaixo para entrar direto em cada área.</p>
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-black ${store.is_open?"border-emerald-400/30 bg-emerald-400/10 text-emerald-200":"border-zinc-600/50 bg-black/25 text-zinc-300"}`}>
+                        <span className={`h-2 w-2 rounded-full ${store.is_open?"bg-emerald-400":"bg-zinc-500"}`} />
+                        {store.is_open ? "Recebendo pedidos" : "Operação pausada"}
+                      </span>
+                      <span className="inline-flex items-center gap-2 rounded-full border border-yellow-400/20 bg-yellow-400/[0.07] px-3 py-1.5 text-xs font-semibold text-yellow-100">
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        Loja aprovada
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="rounded-3xl border border-white/10 bg-black/30 p-4 backdrop-blur-sm">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Resumo financeiro</p>
+                    <p className="mt-2 text-xs text-zinc-400">Aguardando repasse</p>
+                    <p className="mt-1 text-3xl font-black text-yellow-300">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p>
+                    <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-xs">
+                      <span className="text-zinc-500">Já repassado</span>
+                      <span className="font-black text-zinc-200">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(paidPayout)}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-                  <div className="flex items-center justify-between"><span className="text-xs text-zinc-400">Novas solicitações</span><Clock3 className="h-4 w-4 text-yellow-300"/></div>
-                  <p className="mt-2 text-3xl font-black">{offers.length}</p>
+                <button type="button" onClick={()=>switchTab("pedidos")} className="group rounded-2xl border border-yellow-400/15 bg-gradient-to-br from-yellow-400/[0.09] to-white/[0.02] p-4 text-left transition hover:-translate-y-0.5 hover:border-yellow-400/35 hover:bg-yellow-400/[0.11]">
+                  <div className="flex items-center justify-between"><span className="text-xs font-semibold text-zinc-300">Novas solicitações</span><Clock3 className="h-4 w-4 text-yellow-300"/></div>
+                  <p className="mt-3 text-3xl font-black">{offers.length}</p>
+                  <p className="mt-1 text-[11px] text-zinc-500">Toque para ver pedidos próximos</p>
+                </button>
+                <button type="button" onClick={()=>switchTab("pedidos")} className="group rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-left transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.055]">
+                  <div className="flex items-center justify-between"><span className="text-xs font-semibold text-zinc-300">Em andamento</span><Truck className="h-4 w-4 text-yellow-300"/></div>
+                  <p className="mt-3 text-3xl font-black">{activeRequests.length}</p>
+                  <p className="mt-1 text-[11px] text-zinc-500">Aceitos, pagos ou em entrega</p>
+                </button>
+                <button type="button" onClick={()=>switchTab("estoque")} className="group rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-left transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.055]">
+                  <div className="flex items-center justify-between"><span className="text-xs font-semibold text-zinc-300">Estoque disponível</span><Boxes className="h-4 w-4 text-yellow-300"/></div>
+                  <p className="mt-3 text-3xl font-black">{totalAvailable}</p>
+                  <p className="mt-1 text-[11px] text-zinc-500">Unidades livres para venda</p>
+                </button>
+                <button type="button" onClick={()=>switchTab("repasses")} className="group rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-left transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.055]">
+                  <div className="flex items-center justify-between"><span className="text-xs font-semibold text-zinc-300">Aguardando repasse</span><CircleDollarSign className="h-4 w-4 text-yellow-300"/></div>
+                  <p className="mt-3 text-2xl font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p>
+                  <p className="mt-1 text-[11px] text-zinc-500">Toque para dados e histórico PIX</p>
+                </button>
+              </div>
+
+              <div className="grid gap-4 xl:grid-cols-[1.15fr_.85fr]">
+                <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-yellow-300">Acesso rápido</p>
+                      <h2 className="mt-1 text-lg font-black">Central de operação</h2>
+                    </div>
+                    <Settings2 className="h-5 w-5 text-zinc-500"/>
+                  </div>
+                  <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                    <button type="button" onClick={()=>switchTab("pedidos")} className="rounded-2xl border border-white/10 bg-black/20 p-4 text-left transition hover:border-yellow-400/30 hover:bg-yellow-400/[0.06]">
+                      <Package className="h-5 w-5 text-yellow-300"/>
+                      <p className="mt-3 text-sm font-black">Pedidos</p>
+                      <p className="mt-1 text-[11px] leading-4 text-zinc-500">Aceite e acompanhe entregas.</p>
+                    </button>
+                    <button type="button" onClick={()=>switchTab("estoque")} className="rounded-2xl border border-white/10 bg-black/20 p-4 text-left transition hover:border-yellow-400/30 hover:bg-yellow-400/[0.06]">
+                      <Boxes className="h-5 w-5 text-yellow-300"/>
+                      <p className="mt-3 text-sm font-black">Estoque</p>
+                      <p className="mt-1 text-[11px] leading-4 text-zinc-500">Atualize disponibilidade por produto.</p>
+                    </button>
+                    <button type="button" onClick={()=>switchTab("repasses")} className="rounded-2xl border border-white/10 bg-black/20 p-4 text-left transition hover:border-yellow-400/30 hover:bg-yellow-400/[0.06]">
+                      <WalletCards className="h-5 w-5 text-yellow-300"/>
+                      <p className="mt-3 text-sm font-black">Repasses</p>
+                      <p className="mt-1 text-[11px] leading-4 text-zinc-500">Conta PIX e histórico financeiro.</p>
+                    </button>
+                  </div>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-                  <div className="flex items-center justify-between"><span className="text-xs text-zinc-400">Em andamento</span><Truck className="h-4 w-4 text-yellow-300"/></div>
-                  <p className="mt-2 text-3xl font-black">{activeRequests.length}</p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-                  <div className="flex items-center justify-between"><span className="text-xs text-zinc-400">Aguardando repasse</span><CircleDollarSign className="h-4 w-4 text-yellow-300"/></div>
-                  <p className="mt-2 text-2xl font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-                  <div className="flex items-center justify-between"><span className="text-xs text-zinc-400">Estoque disponível</span><Boxes className="h-4 w-4 text-yellow-300"/></div>
-                  <p className="mt-2 text-3xl font-black">{totalAvailable}</p>
+
+                <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-yellow-300">Agora</p>
+                      <h2 className="mt-1 text-lg font-black">Pulso da operação</h2>
+                    </div>
+                    <div className={`h-2.5 w-2.5 rounded-full ${store.is_open?"bg-emerald-400 shadow-[0_0_18px_rgba(52,211,153,0.9)]":"bg-zinc-600"}`} />
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+                      <span className="text-xs text-zinc-400">Fila de oportunidades</span>
+                      <span className="text-sm font-black text-zinc-100">{offers.length}</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+                      <span className="text-xs text-zinc-400">Pedidos ativos</span>
+                      <span className="text-sm font-black text-zinc-100">{activeRequests.length}</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+                      <span className="text-xs text-zinc-400">Produtos disponíveis</span>
+                      <span className="text-sm font-black text-zinc-100">{totalAvailable}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </section>}

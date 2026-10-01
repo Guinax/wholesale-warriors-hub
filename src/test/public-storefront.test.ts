@@ -11,6 +11,7 @@ describe("Public storefront and auth routing contracts", () => {
     expect(app).toContain('<Route path="/pagamento" element={<ProtectedRoute><Pagamento /></ProtectedRoute>} />');
     expect(app).toContain('<Route path="/recibo/:code" element={<ProtectedRoute><Recibo /></ProtectedRoute>} />');
     expect(app).toContain('<Route path="/minha-conta" element={<ProtectedRoute><MinhaConta /></ProtectedRoute>} />');
+    expect(app).toContain('<Route path="/revendedor" element={<ProtectedRoute><PainelRevendedor /></ProtectedRoute>} />');
     expect(app).toContain('<Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />');
   });
 
@@ -19,6 +20,19 @@ describe("Public storefront and auth routing contracts", () => {
     expect(top).toContain("!session");
     expect(top).toContain('navigate("/auth")');
     expect(top).toContain("ENTRAR");
+  });
+
+  it("exposes the partner area and keeps operational panels approval-gated", () => {
+    const top = read("src/components/TopNav.tsx");
+    const bottom = read("src/components/BottomNav.tsx");
+    const panel = read("src/pages/PainelRevendedor.tsx");
+    expect(top).toContain("ÁREA DO PARCEIRO");
+    expect(top).toContain('navigate("/revendedor")');
+    expect(bottom).toContain('label: "PARCEIRO"');
+    expect(panel).toContain('const approvedStores = stores.filter((s) => s.status === "approved");');
+    expect(panel).toContain("{hasApprovedStore && <>");
+    expect(panel).toContain("{approvedStores.map((store)=>");
+    expect(panel).toContain("liberados somente para lojas aprovadas");
   });
 
   it("does not allow an external next redirect after login", () => {

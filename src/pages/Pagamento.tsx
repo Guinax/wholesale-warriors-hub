@@ -9,7 +9,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { computeDueAt, formatCurrency, generateOrderCode, pendingTrackingCode } from "@/lib/orderUtils";
+import { computeDueAt, formatCurrency, generateOrderCode } from "@/lib/orderUtils";
 import { logAudit } from "@/lib/audit";
 import { createPaymentLink } from "@/lib/payments";
 import { lookupCep, shippingCostFor, shippingEtaFor, shippingLoadFor } from "@/lib/shipping";
@@ -330,14 +330,12 @@ const Pagamento = () => {
     const snapshot = JSON.stringify({ customer, docType, method, items, orderTotal, freeShippingTestActive });
     const reusableOrder = pendingOrder.current?.snapshot === snapshot ? pendingOrder.current : null;
     const orderCode = reusableOrder?.code ?? generateOrderCode();
-    const trackingCode = pendingTrackingCode(orderCode);
     const dueAt = computeDueAt();
 
     if (!reusableOrder) {
       const { error } = await supabase.from("orders").insert({
         user_id: user.id,
         order_code: orderCode,
-        tracking_code: trackingCode,
         payment_method: method,
         payment_status: "pending",
         due_at: dueAt.toISOString(),

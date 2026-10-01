@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { lookupCep, maskCepValue, onlyDigitsCep } from "@/lib/shipping";
+import { Boxes, CircleDollarSign, Clock3, Home, MapPin, Package, Settings2, Store as StoreIcon, Truck, WalletCards } from "lucide-react";
 
 type Offer = { id: string; items: Array<{ name: string; qty: number }>; subtotal: number; city: string; distance_km: number; partner_merchandise: number };
 type Request = { id: string; status: string; store_id?: string | null; store_name?: string | null; order_code?: string | null; payment_status?: string | null; shipping?: number | null; route_km?: number | null; eta_minutes?: number | null; items: Array<{ name: string; qty: number }> };
@@ -185,118 +186,197 @@ export default function PainelRevendedor() {
     await load();
   };
 
+  const activeRequests = requests.filter((r) => ["accepted","quoted","paid","delivering"].includes(r.status));
+  const waitingPayout = payouts.filter((p) => ["eligible","approved"].includes(p.status)).reduce((sum,p)=>sum+Number(p.amount||0),0);
+  const paidPayout = payouts.filter((p) => p.status === "paid").reduce((sum,p)=>sum+Number(p.amount||0),0);
+  const openStore = stores.find((s) => s.is_open) ?? stores[0] ?? null;
+  const totalAvailable = inventory.reduce((sum, item) => sum + Math.max(0, Number(item.on_hand) - Number(item.reserved)), 0);
+
   return (
-    <main className="min-h-screen bg-background p-4 md:p-8">
-      <div className="mx-auto max-w-4xl space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Operação do revendedor</h1>
-          <p className="text-muted-foreground">Controle como cada loja atende as entregas locais.</p>
-        </div>
-        {offers.length > 0 && <section className="space-y-3">
-          <h2 className="text-xl font-semibold">Novas entregas na sua região</h2>
-          {offers.map((offer) => <Card key={offer.id}><CardContent className="py-5 space-y-3">
-            <div className="flex flex-wrap justify-between gap-2"><strong>{offer.city}</strong><span>{Number(offer.distance_km).toFixed(1)} km</span></div>
-            <p className="text-sm text-muted-foreground">{offer.items.map((i) => `${i.qty}x ${i.name}`).join(" • ")}</p>
-            <div className="flex gap-2"><Button onClick={() => void command("accept", { request_id: offer.id }, "Pedido aceito. Informe a rota para calcular a entrega.")}>Aceitar</Button>
-            <Button variant="outline" onClick={() => void command("decline", { request_id: offer.id }, "Oferta recusada.")}>Recusar</Button></div>
-          </CardContent></Card>)}
-        </section>}
+    <main className="min-h-screen bg-[#0a0b0d] text-zinc-100 pb-24 md:pb-8">
+      <div className="mx-auto min-h-screen max-w-[1500px] md:grid md:grid-cols-[220px_1fr]">
+        <aside className="hidden md:flex min-h-screen flex-col border-r border-white/10 bg-[#0d0f12] p-4">
+          <div className="px-2 py-4">
+            <p className="font-heading text-xl font-black leading-none tracking-tight">MANSÃO</p>
+            <p className="font-heading text-xl font-black leading-none tracking-tight">MAROMBA</p>
+            <p className="mt-2 text-[10px] uppercase tracking-[0.22em] text-zinc-500">Área do parceiro</p>
+          </div>
+          <nav className="mt-6 space-y-2 text-sm">
+            {[
+              [Home, "Visão geral", "#visao-geral"],
+              [Package, "Pedidos", "#pedidos"],
+              [Boxes, "Meu estoque", "#estoque"],
+              [WalletCards, "Repasses", "#repasses"],
+              [StoreIcon, "Minha loja", "#minha-loja"],
+            ].map(([Icon,label,href],i)=><a key={String(label)} href={String(href)} className={`flex items-center gap-3 rounded-xl px-3 py-3 transition ${i===0?"bg-yellow-400/15 text-yellow-300":"text-zinc-400 hover:bg-white/5 hover:text-white"}`}><Icon className="h-4 w-4"/><span>{label}</span></a>)}
+          </nav>
+          <div className="mt-auto rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs text-zinc-500">
+            Pagamento centralizado na plataforma. Entrega liberada somente após confirmação.
+          </div>
+        </aside>
 
-        {requests.filter((r) => ["accepted","quoted","paid","delivering"].includes(r.status)).length > 0 && <section className="space-y-3">
-          <h2 className="text-xl font-semibold">Pedidos em operação</h2>
-          {requests.filter((r) => ["accepted","quoted","paid","delivering"].includes(r.status)).map((r) => <Card key={r.id}><CardContent className="py-5 space-y-4">
-            <div className="flex flex-wrap justify-between gap-2"><strong>{r.store_name ?? "Loja"}</strong><span>{r.order_code ?? r.status}</span></div>
-            <p className="text-sm">{r.items?.map((i) => `${i.qty}x ${i.name}`).join(" • ")}</p>
-            {r.status === "accepted" && <div className="grid gap-2 md:grid-cols-4">
-              <input className="h-10 rounded-md border bg-background px-3" placeholder="Rota km" inputMode="decimal" value={routeKm[r.id] ?? ""} onChange={(e) => setRouteKm((x) => ({...x,[r.id]:e.target.value}))} />
-              <input className="h-10 rounded-md border bg-background px-3" placeholder="Peso kg" inputMode="decimal" value={weightKg[r.id] ?? ""} onChange={(e) => setWeightKg((x) => ({...x,[r.id]:e.target.value}))} />
-              <input className="h-10 rounded-md border bg-background px-3" placeholder="Prazo min" inputMode="numeric" value={eta[r.id] ?? ""} onChange={(e) => setEta((x) => ({...x,[r.id]:e.target.value}))} />
-              <Button onClick={() => void command("quote", { request_id:r.id, route_km:Number(routeKm[r.id]), weight_kg:Number(weightKg[r.id]), eta_minutes:Number(eta[r.id]) }, "Frete calculado e enviado ao cliente.")}>Calcular entrega</Button>
-            </div>}
-            {r.status === "quoted" && <p className="font-medium">Frete calculado: R$ {Number(r.shipping ?? 0).toFixed(2).replace(".", ",")} • aguardando cliente/pagamento</p>}
-            {r.status === "paid" && <Button onClick={() => void command("dispatch", { request_id:r.id }, "Pedido saiu para entrega.")}>Saiu para entrega</Button>}
-            {r.status === "delivering" && <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Confirme presencialmente a maioridade do recebedor e peça o código de entrega exibido ao cliente.</p>
-              <label className="flex items-start gap-2 text-sm">
-                <input type="checkbox" className="mt-1" checked={adultVerified[r.id] ?? false} onChange={(e) => setAdultVerified((x) => ({...x,[r.id]:e.target.checked}))} />
-                <span>Confirmo que conferi presencialmente documento oficial com foto e que o recebedor tem 18 anos ou mais.</span>
-              </label>
-              <div className="flex gap-2">
-                <input className="h-10 flex-1 rounded-md border bg-background px-3 uppercase" placeholder="Código do cliente" maxLength={8} value={deliveryCode[r.id] ?? ""} onChange={(e) => setDeliveryCode((x) => ({...x,[r.id]:e.target.value.toUpperCase()}))} />
-                <Button disabled={(deliveryCode[r.id] ?? "").length < 4 || !(adultVerified[r.id] ?? false) || saving === r.id} onClick={() => void command("deliver", { request_id:r.id, code:deliveryCode[r.id], adult_verified:adultVerified[r.id] === true }, "Entrega confirmada e estoque baixado.")}>Confirmar entrega</Button>
+        <div className="min-w-0">
+          <header className="sticky top-0 z-20 border-b border-white/10 bg-[#0a0b0d]/95 px-4 py-3 backdrop-blur md:px-7">
+            <div className="flex items-center justify-between gap-3">
+              <div className="md:hidden">
+                <p className="font-heading text-sm font-black">MANSÃO MAROMBA</p>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">Parceiro</p>
               </div>
-            </div>}
-          </CardContent></Card>)}
-        </section>}
+              <div className="hidden md:block">
+                <h1 className="text-2xl font-black">Olá, parceiro</h1>
+                <p className="text-sm text-zinc-400">Gerencie pedidos, estoque, entregas e repasses.</p>
+              </div>
+              <div className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold ${openStore?.is_open?"border-emerald-500/30 bg-emerald-500/10 text-emerald-300":"border-zinc-700 bg-zinc-900 text-zinc-400"}`}>
+                <span className={`h-2 w-2 rounded-full ${openStore?.is_open?"bg-emerald-400":"bg-zinc-500"}`} />
+                {openStore?.is_open ? "Loja aberta" : "Loja fechada"}
+              </div>
+            </div>
+          </header>
 
-        {stores.length === 0 && <Card>
-          <CardHeader><CardTitle>Ativar operação como revendedor</CardTitle></CardHeader>
-          <CardContent className="grid gap-3 md:grid-cols-2">
-            <input className="h-10 rounded-md border bg-background px-3" placeholder="Nome da loja" value={newStore.name} onChange={(e)=>setNewStore({...newStore,name:e.target.value})}/>
-            <input className="h-10 rounded-md border bg-background px-3" placeholder="CNPJ" inputMode="numeric" value={newStore.document} onChange={(e)=>setNewStore({...newStore,document:e.target.value})}/>
-            <input className="h-10 rounded-md border bg-background px-3" placeholder="Telefone / WhatsApp" value={newStore.phone} onChange={(e)=>setNewStore({...newStore,phone:e.target.value})}/>
-            <div className="flex gap-2"><input className="h-10 min-w-0 flex-1 rounded-md border bg-background px-3" placeholder="CEP da loja" inputMode="numeric" value={newStore.cep} onChange={(e)=>setNewStore({...newStore,cep:maskCepValue(e.target.value),lat:"",lng:""})}/><Button type="button" variant="outline" disabled={locatingStore} onClick={()=>void locateStore()}>{locatingStore?"Localizando...":"Buscar CEP"}</Button></div>
-            <input className="h-10 rounded-md border bg-background px-3" placeholder="Endereço da loja" value={newStore.address} onChange={(e)=>setNewStore({...newStore,address:e.target.value})}/>
-            <input className="h-10 rounded-md border bg-muted px-3" aria-label="Cidade e estado" readOnly value={[newStore.city,newStore.state].filter(Boolean).join(" / ")} placeholder="Cidade / UF (automático)"/>
-            <div className="space-y-1"><Label>Raio de atendimento (km)</Label><input className="h-10 w-full rounded-md border bg-background px-3" inputMode="decimal" value={newStore.radius_km} onChange={(e)=>setNewStore({...newStore,radius_km:e.target.value})}/></div>
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={newStore.terms} onChange={(e)=>setNewStore({...newStore,terms:e.target.checked})}/> Aceito as condições da operação parceira.</label>
-            <div className="md:col-span-2"><Button disabled={registering} onClick={()=>void registerStore()}>{registering ? "Enviando..." : "Enviar loja para aprovação"}</Button></div>
-            <p className="md:col-span-2 text-xs text-muted-foreground">A loja só recebe pedidos depois da aprovação administrativa, aceite das condições vigentes, configuração de estoque e abertura da operação.</p>
-          </CardContent>
-        </Card>}
-        {payouts.length > 0 && <section className="space-y-3">
-          <h2 className="text-xl font-semibold">Meus repasses</h2>
-          <p className="text-sm text-muted-foreground">Valores liberados somente após pagamento confirmado e entrega concluída.</p>
-          {payouts.map((p) => <Card key={p.id}><CardContent className="py-4 flex flex-wrap items-center justify-between gap-3">
-            <div><strong>R$ {Number(p.amount).toFixed(2).replace(".", ",")}</strong><p className="text-xs text-muted-foreground">{stores.find(s=>s.id===p.store_id)?.name ?? "Loja parceira"}</p></div>
-            <div className="text-right"><span className="text-sm font-medium">{p.status==="eligible"?"Aguardando aprovação":p.status==="approved"?"Aprovado para pagamento":p.status==="paid"?"Pago":p.status==="cancelled"?"Cancelado":p.status}</span>{p.status==="paid"&&<p className="text-xs text-muted-foreground">{p.paid_at?new Date(p.paid_at).toLocaleString("pt-BR"):""}{p.receipt_reference?` • ${p.receipt_reference}`:""}</p>}</div>
-          </CardContent></Card>)}
-        </section>}
+          <div className="space-y-6 p-4 md:p-7">
+            <section id="visao-geral" className="space-y-4">
+              <div className="md:hidden">
+                <h1 className="text-2xl font-black">Pedidos</h1>
+                <p className="text-sm text-zinc-400">Operação local em tempo real.</p>
+              </div>
 
-        {stores.map((store) => (
-          <Card key={store.id}>
-            <CardHeader><CardTitle>{store.name}</CardTitle></CardHeader>
-            <CardContent className="grid gap-5 md:grid-cols-2">{store.status==="approved"&&store.accepted_terms_version!==store.terms_version&&<div className="md:col-span-2 rounded-lg border p-4 space-y-2"><strong>Condições operacionais atualizadas</strong><p className="text-sm text-muted-foreground">Aceite a versão {store.terms_version} antes de abrir a loja ou alterar a operação.</p><Button disabled={saving==="terms-"+store.id} onClick={()=>void acceptTerms(store)}>{saving==="terms-"+store.id?"Salvando...":"Aceitar condições vigentes"}</Button></div>}
-              <div className="space-y-2">
-                <Label>Modalidade de entrega</Label>
-                <Select value={store.delivery_mode} onValueChange={(value: Store["delivery_mode"]) =>
-                  setStores((prev) => prev.map((s) => s.id === store.id ? { ...s, delivery_mode: value, own_driver_available: value === "third_party" ? false : s.own_driver_available } : s))
-                }>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="own">Entregador próprio</SelectItem>
-                    <SelectItem value="third_party">Entregador terceirizado</SelectItem>
-                    <SelectItem value="hybrid">Híbrido</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div><Label>Motoqueiro disponível agora</Label><p className="text-sm text-muted-foreground">Prioriza entrega própria quando disponível.</p></div>
-                <Switch disabled={store.delivery_mode === "third_party"} checked={store.own_driver_available}
-                  onCheckedChange={(checked) => setStores((prev) => prev.map((s) => s.id === store.id ? { ...s, own_driver_available: checked } : s))} />
-              </div>
-              <div className="md:col-span-2 rounded-lg border p-4 space-y-3"><div className="flex items-center justify-between gap-3"><div><Label>Loja recebendo pedidos</Label><p className="text-xs text-muted-foreground">Só abra quando estoque e operação estiverem prontos.</p></div><Switch disabled={store.status!=="approved"} checked={store.is_open} onCheckedChange={(checked)=>setStores(prev=>prev.map(s=>s.id===store.id?{...s,is_open:checked}:s))}/></div><div className="grid gap-2 md:grid-cols-3"><input className="h-10 rounded-md border bg-background px-3" type="number" min="0" step="0.01" aria-label="Taxa base" value={store.delivery_base} onChange={e=>setStores(prev=>prev.map(s=>s.id===store.id?{...s,delivery_base:Number(e.target.value)}:s))}/><input className="h-10 rounded-md border bg-background px-3" type="number" min="0" step="0.01" aria-label="Valor por km" value={store.delivery_per_km} onChange={e=>setStores(prev=>prev.map(s=>s.id===store.id?{...s,delivery_per_km:Number(e.target.value)}:s))}/><input className="h-10 rounded-md border bg-background px-3" type="number" min="0" step="0.01" aria-label="Valor por kg" value={store.delivery_per_kg} onChange={e=>setStores(prev=>prev.map(s=>s.id===store.id?{...s,delivery_per_kg:Number(e.target.value)}:s))}/></div><Button variant="outline" disabled={saving==="settings-"+store.id||store.status!=="approved"} onClick={()=>void saveStoreSettings(store)}>{saving==="settings-"+store.id?"Salvando...":"Salvar abertura e tarifas"}</Button></div>
-              <div className="md:col-span-2 rounded-lg border p-4 space-y-3"><div><Label>Estoque desta loja</Label><p className="text-xs text-muted-foreground">Disponível = físico menos reservado em pedidos.</p></div>{catalogProducts.length===0?<p className="text-sm text-muted-foreground">Nenhum produto ativo no catálogo.</p>:catalogProducts.map(p=>{const i=inventory.find(x=>x.store_id===store.id&&x.product_id===p.id)??{store_id:store.id,product_id:p.id,on_hand:0,reserved:0,name:p.name};const key=i.store_id+":"+i.product_id;return <div key={key} className="grid gap-2 border-t pt-3 md:grid-cols-[1fr_110px_1fr_auto] md:items-center"><div><strong className="text-sm">{i.name}</strong><p className="text-xs text-muted-foreground">Físico {i.on_hand} • reservado {i.reserved} • disponível {i.on_hand-i.reserved}</p></div><input className="h-9 rounded-md border bg-background px-2" type="number" min="0" step="1" placeholder={String(i.on_hand)} value={stockDraft[key]??""} onChange={e=>setStockDraft(x=>({...x,[key]:e.target.value}))}/><input className="h-9 rounded-md border bg-background px-2" placeholder="Motivo do ajuste" value={stockReason[key]??""} onChange={e=>setStockReason(x=>({...x,[key]:e.target.value}))}/><Button size="sm" variant="outline" disabled={saving==="stock-"+key} onClick={()=>void saveStock(i.store_id,i.product_id,i.on_hand)}>Atualizar</Button></div>})}</div>
-              <div className="md:col-span-2 rounded-lg border p-4 space-y-3">
-                <div><Label>Conta PIX para receber repasses</Label><p className="text-xs text-muted-foreground">O cliente paga à plataforma. Esta conta é usada somente para o repasse da sua loja.</p></div>
-                <div className="grid gap-2 md:grid-cols-2">
-                  <Select value={pix[store.id]?.pix_key_type ?? "cnpj"} onValueChange={(v)=>setPix(x=>({...x,[store.id]:{...(x[store.id]??{pix_key:"",holder_name:"",holder_document:""}),pix_key_type:v}}))}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="cpf">CPF</SelectItem><SelectItem value="cnpj">CNPJ</SelectItem><SelectItem value="email">E-mail</SelectItem><SelectItem value="phone">Telefone</SelectItem><SelectItem value="random">Aleatória</SelectItem></SelectContent></Select>
-                  <input className="h-10 rounded-md border bg-background px-3" placeholder="Chave PIX" value={pix[store.id]?.pix_key ?? ""} onChange={e=>setPix(x=>({...x,[store.id]:{...(x[store.id]??{pix_key_type:"cnpj",holder_name:"",holder_document:""}),pix_key:e.target.value}}))}/>
-                  <input className="h-10 rounded-md border bg-background px-3" placeholder="Nome do titular" value={pix[store.id]?.holder_name ?? ""} onChange={e=>setPix(x=>({...x,[store.id]:{...(x[store.id]??{pix_key_type:"cnpj",pix_key:"",holder_document:""}),holder_name:e.target.value}}))}/>
-                  <input className="h-10 rounded-md border bg-background px-3" placeholder="CPF/CNPJ do titular" value={pix[store.id]?.holder_document ?? ""} onChange={e=>setPix(x=>({...x,[store.id]:{...(x[store.id]??{pix_key_type:"cnpj",pix_key:"",holder_name:""}),holder_document:e.target.value}}))}/>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+                  <div className="flex items-center justify-between"><span className="text-xs text-zinc-400">Novas solicitações</span><Clock3 className="h-4 w-4 text-yellow-300"/></div>
+                  <p className="mt-2 text-3xl font-black">{offers.length}</p>
                 </div>
-                <Button variant="outline" disabled={saving==="pix-"+store.id} onClick={()=>void savePix(store.id)}>{saving==="pix-"+store.id?"Salvando...":"Salvar conta PIX"}</Button>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+                  <div className="flex items-center justify-between"><span className="text-xs text-zinc-400">Em andamento</span><Truck className="h-4 w-4 text-yellow-300"/></div>
+                  <p className="mt-2 text-3xl font-black">{activeRequests.length}</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+                  <div className="flex items-center justify-between"><span className="text-xs text-zinc-400">Aguardando repasse</span><CircleDollarSign className="h-4 w-4 text-yellow-300"/></div>
+                  <p className="mt-2 text-2xl font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+                  <div className="flex items-center justify-between"><span className="text-xs text-zinc-400">Estoque disponível</span><Boxes className="h-4 w-4 text-yellow-300"/></div>
+                  <p className="mt-2 text-3xl font-black">{totalAvailable}</p>
+                </div>
               </div>
-              <div className="md:col-span-2 flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Cadastro: {store.status}</span>
-                <Button disabled={saving === store.id} onClick={() => void saveDelivery(store)}>
-                  {saving === store.id ? "Salvando..." : "Salvar operação"}
-                </Button>
+            </section>
+
+            {offers.length > 0 && <section id="pedidos" className="space-y-3">
+              <div className="flex items-center justify-between"><h2 className="text-lg font-black">Solicitações próximas</h2><span className="text-xs text-zinc-500">{offers.length} aguardando decisão</span></div>
+              <div className="grid gap-3 xl:grid-cols-2">
+                {offers.map((offer) => <div key={offer.id} className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-black">Pedido próximo</p>
+                      <p className="mt-1 flex items-center gap-1 text-xs text-zinc-400"><MapPin className="h-3.5 w-3.5"/>{offer.city} · {Number(offer.distance_km).toFixed(1)} km</p>
+                    </div>
+                    <span className="rounded-lg border border-yellow-400/40 bg-yellow-400/10 px-2 py-1 text-[11px] font-semibold text-yellow-300">Aguardando aceite</span>
+                  </div>
+                  <p className="mt-3 text-sm text-zinc-300">{offer.items.map((i)=>`${i.qty}× ${i.name}`).join(" • ")}</p>
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <Button className="bg-yellow-400 font-black text-black hover:bg-yellow-300" disabled={saving===offer.id} onClick={()=>void command("accept",{request_id:offer.id},"Pedido aceito. Informe a rota para calcular a entrega.")}>Aceitar solicitação</Button>
+                    <Button variant="outline" className="border-white/15 bg-transparent text-zinc-200 hover:bg-white/5" disabled={saving===offer.id} onClick={()=>void command("decline",{request_id:offer.id},"Oferta recusada.")}>Recusar</Button>
+                  </div>
+                  <p className="mt-3 text-[11px] text-zinc-500">Após o aceite, o frete é calculado e o cliente confirma o pagamento.</p>
+                </div>)}
               </div>
-            </CardContent>
-          </Card>
-        ))}
+            </section>}
+
+            {activeRequests.length > 0 && <section className="space-y-3">
+              <div className="flex items-center justify-between"><h2 className="text-lg font-black">Pedidos em andamento</h2><span className="text-xs text-zinc-500">Atualização em tempo real</span></div>
+              <div className="space-y-3">
+                {activeRequests.map((r)=><div key={r.id} className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="font-black">{r.order_code ?? "Pedido em preparação"}</p>
+                      <p className="text-xs text-zinc-400">{r.store_name ?? "Loja parceira"} · {r.items?.map((i)=>`${i.qty}× ${i.name}`).join(" • ")}</p>
+                    </div>
+                    <span className={`rounded-lg px-2 py-1 text-[11px] font-semibold ${r.status==="paid"||r.status==="delivering"?"bg-emerald-500/10 text-emerald-300":"bg-yellow-400/10 text-yellow-300"}`}>
+                      {r.status==="accepted"?"Aceito":r.status==="quoted"?"Frete calculado":r.status==="paid"?"Pagamento confirmado":"Em entrega"}
+                    </span>
+                  </div>
+                  {r.status==="accepted"&&<div className="mt-4 grid gap-2 md:grid-cols-4">
+                    <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3 text-sm" placeholder="Rota km" inputMode="decimal" value={routeKm[r.id]??""} onChange={(e)=>setRouteKm((x)=>({...x,[r.id]:e.target.value}))}/>
+                    <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3 text-sm" placeholder="Peso kg" inputMode="decimal" value={weightKg[r.id]??""} onChange={(e)=>setWeightKg((x)=>({...x,[r.id]:e.target.value}))}/>
+                    <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3 text-sm" placeholder="Prazo min" inputMode="numeric" value={eta[r.id]??""} onChange={(e)=>setEta((x)=>({...x,[r.id]:e.target.value}))}/>
+                    <Button className="bg-yellow-400 font-bold text-black hover:bg-yellow-300" onClick={()=>void command("quote",{request_id:r.id,route_km:Number(routeKm[r.id]),weight_kg:Number(weightKg[r.id]),eta_minutes:Number(eta[r.id])},"Frete calculado e enviado ao cliente.")}>Calcular entrega</Button>
+                  </div>}
+                  {r.status==="quoted"&&<p className="mt-4 rounded-xl border border-yellow-400/20 bg-yellow-400/5 p-3 text-sm text-yellow-200">Frete: R$ {Number(r.shipping??0).toFixed(2).replace(".",",")} · aguardando pagamento do cliente.</p>}
+                  {r.status==="paid"&&<div className="mt-4"><Button className="bg-yellow-400 font-bold text-black hover:bg-yellow-300" onClick={()=>void command("dispatch",{request_id:r.id},"Pedido saiu para entrega.")}><Truck className="mr-2 h-4 w-4"/>Saiu para entrega</Button></div>}
+                  {r.status==="delivering"&&<div className="mt-4 space-y-3">
+                    <label className="flex items-start gap-2 text-sm text-zinc-300"><input type="checkbox" className="mt-1" checked={adultVerified[r.id]??false} onChange={(e)=>setAdultVerified((x)=>({...x,[r.id]:e.target.checked}))}/><span>Confirmei documento oficial com foto e maioridade do recebedor.</span></label>
+                    <div className="flex gap-2"><input className="h-10 min-w-0 flex-1 rounded-lg border border-white/10 bg-black/20 px-3 uppercase" placeholder="Código do cliente" maxLength={8} value={deliveryCode[r.id]??""} onChange={(e)=>setDeliveryCode((x)=>({...x,[r.id]:e.target.value.toUpperCase()}))}/><Button className="bg-yellow-400 font-bold text-black hover:bg-yellow-300" disabled={(deliveryCode[r.id]??"").length<4||!(adultVerified[r.id]??false)||saving===r.id} onClick={()=>void command("deliver",{request_id:r.id,code:deliveryCode[r.id],adult_verified:adultVerified[r.id]===true},"Entrega confirmada e estoque baixado.")}>Confirmar entrega</Button></div>
+                  </div>}
+                </div>)}
+              </div>
+            </section>}
+
+            {stores.length===0&&<section id="minha-loja" className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
+              <h2 className="text-lg font-black">Ativar operação como revendedor</h2>
+              <p className="mt-1 text-sm text-zinc-400">Cadastre sua loja para entrar na rede local.</p>
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" placeholder="Nome da loja" value={newStore.name} onChange={(e)=>setNewStore({...newStore,name:e.target.value})}/>
+                <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" placeholder="CNPJ" inputMode="numeric" value={newStore.document} onChange={(e)=>setNewStore({...newStore,document:e.target.value})}/>
+                <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" placeholder="Telefone / WhatsApp" value={newStore.phone} onChange={(e)=>setNewStore({...newStore,phone:e.target.value})}/>
+                <div className="flex gap-2"><input className="h-10 min-w-0 flex-1 rounded-lg border border-white/10 bg-black/20 px-3" placeholder="CEP da loja" inputMode="numeric" value={newStore.cep} onChange={(e)=>setNewStore({...newStore,cep:maskCepValue(e.target.value),lat:"",lng:""})}/><Button variant="outline" className="border-white/15 bg-transparent" disabled={locatingStore} onClick={()=>void locateStore()}>{locatingStore?"Localizando...":"Buscar CEP"}</Button></div>
+                <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" placeholder="Endereço da loja" value={newStore.address} onChange={(e)=>setNewStore({...newStore,address:e.target.value})}/>
+                <input className="h-10 rounded-lg border border-white/10 bg-white/5 px-3" readOnly value={[newStore.city,newStore.state].filter(Boolean).join(" / ")} placeholder="Cidade / UF"/>
+                <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" inputMode="decimal" placeholder="Raio de atendimento (km)" value={newStore.radius_km} onChange={(e)=>setNewStore({...newStore,radius_km:e.target.value})}/>
+                <label className="flex items-center gap-2 text-sm text-zinc-300"><input type="checkbox" checked={newStore.terms} onChange={(e)=>setNewStore({...newStore,terms:e.target.checked})}/>Aceito as condições da operação parceira.</label>
+              </div>
+              <Button className="mt-4 bg-yellow-400 font-black text-black hover:bg-yellow-300" disabled={registering} onClick={()=>void registerStore()}>{registering?"Enviando...":"Enviar loja para aprovação"}</Button>
+            </section>}
+
+            {stores.map((store)=><section id="minha-loja" key={store.id} className="space-y-4">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div><h2 className="text-lg font-black">{store.name}</h2><p className="text-xs text-zinc-500">Cadastro: {store.status}</p></div>
+                  <Settings2 className="h-5 w-5 text-yellow-300"/>
+                </div>
+                {store.status==="approved"&&store.accepted_terms_version!==store.terms_version&&<div className="mt-4 rounded-xl border border-yellow-400/20 bg-yellow-400/5 p-4"><p className="font-semibold text-yellow-200">Condições atualizadas</p><p className="mt-1 text-xs text-zinc-400">Aceite a versão {store.terms_version} para reabrir a operação.</p><Button className="mt-3 bg-yellow-400 font-bold text-black hover:bg-yellow-300" disabled={saving==="terms-"+store.id} onClick={()=>void acceptTerms(store)}>Aceitar condições</Button></div>}
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  <div><Label className="text-zinc-300">Modalidade de entrega</Label><Select value={store.delivery_mode} onValueChange={(value:Store["delivery_mode"])=>setStores((prev)=>prev.map((s)=>s.id===store.id?{...s,delivery_mode:value,own_driver_available:value==="third_party"?false:s.own_driver_available}:s))}><SelectTrigger className="mt-1 border-white/10 bg-black/20"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="own">Entregador próprio</SelectItem><SelectItem value="third_party">Entregador terceirizado</SelectItem><SelectItem value="hybrid">Híbrido</SelectItem></SelectContent></Select></div>
+                  <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/20 p-4"><div><Label className="text-zinc-300">Motoqueiro disponível</Label><p className="text-xs text-zinc-500">Prioriza entrega própria.</p></div><Switch disabled={store.delivery_mode==="third_party"} checked={store.own_driver_available} onCheckedChange={(checked)=>setStores((prev)=>prev.map((s)=>s.id===store.id?{...s,own_driver_available:checked}:s))}/></div>
+                </div>
+                <div className="mt-3 rounded-xl border border-white/10 bg-black/20 p-4">
+                  <div className="flex items-center justify-between gap-3"><div><Label className="text-zinc-300">Loja recebendo pedidos</Label><p className="text-xs text-zinc-500">Abra somente com estoque e operação prontos.</p></div><Switch disabled={store.status!=="approved"} checked={store.is_open} onCheckedChange={(checked)=>setStores((prev)=>prev.map((s)=>s.id===store.id?{...s,is_open:checked}:s))}/></div>
+                  <div className="mt-3 grid gap-2 md:grid-cols-3"><input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" type="number" min="0" step="0.01" aria-label="Taxa base" value={store.delivery_base} onChange={(e)=>setStores((prev)=>prev.map((s)=>s.id===store.id?{...s,delivery_base:Number(e.target.value)}:s))}/><input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" type="number" min="0" step="0.01" aria-label="Valor por km" value={store.delivery_per_km} onChange={(e)=>setStores((prev)=>prev.map((s)=>s.id===store.id?{...s,delivery_per_km:Number(e.target.value)}:s))}/><input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" type="number" min="0" step="0.01" aria-label="Valor por kg" value={store.delivery_per_kg} onChange={(e)=>setStores((prev)=>prev.map((s)=>s.id===store.id?{...s,delivery_per_kg:Number(e.target.value)}:s))}/></div>
+                  <div className="mt-3 flex flex-wrap gap-2"><Button variant="outline" className="border-white/15 bg-transparent" disabled={saving==="settings-"+store.id||store.status!=="approved"} onClick={()=>void saveStoreSettings(store)}>Salvar tarifas e abertura</Button><Button className="bg-yellow-400 font-bold text-black hover:bg-yellow-300" disabled={saving===store.id} onClick={()=>void saveDelivery(store)}>Salvar operação</Button></div>
+                </div>
+              </div>
+
+              <div id="estoque" className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
+                <div className="flex items-center justify-between"><div><h2 className="text-lg font-black">Meu estoque</h2><p className="text-xs text-zinc-500">Disponível = físico menos reservado.</p></div><Boxes className="h-5 w-5 text-yellow-300"/></div>
+                <div className="mt-3 space-y-2">{catalogProducts.length===0?<p className="text-sm text-zinc-500">Nenhum produto ativo no catálogo.</p>:catalogProducts.map((p)=>{const i=inventory.find((x)=>x.store_id===store.id&&x.product_id===p.id)??{store_id:store.id,product_id:p.id,on_hand:0,reserved:0,name:p.name};const key=i.store_id+":"+i.product_id;return <div key={key} className="grid gap-2 rounded-xl border border-white/10 bg-black/20 p-3 md:grid-cols-[1fr_100px_1fr_auto] md:items-center"><div><p className="text-sm font-semibold">{i.name}</p><p className="text-xs text-zinc-500">Físico {i.on_hand} · reservado {i.reserved} · disponível {i.on_hand-i.reserved}</p></div><input className="h-9 rounded-lg border border-white/10 bg-black/30 px-2" type="number" min="0" step="1" placeholder={String(i.on_hand)} value={stockDraft[key]??""} onChange={(e)=>setStockDraft((x)=>({...x,[key]:e.target.value}))}/><input className="h-9 rounded-lg border border-white/10 bg-black/30 px-2" placeholder="Motivo do ajuste" value={stockReason[key]??""} onChange={(e)=>setStockReason((x)=>({...x,[key]:e.target.value}))}/><Button size="sm" variant="outline" className="border-white/15 bg-transparent" disabled={saving==="stock-"+key} onClick={()=>void saveStock(i.store_id,i.product_id,i.on_hand)}>Atualizar</Button></div>})}</div>
+              </div>
+
+              <div id="repasses" className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
+                <div className="flex items-center justify-between"><div><h2 className="text-lg font-black">Repasses</h2><p className="text-xs text-zinc-500">Cliente paga à plataforma; sua loja recebe depois da entrega.</p></div><WalletCards className="h-5 w-5 text-yellow-300"/></div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2"><div className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs text-zinc-500">Aguardando liberação</p><p className="mt-1 text-xl font-black text-yellow-300">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p></div><div className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs text-zinc-500">Já repassado</p><p className="mt-1 text-xl font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(paidPayout)}</p></div></div>
+                <div className="mt-4 grid gap-2 md:grid-cols-2">
+                  <Select value={pix[store.id]?.pix_key_type??"cnpj"} onValueChange={(v)=>setPix((x)=>({...x,[store.id]:{...(x[store.id]??{pix_key:"",holder_name:"",holder_document:""}),pix_key_type:v}}))}><SelectTrigger className="border-white/10 bg-black/20"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="cpf">CPF</SelectItem><SelectItem value="cnpj">CNPJ</SelectItem><SelectItem value="email">E-mail</SelectItem><SelectItem value="phone">Telefone</SelectItem><SelectItem value="random">Aleatória</SelectItem></SelectContent></Select>
+                  <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" placeholder="Chave PIX" value={pix[store.id]?.pix_key??""} onChange={(e)=>setPix((x)=>({...x,[store.id]:{...(x[store.id]??{pix_key_type:"cnpj",holder_name:"",holder_document:""}),pix_key:e.target.value}}))}/>
+                  <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" placeholder="Nome do titular" value={pix[store.id]?.holder_name??""} onChange={(e)=>setPix((x)=>({...x,[store.id]:{...(x[store.id]??{pix_key_type:"cnpj",pix_key:"",holder_document:""}),holder_name:e.target.value}}))}/>
+                  <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" placeholder="CPF/CNPJ do titular" value={pix[store.id]?.holder_document??""} onChange={(e)=>setPix((x)=>({...x,[store.id]:{...(x[store.id]??{pix_key_type:"cnpj",pix_key:"",holder_name:""}),holder_document:e.target.value}}))}/>
+                </div>
+                <Button variant="outline" className="mt-3 border-white/15 bg-transparent" disabled={saving==="pix-"+store.id} onClick={()=>void savePix(store.id)}>Salvar conta PIX</Button>
+              </div>
+            </section>)}
+
+            {payouts.length>0&&<section className="space-y-2">
+              <h2 className="text-lg font-black">Histórico de repasses</h2>
+              {payouts.map((p)=><div key={p.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.025] p-4"><div><p className="font-bold">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(Number(p.amount))}</p><p className="text-xs text-zinc-500">{stores.find((s)=>s.id===p.store_id)?.name??"Loja parceira"}</p></div><div className="text-right text-sm"><p>{p.status==="eligible"?"Aguardando aprovação":p.status==="approved"?"Aprovado para pagamento":p.status==="paid"?"Pago":p.status==="cancelled"?"Cancelado":p.status}</p>{p.status==="paid"&&<p className="text-xs text-zinc-500">{p.paid_at?new Date(p.paid_at).toLocaleString("pt-BR"):""}{p.receipt_reference?` · ${p.receipt_reference}`:""}</p>}</div></div>)}
+            </section>}
+
+            <div className="rounded-2xl border border-yellow-400/20 bg-yellow-400/5 p-4 text-sm text-yellow-200">
+              A entrega só é liberada depois que o pagamento do cliente é confirmado pela plataforma.
+            </div>
+          </div>
+        </div>
       </div>
+
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-white/10 bg-[#0d0f12]/95 px-2 py-2 backdrop-blur md:hidden">
+        {[[Home,"Início","#visao-geral"],[Package,"Pedidos","#pedidos"],[Boxes,"Estoque","#estoque"],[WalletCards,"Repasses","#repasses"]].map(([Icon,label,href])=><a key={String(label)} href={String(href)} className="flex flex-col items-center gap-1 py-1 text-[10px] text-zinc-400 hover:text-yellow-300"><Icon className="h-5 w-5"/><span>{label}</span></a>)}
+      </nav>
     </main>
   );
 }

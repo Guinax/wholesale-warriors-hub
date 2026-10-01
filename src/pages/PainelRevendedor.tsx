@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { lookupCep, maskCepValue, onlyDigitsCep } from "@/lib/shipping";
-import { Boxes, CircleDollarSign, Clock3, Home, MapPin, Package, Settings2, Store as StoreIcon, Truck, WalletCards } from "lucide-react";
+import { Boxes, CheckCircle2, CircleDollarSign, Clock3, Home, MapPin, Package, Settings2, ShieldCheck, Sparkles, Store as StoreIcon, Truck, WalletCards } from "lucide-react";
 
 type Offer = { id: string; items: Array<{ name: string; qty: number }>; subtotal: number; city: string; distance_km: number; partner_merchandise: number };
 type Request = { id: string; status: string; store_id?: string | null; store_name?: string | null; order_code?: string | null; payment_status?: string | null; shipping?: number | null; route_km?: number | null; eta_minutes?: number | null; items: Array<{ name: string; qty: number }> };
@@ -52,15 +52,32 @@ export default function PainelRevendedor() {
   const [payouts, setPayouts] = useState<Payout[]>([]);
 
   const load = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("partner_stores" as never)
-      .select("id,name,status,is_open,delivery_mode,own_driver_available,delivery_base,delivery_per_km,delivery_per_kg,terms_version,accepted_terms_version")
-      .order("created_at", { ascending: false });
-    if (error) return toast.error("Não foi possível carregar suas lojas.");
-    const loadedStores=(data ?? []) as unknown as Store[];
-    setStores(loadedStores);
+    const { data: dashboard, error: dashboardError } = await supabase.rpc("partner_command" as never, { p_action: "dashboard", p_payload: {} } as never);
+
+    let loadedStores: Store[] = [];
+    if (!dashboardError && dashboard) {
+      const d = dashboard as unknown as { stores?: Store[]; offers?: Offer[]; requests?: Request[]; inventory?: InventoryItem[] };
+      loadedStores = d.stores ?? [];
+      setStores(loadedStores);
+      setOffers(d.offers ?? []);
+      setRequests(d.requests ?? []);
+      setInventory(d.inventory ?? []);
+    } else {
+      const { data, error } = await supabase
+        .from("partner_stores" as never)
+        .select("id,name,status,is_open,delivery_mode,own_driver_available,delivery_base,delivery_per_km,delivery_per_kg,terms_version,accepted_terms_version")
+        .order("created_at", { ascending: false });
+      if (error) {
+        toast.error("Não foi possível carregar o status do seu cadastro. Atualize a página e tente novamente.");
+        return;
+      }
+      loadedStores = (data ?? []) as unknown as Store[];
+      setStores(loadedStores);
+    }
+
     const {data:catalog}=await supabase.from("products").select("id,name").eq("active",true).order("name");
     setCatalogProducts((catalog??[]) as CatalogProduct[]);
+
     if (loadedStores.length) {
       const { data: accounts } = await supabase.from("partner_payout_accounts" as never).select("store_id,pix_key_type,pix_key,holder_name,holder_document");
       const mapped: typeof pix = {};
@@ -68,13 +85,9 @@ export default function PainelRevendedor() {
       setPix(mapped);
       const { data: payoutRows } = await supabase.from("partner_payouts" as never).select("id,store_id,amount,status,approved_at,paid_at,receipt_reference").order("paid_at",{ascending:false,nullsFirst:true});
       setPayouts((payoutRows ?? []) as unknown as Payout[]);
-    }
-    const { data: dashboard, error: dashboardError } = await supabase.rpc("partner_command" as never, { p_action: "dashboard", p_payload: {} } as never);
-    if (!dashboardError && dashboard) {
-      const d = dashboard as unknown as { offers?: Offer[]; requests?: Request[]; inventory?: InventoryItem[] };
-      setOffers(d.offers ?? []);
-      setRequests(d.requests ?? []);
-      setInventory(d.inventory ?? []);
+    } else {
+      setPix({});
+      setPayouts([]);
     }
   }, []);
 
@@ -177,13 +190,36 @@ export default function PainelRevendedor() {
     if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng) || lng < -180 || lng > 180) return toast.error("Informe coordenadas válidas da loja.");
     if (!Number.isFinite(radius) || radius < 1 || radius > 50) return toast.error("O raio deve ficar entre 1 e 50 km.");
     if (!newStore.terms) return toast.error("Aceite as condições de participação.");
+
     setRegistering(true);
-    const { error } = await supabase.rpc("partner_command" as never, { p_action:"register", p_payload:{ ...newStore, document, cep:onlyDigitsCep(newStore.cep), lat, lng, radius_km:radius, terms:true } } as never);
-    setRegistering(false);
-    if (error) return toast.error(error.message);
-    toast.success("Loja enviada para aprovação.");
-    setNewStore({ name:"", document:"", phone:"", cep:"", address:"", city:"", state:"", lat:"", lng:"", radius_km:"15", terms:false });
-    await load();
+    try {
+      const { data: currentDashboard, error: currentDashboardError } = await supabase.rpc("partner_command" as never, { p_action:"dashboard", p_payload:{} } as never);
+      if (!currentDashboardError && currentDashboard) {
+        const currentStores = (currentDashboard as unknown as { stores?: Store[] }).stores ?? [];
+        if (currentStores.length > 0) {
+          setStores(currentStores);
+          toast.info("Seu cadastro já foi recebido e está em análise. Não é necessário cadastrar novamente.");
+          return;
+        }
+      }
+
+      const { error } = await supabase.rpc("partner_command" as never, { p_action:"register", p_payload:{ ...newStore, document, cep:onlyDigitsCep(newStore.cep), lat, lng, radius_km:radius, terms:true } } as never);
+      if (error) {
+        if ((error as { code?: string }).code === "23505") {
+          await load();
+          toast.info("Seu cadastro já existe e está em análise. Atualizamos o painel com o status correto.");
+          return;
+        }
+        toast.error(error.message);
+        return;
+      }
+
+      toast.success("Cadastro recebido! Sua loja está em análise.");
+      setNewStore({ name:"", document:"", phone:"", cep:"", address:"", city:"", state:"", lat:"", lng:"", radius_km:"15", terms:false });
+      await load();
+    } finally {
+      setRegistering(false);
+    }
   };
 
   const approvedStores = stores.filter((s) => s.status === "approved");
@@ -237,16 +273,50 @@ export default function PainelRevendedor() {
           </header>
 
           <div className="space-y-6 p-4 md:p-7">
-            {!hasApprovedStore && <section id="visao-geral" className="rounded-2xl border border-yellow-400/20 bg-yellow-400/5 p-5">
-              <div className="flex items-start gap-3">
-                <StoreIcon className="mt-0.5 h-5 w-5 shrink-0 text-yellow-300"/>
-                <div>
-                  <h1 className="text-xl font-black">Área do parceiro / revendedor</h1>
-                  <p className="mt-1 text-sm text-zinc-300">{stores.length===0 ? "Cadastre sua loja abaixo para entrar na rede de parceiros." : "Seu cadastro de loja está aguardando liberação para operar."}</p>
+            {!hasApprovedStore && <section id="visao-geral" className="relative overflow-hidden rounded-3xl border border-yellow-400/20 bg-gradient-to-br from-[#1c170a] via-[#101114] to-[#090a0c] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.38)] sm:p-6">
+              <div className="pointer-events-none absolute -right-14 -top-20 h-52 w-52 rounded-full bg-yellow-400/10 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-24 left-10 h-44 w-44 rounded-full bg-amber-500/10 blur-3xl" />
+              <div className="relative">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-2xl border border-yellow-400/25 bg-yellow-400/10 p-2.5">
+                      <StoreIcon className="h-5 w-5 text-yellow-300"/>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-yellow-300">Área do parceiro</p>
+                      <h1 className="mt-1 text-xl font-black sm:text-2xl">{stores.length===0 ? "Ative sua operação local" : "Cadastro recebido com sucesso"}</h1>
+                      <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-300">{stores.length===0 ? "Cadastre sua loja abaixo para entrar na rede de parceiros Mansão Maromba." : "Sua loja já está salva. Agora ela passa pela análise de segurança e condições comerciais antes da liberação operacional."}</p>
+                    </div>
+                  </div>
+                  {stores.length>0&&<span className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-xs font-black text-amber-200"><Clock3 className="h-3.5 w-3.5"/>Em análise</span>}
                 </div>
+
+                {pendingStores.length>0&&<>
+                  <div className="mt-5 grid gap-2 sm:grid-cols-3">
+                    <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.07] p-3">
+                      <CheckCircle2 className="h-5 w-5 text-emerald-300"/>
+                      <p className="mt-2 text-xs font-black text-emerald-100">Cadastro recebido</p>
+                      <p className="mt-1 text-[11px] leading-4 text-zinc-400">Dados da loja registrados.</p>
+                    </div>
+                    <div className="rounded-2xl border border-yellow-400/25 bg-yellow-400/[0.08] p-3">
+                      <ShieldCheck className="h-5 w-5 text-yellow-300"/>
+                      <p className="mt-2 text-xs font-black text-yellow-100">Análise da parceria</p>
+                      <p className="mt-1 text-[11px] leading-4 text-zinc-400">Validação de segurança e condições.</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                      <Sparkles className="h-5 w-5 text-zinc-400"/>
+                      <p className="mt-2 text-xs font-black text-zinc-200">Liberação do painel</p>
+                      <p className="mt-1 text-[11px] leading-4 text-zinc-500">Pedidos, estoque, entrega e repasses.</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 space-y-2">{pendingStores.map((store)=><div key={store.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/25 p-4"><div><p className="font-black text-zinc-100">{store.name}</p><p className="mt-1 text-xs text-zinc-500">CNPJ cadastrado · operação ainda bloqueada até aprovação</p></div><span className="rounded-xl border border-yellow-400/30 bg-yellow-400/10 px-3 py-1.5 text-xs font-black text-yellow-200">{store.status==="pending"?"Em análise":store.status==="rejected"?"Revisão necessária":"Aguardando liberação"}</span></div>)}</div>
+
+                  <div className="mt-4 rounded-2xl border border-yellow-400/15 bg-yellow-400/[0.06] p-3 text-xs leading-5 text-yellow-100">
+                    Seu cadastro já está ativo no sistema como solicitação. Não é necessário enviar novamente; a operação será liberada após a aprovação.
+                  </div>
+                </>}
               </div>
-              {pendingStores.length>0&&<div className="mt-4 space-y-2">{pendingStores.map((store)=><div key={store.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-black/20 p-3"><div><p className="font-semibold">{store.name}</p><p className="text-xs text-zinc-500">CNPJ cadastrado · situação da loja</p></div><span className="rounded-lg border border-yellow-400/30 bg-yellow-400/10 px-2 py-1 text-xs font-semibold text-yellow-200">{store.status==="pending"?"Em análise":store.status==="rejected"?"Revisão necessária":"Aguardando liberação"}</span></div>)}</div>}
-              <p className="mt-4 text-xs text-zinc-400">Pedidos, estoque, entregas e repasses são liberados somente para lojas aprovadas.</p>
             </section>}
 
             {hasApprovedStore && <>

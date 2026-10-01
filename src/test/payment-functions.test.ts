@@ -43,7 +43,7 @@ function loadHandler(name: string, overrides: Record<string, unknown> = {}) {
   }));
   return {request,fetchMock,updates,filters,rpc};
 }
-const linkBody = {order_code:'FM-TEST',redirect_url:'https://wholesale-warriors-hub.lovable.app/recibo/FM-TEST'};
+const linkBody = {order_code:'FM-TEST',redirect_url:'https://wholesale-warriors-hub.vercel.app/recibo/FM-TEST'};
 describe('Payment integration boundaries', () => {
   it('keeps payment Edge Functions on service-only public RPC wrappers', () => {
     for (const name of ['payment-link','payment-check','payment-webhook']) {

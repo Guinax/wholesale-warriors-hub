@@ -267,6 +267,16 @@ export default function PainelRevendedor() {
                 <h1 className="text-2xl font-black">Olá, parceiro</h1>
                 <p className="text-sm text-zinc-400">{hasApprovedStore ? "Gerencie pedidos, estoque, entregas e repasses." : "Cadastre sua loja ou acompanhe a aprovação."}</p>
               </div>
+              <Button
+                type="button"
+                onClick={() => navigate("/")}
+                className="h-10 rounded-xl bg-yellow-400 px-3 font-black text-black hover:bg-yellow-300 sm:px-4"
+                aria-label="Voltar para a Home"
+              >
+                <Home className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Voltar para a Home</span>
+                <span className="sm:hidden">Home</span>
+              </Button>
               <div className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold ${openStore?.is_open?"border-emerald-500/30 bg-emerald-500/10 text-emerald-300":"border-zinc-700 bg-zinc-900 text-zinc-400"}`}>
                 <span className={`h-2 w-2 rounded-full ${openStore?.is_open?"bg-emerald-400":"bg-zinc-500"}`} />
                 {openStore?.is_open ? "Loja aberta" : "Loja fechada"}

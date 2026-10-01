@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
 import { isValidCnpj } from "@/lib/brDocuments";
+import { isStrongPassword, STRONG_PASSWORD_MESSAGE } from "@/lib/passwordPolicy";
 
 interface CadastroForm {
   password: string;
@@ -281,7 +282,7 @@ const CadastroCNPJ = () => {
             <div>
               <Label htmlFor="password">Senha *</Label>
               <Input id="password" type="password" autoComplete="new-password"
-                {...register("password", { required: "Crie uma senha", minLength: { value: 8, message: "Use pelo menos 8 caracteres" } })} />
+                {...register("password", { required: "Crie uma senha", validate: value => isStrongPassword(value) || STRONG_PASSWORD_MESSAGE })} />
               {errors.password && <p className="text-destructive text-xs mt-1">{errors.password.message}</p>}
             </div>
             <div>

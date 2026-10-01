@@ -267,16 +267,6 @@ export default function PainelRevendedor() {
                 <h1 className="text-2xl font-black">Olá, parceiro</h1>
                 <p className="text-sm text-zinc-400">{hasApprovedStore ? "Gerencie pedidos, estoque, entregas e repasses." : "Cadastre sua loja ou acompanhe a aprovação."}</p>
               </div>
-              <Button
-                type="button"
-                onClick={() => navigate("/")}
-                className="h-10 rounded-xl bg-yellow-400 px-3 font-black text-black hover:bg-yellow-300 sm:px-4"
-                aria-label="Voltar para a Home"
-              >
-                <Home className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Voltar para a Home</span>
-                <span className="sm:hidden">Home</span>
-              </Button>
               <div className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold ${openStore?.is_open?"border-emerald-500/30 bg-emerald-500/10 text-emerald-300":"border-zinc-700 bg-zinc-900 text-zinc-400"}`}>
                 <span className={`h-2 w-2 rounded-full ${openStore?.is_open?"bg-emerald-400":"bg-zinc-500"}`} />
                 {openStore?.is_open ? "Loja aberta" : "Loja fechada"}
@@ -545,8 +535,16 @@ export default function PainelRevendedor() {
         </div>
       </div>
 
-      <nav className={`fixed inset-x-0 bottom-0 z-30 grid ${hasApprovedStore?"grid-cols-4":"grid-cols-1"} border-t border-white/10 bg-[#0d0f12]/95 px-2 py-2 backdrop-blur md:hidden`}>
-        {(hasApprovedStore ? [[Home,"Início","#visao-geral"],[Package,"Pedidos","#pedidos"],[Boxes,"Estoque","#estoque"],[WalletCards,"Repasses","#repasses"]] : [[StoreIcon,"Cadastro / aprovação","#visao-geral"]]).map(([Icon,label,href])=><a key={String(label)} href={String(href)} className="flex flex-col items-center gap-1 py-1 text-[10px] text-zinc-400 hover:text-yellow-300"><Icon className="h-5 w-5"/><span>{label}</span></a>)}
+      <nav className={`fixed inset-x-0 bottom-0 z-30 grid ${hasApprovedStore?"grid-cols-4":"grid-cols-2"} border-t border-white/10 bg-[#0d0f12]/95 px-2 py-2 backdrop-blur md:hidden`}>
+        {hasApprovedStore ? <>
+          <a href="#pedidos" className="flex flex-col items-center gap-1 py-1 text-[10px] text-zinc-400 hover:text-yellow-300"><Package className="h-5 w-5"/><span>Pedidos</span></a>
+          <button type="button" onClick={()=>navigate("/")} className="mx-1 flex flex-col items-center gap-1 rounded-xl bg-yellow-400 px-2 py-1 text-[10px] font-black text-black hover:bg-yellow-300" aria-label="Voltar para a Home"><Home className="h-5 w-5"/><span>Home</span></button>
+          <a href="#estoque" className="flex flex-col items-center gap-1 py-1 text-[10px] text-zinc-400 hover:text-yellow-300"><Boxes className="h-5 w-5"/><span>Estoque</span></a>
+          <a href="#repasses" className="flex flex-col items-center gap-1 py-1 text-[10px] text-zinc-400 hover:text-yellow-300"><WalletCards className="h-5 w-5"/><span>Repasses</span></a>
+        </> : <>
+          <a href="#visao-geral" className="flex flex-col items-center gap-1 py-1 text-[10px] text-zinc-400 hover:text-yellow-300"><StoreIcon className="h-5 w-5"/><span>Cadastro</span></a>
+          <button type="button" onClick={()=>navigate("/")} className="mx-1 flex flex-col items-center gap-1 rounded-xl bg-yellow-400 px-2 py-1 text-[10px] font-black text-black hover:bg-yellow-300" aria-label="Voltar para a Home"><Home className="h-5 w-5"/><span>Home</span></button>
+        </>}
       </nav>
     </main>
   );

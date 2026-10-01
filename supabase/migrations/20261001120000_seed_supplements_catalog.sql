@@ -8,7 +8,7 @@ with supplements(category, name, image_url, unit_price, wholesale_price, min_qty
   ('suplementos','Growth 100% Whey Concentrado 900g - Chocolate','https://www.gsuplementos.com.br/upload/produto/imagem/100-whey-protein-concentrado-chocolate-4074.jpg',169.90,169.90,1,0,true,true,'GROWTH',5,27,0.90),
   ('suplementos','Growth Whey Protein Isolado 1kg - Natural','https://http2.mlstatic.com/D_Q_NP_2X_605549-MLA99468028240_112025-P.webp',399.90,399.90,1,0,true,true,'GROWTH',6,28,1.00),
   ('suplementos','Growth Medium Whey Protein 1kg - Chocolate','https://www.gsuplementos.com.br/upload/produto/imagem/medium-whey-protein-1kg-growth-supplements.jpg',129.90,129.90,1,0,true,true,'GROWTH',7,29,1.00),
-  ('suplementos','Growth BCAA 2:1:1 - 120 Cápsulas','https://down-br.img.susercontent.com/file/sg-11134201-7ra34-mbcs2mbm60cxee',47.40,47.40,1,0,true,true,'GROWTH',8,30,null),
+  ('suplementos','Growth BCAA 2:1:1 - 120 Cápsulas','https://down-br.img.susercontent.com/file/sg-11134201-7ra34-mbcs2mbm60cxee',46.90,46.90,1,0,true,true,'GROWTH',8,30,null),
   ('suplementos','Growth Ômega 3 Ultra 1100 - 75 Softgel','https://http2.mlstatic.com/D_668160-MLA103883306237_012026-C.jpg',78.90,78.90,1,0,true,true,'GROWTH',9,31,null),
   ('suplementos','Growth Blend Vegan 1kg - Chocolate','https://http2.mlstatic.com/D_Q_NP_2X_721471-MLA106460762490_022026-V.jpeg',128.15,128.15,1,0,true,true,'GROWTH',10,32,1.00)
 )

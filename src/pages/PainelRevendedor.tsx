@@ -52,6 +52,7 @@ export default function PainelRevendedor() {
   const [locatingStore, setLocatingStore] = useState(false);
   const [pix, setPix] = useState<Record<string,{pix_key_type:string;pix_key:string;holder_name:string;holder_document:string}>>({});
   const [payouts, setPayouts] = useState<Payout[]>([]);
+  const [activeTab, setActiveTab] = useState<"inicio"|"pedidos"|"estoque"|"repasses">("inicio");
 
   const load = useCallback(async () => {
     const { data: dashboard, error: dashboardError } = await supabase.rpc("partner_command" as never, { p_action: "dashboard", p_payload: {} } as never);
@@ -243,13 +244,12 @@ export default function PainelRevendedor() {
             <p className="mt-2 text-[10px] uppercase tracking-[0.22em] text-zinc-500">Área do parceiro</p>
           </div>
           <nav className="mt-6 space-y-2 text-sm">
-            {(hasApprovedStore ? [
-              [Home, "Visão geral", "#visao-geral"],
-              [Package, "Pedidos", "#pedidos"],
-              [Boxes, "Meu estoque", "#estoque"],
-              [WalletCards, "Repasses", "#repasses"],
-              [StoreIcon, "Minha loja", "#minha-loja"],
-            ] : [[StoreIcon, "Cadastro / aprovação", "#visao-geral"]]).map(([Icon,label,href],i)=><a key={String(label)} href={String(href)} className={`flex items-center gap-3 rounded-xl px-3 py-3 transition ${i===0?"bg-yellow-400/15 text-yellow-300":"text-zinc-400 hover:bg-white/5 hover:text-white"}`}><Icon className="h-4 w-4"/><span>{label}</span></a>)}
+            {hasApprovedStore ? <>
+              <button type="button" onClick={()=>setActiveTab("inicio")} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition ${activeTab==="inicio"?"bg-yellow-400/15 text-yellow-300":"text-zinc-400 hover:bg-white/5 hover:text-white"}`}><Home className="h-4 w-4"/><span>Visão geral</span></button>
+              <button type="button" onClick={()=>setActiveTab("pedidos")} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition ${activeTab==="pedidos"?"bg-yellow-400/15 text-yellow-300":"text-zinc-400 hover:bg-white/5 hover:text-white"}`}><Package className="h-4 w-4"/><span>Pedidos</span></button>
+              <button type="button" onClick={()=>setActiveTab("estoque")} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition ${activeTab==="estoque"?"bg-yellow-400/15 text-yellow-300":"text-zinc-400 hover:bg-white/5 hover:text-white"}`}><Boxes className="h-4 w-4"/><span>Meu estoque</span></button>
+              <button type="button" onClick={()=>setActiveTab("repasses")} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition ${activeTab==="repasses"?"bg-yellow-400/15 text-yellow-300":"text-zinc-400 hover:bg-white/5 hover:text-white"}`}><WalletCards className="h-4 w-4"/><span>Repasses</span></button>
+            </> : <button type="button" className="flex w-full items-center gap-3 rounded-xl bg-yellow-400/15 px-3 py-3 text-left text-yellow-300"><StoreIcon className="h-4 w-4"/><span>Cadastro / aprovação</span></button>}
           </nav>
           <div className="mt-auto rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs text-zinc-500">
             Pagamento centralizado na plataforma. Entrega liberada somente após confirmação.
@@ -330,7 +330,7 @@ export default function PainelRevendedor() {
             </section>}
 
             {hasApprovedStore && <>
-            <section id="visao-geral" className="space-y-4">
+            {activeTab==="inicio" && <section id="visao-geral" className="space-y-4">
               <div className="md:hidden">
                 <h1 className="text-2xl font-black">Pedidos</h1>
                 <p className="text-sm text-zinc-400">Operação local em tempo real.</p>
@@ -354,8 +354,9 @@ export default function PainelRevendedor() {
                   <p className="mt-2 text-3xl font-black">{totalAvailable}</p>
                 </div>
               </div>
-            </section>
+            </section>}
 
+            {activeTab==="pedidos" && <div className="space-y-6">
             {offers.length > 0 && <section id="pedidos" className="space-y-3">
               <div className="flex items-center justify-between"><h2 className="text-lg font-black">Solicitações próximas</h2><span className="text-xs text-zinc-500">{offers.length} aguardando decisão</span></div>
               <div className="grid gap-3 xl:grid-cols-2">
@@ -405,6 +406,8 @@ export default function PainelRevendedor() {
                 </div>)}
               </div>
             </section>}
+            {offers.length===0 && activeRequests.length===0 && <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-8 text-center"><Package className="mx-auto h-8 w-8 text-zinc-600"/><h2 className="mt-3 font-black">Nenhum pedido agora</h2><p className="mt-1 text-sm text-zinc-500">Novas solicitações e pedidos em andamento aparecerão aqui.</p></div>}
+            </div>}
 
             </>}
 
@@ -488,6 +491,7 @@ export default function PainelRevendedor() {
             </section>}
 
             {approvedStores.map((store)=><section id="minha-loja" key={store.id} className="space-y-4">
+              {activeTab==="inicio" && <>
               <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div><h2 className="text-lg font-black">{store.name}</h2><p className="text-xs text-zinc-500">Cadastro: {store.status}</p></div>
@@ -504,8 +508,9 @@ export default function PainelRevendedor() {
                   <div className="mt-3 flex flex-wrap gap-2"><Button variant="outline" className="border-white/15 bg-transparent" disabled={saving==="settings-"+store.id||store.status!=="approved"} onClick={()=>void saveStoreSettings(store)}>Salvar tarifas e abertura</Button><Button className="bg-yellow-400 font-bold text-black hover:bg-yellow-300" disabled={saving===store.id} onClick={()=>void saveDelivery(store)}>Salvar operação</Button></div>
                 </div>
               </div>
+              </>}
 
-              <div id="estoque" className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
+              {activeTab==="estoque" && <div id="estoque" className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
                 <div className="flex items-center justify-between gap-3">
                   <div><h2 className="text-lg font-black">Meu estoque</h2><p className="text-xs text-zinc-500">Disponível = físico menos reservado.</p></div>
                   <Boxes className="h-5 w-5 text-yellow-300"/>
@@ -530,9 +535,9 @@ export default function PainelRevendedor() {
                     </div>
                   </div>})}
                 </div>}
-              </div>
+              </div>}
 
-              <div id="repasses" className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
+              {activeTab==="repasses" && <div id="repasses" className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
                 <div className="flex items-center justify-between"><div><h2 className="text-lg font-black">Repasses</h2><p className="text-xs text-zinc-500">Cliente paga à plataforma; sua loja recebe depois da entrega.</p></div><WalletCards className="h-5 w-5 text-yellow-300"/></div>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2"><div className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs text-zinc-500">Aguardando liberação</p><p className="mt-1 text-xl font-black text-yellow-300">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p></div><div className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs text-zinc-500">Já repassado</p><p className="mt-1 text-xl font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(paidPayout)}</p></div></div>
                 <div className="mt-4 grid gap-2 md:grid-cols-2">
@@ -542,30 +547,30 @@ export default function PainelRevendedor() {
                   <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" placeholder="CPF/CNPJ do titular" value={pix[store.id]?.holder_document??""} onChange={(e)=>setPix((x)=>({...x,[store.id]:{...(x[store.id]??{pix_key_type:"cnpj",pix_key:"",holder_name:""}),holder_document:e.target.value}}))}/>
                 </div>
                 <Button variant="outline" className="mt-3 border-white/15 bg-transparent" disabled={saving==="pix-"+store.id} onClick={()=>void savePix(store.id)}>Salvar conta PIX</Button>
-              </div>
+              </div>}
             </section>)}
 
-            {hasApprovedStore&&payouts.length>0&&<section className="space-y-2">
+            {hasApprovedStore&&activeTab==="repasses"&&payouts.length>0&&<section className="space-y-2">
               <h2 className="text-lg font-black">Histórico de repasses</h2>
               {payouts.map((p)=><div key={p.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.025] p-4"><div><p className="font-bold">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(Number(p.amount))}</p><p className="text-xs text-zinc-500">{stores.find((s)=>s.id===p.store_id)?.name??"Loja parceira"}</p></div><div className="text-right text-sm"><p>{p.status==="eligible"?"Aguardando aprovação":p.status==="approved"?"Aprovado para pagamento":p.status==="paid"?"Pago":p.status==="cancelled"?"Cancelado":p.status}</p>{p.status==="paid"&&<p className="text-xs text-zinc-500">{p.paid_at?new Date(p.paid_at).toLocaleString("pt-BR"):""}{p.receipt_reference?` · ${p.receipt_reference}`:""}</p>}</div></div>)}
             </section>}
 
-            <div className="rounded-2xl border border-yellow-400/20 bg-yellow-400/5 p-4 text-sm text-yellow-200">
+            {(!hasApprovedStore || activeTab==="inicio") && <div className="rounded-2xl border border-yellow-400/20 bg-yellow-400/5 p-4 text-sm text-yellow-200">
               A entrega só é liberada depois que o pagamento do cliente é confirmado pela plataforma.
-            </div>
+            </div>}
           </div>
         </div>
       </div>
 
       <nav className={`fixed inset-x-0 bottom-0 z-30 grid ${hasApprovedStore?"grid-cols-5":"grid-cols-2"} border-t border-white/10 bg-[#0d0f12]/95 px-2 py-2 backdrop-blur md:hidden`}>
         {hasApprovedStore ? <>
-          <a href="#visao-geral" className="flex flex-col items-center gap-1 py-1 text-[10px] text-zinc-400 hover:text-yellow-300"><Home className="h-5 w-5"/><span>Início</span></a>
-          <a href="#pedidos" className="flex flex-col items-center gap-1 py-1 text-[10px] text-zinc-400 hover:text-yellow-300"><Package className="h-5 w-5"/><span>Pedidos</span></a>
+          <button type="button" onClick={()=>setActiveTab("inicio")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="inicio"?"text-yellow-300":"text-zinc-400"}`}><Home className="h-5 w-5"/><span>Início</span></button>
+          <button type="button" onClick={()=>setActiveTab("pedidos")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="pedidos"?"text-yellow-300":"text-zinc-400"}`}><Package className="h-5 w-5"/><span>Pedidos</span></button>
           <button type="button" onClick={()=>navigate("/")} className="mx-1 flex flex-col items-center gap-1 rounded-xl bg-yellow-400 px-2 py-1 text-[10px] font-black text-black hover:bg-yellow-300" aria-label="Voltar para a Home"><Home className="h-5 w-5"/><span>Home</span></button>
-          <a href="#estoque" className="flex flex-col items-center gap-1 py-1 text-[10px] text-zinc-400 hover:text-yellow-300"><Boxes className="h-5 w-5"/><span>Estoque</span></a>
-          <a href="#repasses" className="flex flex-col items-center gap-1 py-1 text-[10px] text-zinc-400 hover:text-yellow-300"><WalletCards className="h-5 w-5"/><span>Repasses</span></a>
+          <button type="button" onClick={()=>setActiveTab("estoque")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="estoque"?"text-yellow-300":"text-zinc-400"}`}><Boxes className="h-5 w-5"/><span>Estoque</span></button>
+          <button type="button" onClick={()=>setActiveTab("repasses")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="repasses"?"text-yellow-300":"text-zinc-400"}`}><WalletCards className="h-5 w-5"/><span>Repasses</span></button>
         </> : <>
-          <a href="#visao-geral" className="flex flex-col items-center gap-1 py-1 text-[10px] text-zinc-400 hover:text-yellow-300"><StoreIcon className="h-5 w-5"/><span>Cadastro</span></a>
+          <span className="flex flex-col items-center gap-1 py-1 text-[10px] text-yellow-300"><StoreIcon className="h-5 w-5"/><span>Cadastro</span></span>
           <button type="button" onClick={()=>navigate("/")} className="mx-1 flex flex-col items-center gap-1 rounded-xl bg-yellow-400 px-2 py-1 text-[10px] font-black text-black hover:bg-yellow-300" aria-label="Voltar para a Home"><Home className="h-5 w-5"/><span>Home</span></button>
         </>}
       </nav>

@@ -98,13 +98,16 @@ Deno.serve(async (req) => {
     return json({ error: "Pedido encerrado. Faça um novo pedido pelo carrinho." }, 409);
   }
   const redirect = new URL(parsed.data.redirect_url);
-  const allowedRedirectOrigins = (Deno.env.get("CHECKOUT_REDIRECT_ORIGINS") ??
-    "https://wholesale-warriors-hub.vercel.app")
+  const configuredRedirectOrigins = (Deno.env.get("CHECKOUT_REDIRECT_ORIGINS") ?? "")
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean);
+  const allowedRedirectOrigins = new Set([
+    "https://wholesale-warriors-hub.vercel.app",
+    ...configuredRedirectOrigins,
+  ]);
 
-  if (!allowedRedirectOrigins.includes(redirect.origin) || redirect.pathname !== `/recibo/${order.order_code}`) {
+  if (!allowedRedirectOrigins.has(redirect.origin) || redirect.pathname !== `/recibo/${order.order_code}`) {
     return json({ error: "Endereço de retorno inválido." }, 400);
   }
 

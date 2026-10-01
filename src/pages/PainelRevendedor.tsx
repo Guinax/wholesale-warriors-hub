@@ -487,7 +487,7 @@ export default function PainelRevendedor() {
 
                 <label className="mt-4 flex items-start gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-zinc-300">
                   <input type="checkbox" className="mt-0.5 h-4 w-4 accent-yellow-400" checked={newStore.terms} onChange={(e)=>setNewStore({...newStore,terms:e.target.checked})}/>
-                  <span><strong className="text-zinc-100">Aceito as condições da operação parceira.</strong><br/><span className="text-xs text-zinc-500">Pedidos, estoque, entregas e repasses são liberados após a aprovação da loja.</span></span>
+                  <span><strong className="text-zinc-100">Aceito as condições da operação parceira.</strong><br/><span className="text-xs text-zinc-500">Pedidos, estoque, entregas e repasses são liberados somente para lojas aprovadas.</span></span>
                 </label>
 
                 <Button className="mt-4 h-12 w-full rounded-xl bg-yellow-400 text-sm font-black text-black shadow-[0_10px_30px_rgba(250,204,21,0.12)] hover:bg-yellow-300 sm:w-auto sm:px-6" disabled={registering} onClick={()=>void registerStore()}>{registering?"Enviando...":"Enviar loja para aprovação"}</Button>

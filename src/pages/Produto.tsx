@@ -115,11 +115,11 @@ const Produto = () => {
               <Button variant="outline" size="icon" aria-label="Diminuir quantidade" disabled={qty <= 1} onClick={() => setQty((q) => Math.max(1, q - 1))}>−</Button>
               <div className="min-w-16 text-center font-black text-lg">{qty}</div>
               <Button variant="outline" size="icon" aria-label="Aumentar quantidade" disabled={qty >= product.stock} onClick={() => setQty((q) => Math.min(product.stock, q + 1))}>+</Button>
-              <span className="text-xs text-muted-foreground">Estoque: {product.stock}</span>
+              <span className="text-xs text-muted-foreground">{product.stock > 0 ? `Estoque: ${product.stock}` : "Estoque em atualização"}</span>
             </div>
 
             <Button size="lg" className="w-full font-heading font-black" onClick={addToCart} disabled={product.stock < 1}>
-              <ShoppingCart className="w-4 h-4" /> ADICIONAR AO CARRINHO
+              <ShoppingCart className="w-4 h-4" /> {product.stock < 1 ? "ESTOQUE EM ATUALIZAÇÃO" : "ADICIONAR AO CARRINHO"}
             </Button>
           </Card>
 

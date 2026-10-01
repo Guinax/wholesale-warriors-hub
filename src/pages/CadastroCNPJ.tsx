@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { ArrowLeft, Building2, User, MapPin, Phone, FileText, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Building2, User, MapPin, Phone, FileText } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,14 +69,7 @@ const CadastroCNPJ = () => {
   const [params] = useSearchParams();
   const rawNext = params.get("next") ?? "";
   const nextPath = rawNext.startsWith("/") && !rawNext.startsWith("//") && !rawNext.includes("\\") ? rawNext : "/minha-conta";
-  const [submitted, setSubmitted] = useState(false);
-  const [confirmed, setConfirmed] = useState(false);
-  const [submittedEmail, setSubmittedEmail] = useState("");
-  const [resending, setResending] = useState(false);
-  const [resendAfter, setResendAfter] = useState(0);
   const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<CadastroForm>();
-
-  const emailRedirectTo = `${window.location.origin}${nextPath}`;
 
   const onSubmit = async (form: CadastroForm) => {
     try {
@@ -93,7 +86,6 @@ const CadastroCNPJ = () => {
         email,
         password,
         options: {
-          emailRedirectTo,
           data: {
             full_name: registration.responsavel.trim(),
             phone: registration.whatsapp || registration.telefone,
@@ -116,12 +108,11 @@ const CadastroCNPJ = () => {
         toast.error("Não foi possível criar outra conta com este e-mail. Tente entrar ou recuperar sua senha.");
         return;
       }
-      setSubmittedEmail(email);
-      setConfirmed(Boolean(data.session));
-      setResendAfter(Date.now() + 60_000);
       setValue("password", "");
       setValue("confirmPassword", "");
-      setSubmitted(true);
+      if (data.session) await supabase.auth.signOut();
+      toast.success("Cadastro concluído! Entre com seu e-mail e senha.");
+      navigate(`/auth?next=${encodeURIComponent(nextPath)}`, { replace: true });
     } catch (error) {
       const code = (error as { code?: string })?.code;
       toast.error(code === "over_email_send_rate_limit" || code === "over_request_rate_limit"
@@ -134,31 +125,7 @@ const CadastroCNPJ = () => {
     }
   };
 
-  const resendConfirmation = async () => {
-    if (resending) return;
-    if (Date.now() < resendAfter) {
-      toast.info("Aguarde um minuto entre os envios.");
-      return;
-    }
-    setResending(true);
-    try {
-      const { error } = await supabase.auth.resend({
-        type: "signup",
-        email: submittedEmail,
-        options: { emailRedirectTo },
-      });
-      if (error) throw error;
-      setResendAfter(Date.now() + 60_000);
-      toast.success("Solicitação enviada. Confira sua caixa de entrada e o spam.");
-    } catch {
-      toast.error("Não foi possível reenviar o e-mail agora. Aguarde alguns minutos e tente novamente.");
-    } finally {
-      setResending(false);
-    }
-  };
-
-  if (submitted) {
-    return (
+  return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="text-center space-y-6 max-w-md">
           <div className="mx-auto w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center">

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +33,7 @@ type InventoryItem = { store_id:string; product_id:string; on_hand:number; reser
 type CatalogProduct = { id:string; name:string };
 
 export default function PainelRevendedor() {
+  const navigate = useNavigate();
   const [stores, setStores] = useState<Store[]>([]);
   const [saving, setSaving] = useState<string | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -315,6 +317,15 @@ export default function PainelRevendedor() {
                   <div className="mt-4 rounded-2xl border border-yellow-400/15 bg-yellow-400/[0.06] p-3 text-xs leading-5 text-yellow-100">
                     Seu cadastro já está ativo no sistema como solicitação. Não é necessário enviar novamente; a operação será liberada após a aprovação.
                   </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="mt-4 h-11 w-full rounded-xl border-white/15 bg-white/[0.04] font-black text-zinc-100 hover:border-yellow-400/40 hover:bg-yellow-400/10 hover:text-yellow-200 sm:w-auto"
+                    onClick={() => navigate("/")}
+                  >
+                    <Home className="mr-2 h-4 w-4" />
+                    Ir para Home do aplicativo
+                  </Button>
                 </>}
               </div>
             </section>}

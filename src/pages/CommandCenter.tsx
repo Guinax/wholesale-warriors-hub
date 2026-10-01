@@ -52,7 +52,7 @@ type Campaign = {
   created_at: string;
 };
 
-const SITE_ORIGIN = "https://wholesale-warriors-hub.lovable.app";
+const SITE_ORIGIN = "https://wholesale-warriors-hub.vercel.app";
 const PLATFORMS = ["Instagram", "Facebook", "TikTok", "WhatsApp"];
 
 const CommandCenter = () => {

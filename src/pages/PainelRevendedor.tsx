@@ -328,20 +328,83 @@ export default function PainelRevendedor() {
 
             </>}
 
-            {stores.length===0&&<section id="minha-loja" className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
-              <h2 className="text-lg font-black">Ativar operação como revendedor</h2>
-              <p className="mt-1 text-sm text-zinc-400">Cadastre sua loja para entrar na rede local.</p>
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
-                <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" placeholder="Nome da loja" value={newStore.name} onChange={(e)=>setNewStore({...newStore,name:e.target.value})}/>
-                <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" placeholder="CNPJ" inputMode="numeric" value={newStore.document} onChange={(e)=>setNewStore({...newStore,document:e.target.value})}/>
-                <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" placeholder="Telefone / WhatsApp" value={newStore.phone} onChange={(e)=>setNewStore({...newStore,phone:e.target.value})}/>
-                <div className="flex gap-2"><input className="h-10 min-w-0 flex-1 rounded-lg border border-white/10 bg-black/20 px-3" placeholder="CEP da loja" inputMode="numeric" value={newStore.cep} onChange={(e)=>setNewStore({...newStore,cep:maskCepValue(e.target.value),lat:"",lng:""})}/><Button variant="outline" className="border-white/15 bg-transparent" disabled={locatingStore} onClick={()=>void locateStore()}>{locatingStore?"Localizando...":"Buscar CEP"}</Button></div>
-                <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" placeholder="Endereço da loja" value={newStore.address} onChange={(e)=>setNewStore({...newStore,address:e.target.value})}/>
-                <input className="h-10 rounded-lg border border-white/10 bg-white/5 px-3" readOnly value={[newStore.city,newStore.state].filter(Boolean).join(" / ")} placeholder="Cidade / UF"/>
-                <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" inputMode="decimal" placeholder="Raio de atendimento (km)" value={newStore.radius_km} onChange={(e)=>setNewStore({...newStore,radius_km:e.target.value})}/>
-                <label className="flex items-center gap-2 text-sm text-zinc-300"><input type="checkbox" checked={newStore.terms} onChange={(e)=>setNewStore({...newStore,terms:e.target.checked})}/>Aceito as condições da operação parceira.</label>
+            {stores.length===0&&<section id="minha-loja" className="overflow-hidden rounded-3xl border border-yellow-400/20 bg-gradient-to-br from-[#17130a] via-[#0f1013] to-[#090a0c] shadow-[0_20px_70px_rgba(0,0,0,0.35)]">
+              <div className="relative overflow-hidden border-b border-yellow-400/15 px-4 py-6 sm:px-6 sm:py-7">
+                <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-yellow-400/10 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-20 left-10 h-36 w-36 rounded-full bg-amber-500/10 blur-3xl" />
+                <div className="relative">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-yellow-400/25 bg-yellow-400/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] text-yellow-300">
+                    <StoreIcon className="h-3.5 w-3.5"/>
+                    Seja um parceiro Mansão Maromba
+                  </div>
+                  <h2 className="mt-4 max-w-2xl text-2xl font-black leading-tight sm:text-3xl">Transforme sua loja em um ponto ativo da rede.</h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-300 sm:text-base">Receba oportunidades de pedidos próximos, opere seu estoque pelo app e acompanhe entregas e repasses em um só lugar.</p>
+                  <div className="mt-5 grid grid-cols-3 gap-2">
+                    <div className="rounded-2xl border border-white/10 bg-black/25 p-3 text-center">
+                      <Package className="mx-auto h-5 w-5 text-yellow-300"/>
+                      <p className="mt-2 text-[11px] font-bold text-zinc-200">Pedidos locais</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-black/25 p-3 text-center">
+                      <Truck className="mx-auto h-5 w-5 text-yellow-300"/>
+                      <p className="mt-2 text-[11px] font-bold text-zinc-200">Entrega rápida</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-black/25 p-3 text-center">
+                      <WalletCards className="mx-auto h-5 w-5 text-yellow-300"/>
+                      <p className="mt-2 text-[11px] font-bold text-zinc-200">Repasse centralizado</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <Button className="mt-4 bg-yellow-400 font-black text-black hover:bg-yellow-300" disabled={registering} onClick={()=>void registerStore()}>{registering?"Enviando...":"Enviar loja para aprovação"}</Button>
+
+              <div className="p-4 sm:p-6">
+                <div className="mb-4">
+                  <p className="text-xs font-black uppercase tracking-[0.14em] text-yellow-300">Cadastro da loja</p>
+                  <p className="mt-1 text-sm text-zinc-400">Preencha os dados abaixo. Depois da análise, as funções operacionais são liberadas no painel.</p>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-semibold text-zinc-300">Nome da loja</span>
+                    <input className="h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 text-sm outline-none transition placeholder:text-zinc-600 focus:border-yellow-400/60 focus:ring-2 focus:ring-yellow-400/10" placeholder="Ex.: Adega Central" value={newStore.name} onChange={(e)=>setNewStore({...newStore,name:e.target.value})}/>
+                  </label>
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-semibold text-zinc-300">CNPJ</span>
+                    <input className="h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 text-sm outline-none transition placeholder:text-zinc-600 focus:border-yellow-400/60 focus:ring-2 focus:ring-yellow-400/10" placeholder="00.000.000/0000-00" inputMode="numeric" value={newStore.document} onChange={(e)=>setNewStore({...newStore,document:e.target.value})}/>
+                  </label>
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-semibold text-zinc-300">Telefone / WhatsApp</span>
+                    <input className="h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 text-sm outline-none transition placeholder:text-zinc-600 focus:border-yellow-400/60 focus:ring-2 focus:ring-yellow-400/10" placeholder="(19) 99999-9999" value={newStore.phone} onChange={(e)=>setNewStore({...newStore,phone:e.target.value})}/>
+                  </label>
+                  <div className="space-y-1.5">
+                    <span className="text-xs font-semibold text-zinc-300">CEP da loja</span>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <input className="h-12 min-w-0 flex-1 rounded-xl border border-white/10 bg-black/30 px-4 text-sm outline-none transition placeholder:text-zinc-600 focus:border-yellow-400/60 focus:ring-2 focus:ring-yellow-400/10" placeholder="00000-000" inputMode="numeric" value={newStore.cep} onChange={(e)=>setNewStore({...newStore,cep:maskCepValue(e.target.value),lat:"",lng:""})}/>
+                      <Button variant="outline" className="h-12 shrink-0 border-yellow-400/25 bg-yellow-400/5 px-4 text-yellow-200 hover:bg-yellow-400/10 hover:text-yellow-100" disabled={locatingStore} onClick={()=>void locateStore()}>{locatingStore?"Localizando...":"Buscar CEP"}</Button>
+                    </div>
+                  </div>
+                  <label className="space-y-1.5 md:col-span-2">
+                    <span className="text-xs font-semibold text-zinc-300">Endereço da loja</span>
+                    <input className="h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 text-sm outline-none transition placeholder:text-zinc-600 focus:border-yellow-400/60 focus:ring-2 focus:ring-yellow-400/10" placeholder="Rua, número e complemento" value={newStore.address} onChange={(e)=>setNewStore({...newStore,address:e.target.value})}/>
+                  </label>
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-semibold text-zinc-300">Cidade / UF</span>
+                    <input className="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-zinc-300" readOnly value={[newStore.city,newStore.state].filter(Boolean).join(" / ")} placeholder="Preenchido pelo CEP"/>
+                  </label>
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-semibold text-zinc-300">Raio de atendimento</span>
+                    <div className="relative">
+                      <input className="h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 pr-12 text-sm outline-none transition placeholder:text-zinc-600 focus:border-yellow-400/60 focus:ring-2 focus:ring-yellow-400/10" inputMode="decimal" placeholder="15" value={newStore.radius_km} onChange={(e)=>setNewStore({...newStore,radius_km:e.target.value})}/>
+                      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-zinc-500">km</span>
+                    </div>
+                  </label>
+                </div>
+
+                <label className="mt-4 flex items-start gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-zinc-300">
+                  <input type="checkbox" className="mt-0.5 h-4 w-4 accent-yellow-400" checked={newStore.terms} onChange={(e)=>setNewStore({...newStore,terms:e.target.checked})}/>
+                  <span><strong className="text-zinc-100">Aceito as condições da operação parceira.</strong><br/><span className="text-xs text-zinc-500">Pedidos, estoque, entregas e repasses são liberados após a aprovação da loja.</span></span>
+                </label>
+
+                <Button className="mt-4 h-12 w-full rounded-xl bg-yellow-400 text-sm font-black text-black shadow-[0_10px_30px_rgba(250,204,21,0.12)] hover:bg-yellow-300 sm:w-auto sm:px-6" disabled={registering} onClick={()=>void registerStore()}>{registering?"Enviando...":"Enviar loja para aprovação"}</Button>
+              </div>
             </section>}
 
             {approvedStores.map((store)=><section id="minha-loja" key={store.id} className="space-y-4">

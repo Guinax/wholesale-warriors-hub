@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { ArrowLeft, Building2, User, MapPin, Phone, FileText } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -9,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
-import { isValidCnpj, isValidCpf } from "@/lib/brDocuments";
+import { isValidCnpj } from "@/lib/brDocuments";
 
 interface CadastroForm {
   password: string;

@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface Order {
   order_code: string;
-  tracking_code: string;
+  tracking_code: string | null;
   payment_method: string;
   payment_status: string;
   delivery_status: string;

@@ -288,7 +288,7 @@ const Admin = () => {
             <TabsTrigger value="expedition">Expedição</TabsTrigger>
             <TabsTrigger value="inventory">Estoque unificado</TabsTrigger>
             <TabsTrigger value="payouts">Repasses</TabsTrigger>
-            <TabsTrigger value="partners">Revendedores</TabsTrigger>
+            <TabsTrigger value="partners">Parceiros</TabsTrigger>
             <TabsTrigger value="shipping">Logística</TabsTrigger>
             <TabsTrigger value="products">Produtos</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>

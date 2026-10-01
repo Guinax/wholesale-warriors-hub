@@ -125,34 +125,6 @@ const CadastroCNPJ = () => {
   };
 
   return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="text-center space-y-6 max-w-md">
-          <div className="mx-auto w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center">
-            <CheckCircle2 className="w-10 h-10 text-primary" />
-          </div>
-          <h2 className="font-heading font-black text-2xl text-foreground">
-            {confirmed ? "CADASTRO CONCLUÍDO!" : "CONFIRME SEU E-MAIL"}
-          </h2>
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            {confirmed
-              ? "Seu cadastro foi salvo. Você já pode acessar sua conta."
-              : <>Seu cadastro foi recebido. Enviamos um link para <strong>{submittedEmail}</strong>. Abra o e-mail para confirmar sua conta e acessar a plataforma. Confira também a pasta de spam.</>}
-          </p>
-          {!confirmed && <Button variant="outline" className="w-full" disabled={resending} onClick={resendConfirmation}>
-            {resending ? "REENVIANDO..." : "REENVIAR CONFIRMAÇÃO"}
-          </Button>}
-          <Button onClick={() => confirmed
-            ? navigate(nextPath, { replace: true })
-            : navigate(`/auth?next=${encodeURIComponent(nextPath)}`, { replace: true })
-          } className="w-full font-heading font-bold tracking-wider">
-            {nextPath === "/minha-conta" ? "ACESSAR MINHA CONTA" : "CONTINUAR"}
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/90 backdrop-blur-xl border-b border-border">

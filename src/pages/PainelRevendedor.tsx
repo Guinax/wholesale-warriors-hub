@@ -319,8 +319,7 @@ export default function PainelRevendedor() {
                   </div>
                   <Button
                     type="button"
-                    variant="outline"
-                    className="mt-4 h-11 w-full rounded-xl border-white/15 bg-white/[0.04] font-black text-zinc-100 hover:border-yellow-400/40 hover:bg-yellow-400/10 hover:text-yellow-200 sm:w-auto"
+                    className="mt-4 h-11 w-full rounded-xl border border-yellow-300 bg-yellow-400 font-black text-black shadow-[0_10px_28px_rgba(250,204,21,0.18)] hover:bg-yellow-300 hover:text-black sm:w-auto"
                     onClick={() => navigate("/")}
                   >
                     <Home className="mr-2 h-4 w-4" />

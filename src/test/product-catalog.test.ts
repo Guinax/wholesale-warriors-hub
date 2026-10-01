@@ -21,7 +21,7 @@ describe("Product catalog contracts", () => {
     expect(hook).toContain("stock: p.stock");
     expect(categoryPage).toContain("stock?: number");
     expect(card).toContain('stock !== undefined && stock < qty');
-    expect(card).toContain('"INDISPONÍVEL"');
+    expect(card).toContain('"ESTOQUE EM ATUALIZAÇÃO"');
   });
 
   it("supports safe bulk shipping dimensions by package volume", () => {

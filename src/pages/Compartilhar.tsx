@@ -15,7 +15,7 @@ const Compartilhar = () => {
   useEffect(() => {
     document.title = "Compartilhar Cadastro | Família Maromba";
     const origin =
-      typeof window !== "undefined" ? window.location.origin : "https://wholesale-warriors-hub.lovable.app";
+      typeof window !== "undefined" ? window.location.origin : "https://wholesale-warriors-hub.vercel.app";
     setShareUrl(`${origin}/cadastro-login`);
   }, []);
 

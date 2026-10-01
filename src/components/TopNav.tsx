@@ -1,4 +1,4 @@
-import { ShoppingCart, LogOut, User as UserIcon } from "lucide-react";
+import { ShoppingCart, LogOut, Store as StoreIcon, User as UserIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import logo from "@/assets/logo.png";
 import { useCart } from "@/contexts/CartContext";
@@ -40,6 +40,7 @@ const TopNav = () => {
           <button onClick={() => navigate("/comissoes")} className="hover:text-primary transition-colors">COMISSÕES</button>
           <button onClick={() => navigate("/avaliacoes")} className="hover:text-primary transition-colors">AVALIAÇÕES</button>
           <button onClick={() => navigate("/compartilhar")} className="hover:text-primary transition-colors">COMPARTILHAR</button>
+          <button onClick={() => navigate("/revendedor")} className="hover:text-primary transition-colors">ÁREA DO PARCEIRO</button>
         </div>
 
         <div className="flex items-center gap-1">
@@ -63,6 +64,7 @@ const TopNav = () => {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate("/minha-conta")}>Meus dados</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/meus-pedidos")}>Meus pedidos</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/revendedor")}><StoreIcon className="w-4 h-4 mr-2" /> Área do parceiro</DropdownMenuItem>
                 {isAdmin && (
                   <DropdownMenuItem onClick={() => navigate("/admin")}>
                     Painel Admin

@@ -6,10 +6,6 @@ export function generateOrderCode(): string {
   return `FM-${ts}-${rand}`;
 }
 
-export function pendingTrackingCode(orderCode: string): string {
-  return `AGUARDANDO-ENVIO:${orderCode}`;
-}
-
 export function trackingLabel(code?: string | null): string {
   if (!code?.trim() || code.startsWith("AGUARDANDO-ENVIO:") || code.startsWith("FM-P-")) {
     return "Aguardando envio";

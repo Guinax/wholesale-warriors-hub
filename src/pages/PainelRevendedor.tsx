@@ -53,6 +53,10 @@ export default function PainelRevendedor() {
   const [pix, setPix] = useState<Record<string,{pix_key_type:string;pix_key:string;holder_name:string;holder_document:string}>>({});
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [activeTab, setActiveTab] = useState<"inicio"|"pedidos"|"estoque"|"repasses">("inicio");
+  const switchTab = (tab: "inicio"|"pedidos"|"estoque"|"repasses") => {
+    setActiveTab(tab);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  };
 
   const load = useCallback(async () => {
     const { data: dashboard, error: dashboardError } = await supabase.rpc("partner_command" as never, { p_action: "dashboard", p_payload: {} } as never);
@@ -245,10 +249,10 @@ export default function PainelRevendedor() {
           </div>
           <nav className="mt-6 space-y-2 text-sm">
             {hasApprovedStore ? <>
-              <button type="button" onClick={()=>setActiveTab("inicio")} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition ${activeTab==="inicio"?"bg-yellow-400/15 text-yellow-300":"text-zinc-400 hover:bg-white/5 hover:text-white"}`}><Home className="h-4 w-4"/><span>Visão geral</span></button>
-              <button type="button" onClick={()=>setActiveTab("pedidos")} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition ${activeTab==="pedidos"?"bg-yellow-400/15 text-yellow-300":"text-zinc-400 hover:bg-white/5 hover:text-white"}`}><Package className="h-4 w-4"/><span>Pedidos</span></button>
-              <button type="button" onClick={()=>setActiveTab("estoque")} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition ${activeTab==="estoque"?"bg-yellow-400/15 text-yellow-300":"text-zinc-400 hover:bg-white/5 hover:text-white"}`}><Boxes className="h-4 w-4"/><span>Meu estoque</span></button>
-              <button type="button" onClick={()=>setActiveTab("repasses")} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition ${activeTab==="repasses"?"bg-yellow-400/15 text-yellow-300":"text-zinc-400 hover:bg-white/5 hover:text-white"}`}><WalletCards className="h-4 w-4"/><span>Repasses</span></button>
+              <button type="button" onClick={()=>switchTab("inicio")} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition ${activeTab==="inicio"?"bg-yellow-400/15 text-yellow-300":"text-zinc-400 hover:bg-white/5 hover:text-white"}`}><Home className="h-4 w-4"/><span>Visão geral</span></button>
+              <button type="button" onClick={()=>switchTab("pedidos")} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition ${activeTab==="pedidos"?"bg-yellow-400/15 text-yellow-300":"text-zinc-400 hover:bg-white/5 hover:text-white"}`}><Package className="h-4 w-4"/><span>Pedidos</span></button>
+              <button type="button" onClick={()=>switchTab("estoque")} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition ${activeTab==="estoque"?"bg-yellow-400/15 text-yellow-300":"text-zinc-400 hover:bg-white/5 hover:text-white"}`}><Boxes className="h-4 w-4"/><span>Meu estoque</span></button>
+              <button type="button" onClick={()=>switchTab("repasses")} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition ${activeTab==="repasses"?"bg-yellow-400/15 text-yellow-300":"text-zinc-400 hover:bg-white/5 hover:text-white"}`}><WalletCards className="h-4 w-4"/><span>Repasses</span></button>
             </> : <button type="button" className="flex w-full items-center gap-3 rounded-xl bg-yellow-400/15 px-3 py-3 text-left text-yellow-300"><StoreIcon className="h-4 w-4"/><span>Cadastro / aprovação</span></button>}
           </nav>
           <div className="mt-auto rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs text-zinc-500">
@@ -332,7 +336,7 @@ export default function PainelRevendedor() {
             {hasApprovedStore && <>
             {activeTab==="inicio" && <section id="visao-geral" className="space-y-4">
               <div className="md:hidden">
-                <h1 className="text-2xl font-black">Pedidos</h1>
+                <h1 className="text-2xl font-black">Visão geral</h1>
                 <p className="text-sm text-zinc-400">Operação local em tempo real.</p>
               </div>
 
@@ -564,11 +568,11 @@ export default function PainelRevendedor() {
 
       <nav className={`fixed inset-x-0 bottom-0 z-30 grid ${hasApprovedStore?"grid-cols-5":"grid-cols-2"} border-t border-white/10 bg-[#0d0f12]/95 px-2 py-2 backdrop-blur md:hidden`}>
         {hasApprovedStore ? <>
-          <button type="button" onClick={()=>setActiveTab("inicio")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="inicio"?"text-yellow-300":"text-zinc-400"}`}><Home className="h-5 w-5"/><span>Início</span></button>
-          <button type="button" onClick={()=>setActiveTab("pedidos")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="pedidos"?"text-yellow-300":"text-zinc-400"}`}><Package className="h-5 w-5"/><span>Pedidos</span></button>
+          <button type="button" onClick={()=>switchTab("inicio")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="inicio"?"text-yellow-300":"text-zinc-400"}`}><Home className="h-5 w-5"/><span>Início</span></button>
+          <button type="button" onClick={()=>switchTab("pedidos")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="pedidos"?"text-yellow-300":"text-zinc-400"}`}><Package className="h-5 w-5"/><span>Pedidos</span></button>
           <button type="button" onClick={()=>navigate("/")} className="mx-1 flex flex-col items-center gap-1 rounded-xl bg-yellow-400 px-2 py-1 text-[10px] font-black text-black hover:bg-yellow-300" aria-label="Voltar para a Home"><Home className="h-5 w-5"/><span>Home</span></button>
-          <button type="button" onClick={()=>setActiveTab("estoque")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="estoque"?"text-yellow-300":"text-zinc-400"}`}><Boxes className="h-5 w-5"/><span>Estoque</span></button>
-          <button type="button" onClick={()=>setActiveTab("repasses")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="repasses"?"text-yellow-300":"text-zinc-400"}`}><WalletCards className="h-5 w-5"/><span>Repasses</span></button>
+          <button type="button" onClick={()=>switchTab("estoque")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="estoque"?"text-yellow-300":"text-zinc-400"}`}><Boxes className="h-5 w-5"/><span>Estoque</span></button>
+          <button type="button" onClick={()=>switchTab("repasses")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="repasses"?"text-yellow-300":"text-zinc-400"}`}><WalletCards className="h-5 w-5"/><span>Repasses</span></button>
         </> : <>
           <span className="flex flex-col items-center gap-1 py-1 text-[10px] text-yellow-300"><StoreIcon className="h-5 w-5"/><span>Cadastro</span></span>
           <button type="button" onClick={()=>navigate("/")} className="mx-1 flex flex-col items-center gap-1 rounded-xl bg-yellow-400 px-2 py-1 text-[10px] font-black text-black hover:bg-yellow-300" aria-label="Voltar para a Home"><Home className="h-5 w-5"/><span>Home</span></button>

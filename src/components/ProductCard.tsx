@@ -80,6 +80,11 @@ const ProductCard = ({ productId, badge, badgeColor = "bg-primary", name, unitPr
             {badge}
           </span>
         )}
+        {stock !== undefined && stock < 1 && (
+          <span className="absolute top-3 right-3 bg-background/90 text-foreground border border-border text-[10px] font-heading font-bold tracking-wider px-2.5 py-1 rounded-md shadow-md">
+            ESTOQUE EM ATUALIZAÇÃO
+          </span>
+        )}
       </div>
 
       <div className="p-4 space-y-3">
@@ -120,7 +125,7 @@ const ProductCard = ({ productId, badge, badgeColor = "bg-primary", name, unitPr
           className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-heading font-bold text-xs tracking-wider py-3 rounded-lg hover:opacity-90 transition-opacity hover:shadow-[0_0_20px_hsl(45_100%_50%/0.3)]"
         >
           <ShoppingCart className="w-4 h-4" />
-          {stock !== undefined && stock < 1 ? "INDISPONÍVEL" : "ADICIONAR AO CARRINHO"}
+          {stock !== undefined && stock < 1 ? "ESTOQUE EM ATUALIZAÇÃO" : "ADICIONAR AO CARRINHO"}
         </button>
       </div>
     </div>

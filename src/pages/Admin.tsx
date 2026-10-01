@@ -49,7 +49,7 @@ type OrderItem = {
 type Order = {
   id: string;
   order_code: string;
-  tracking_code: string;
+  tracking_code: string | null;
   customer_name: string;
   customer_email: string;
   customer_phone: string;

@@ -28,7 +28,7 @@ describe("Customer auth return flow", () => {
     expect(signup).toContain("over_email_send_rate_limit");
   });
 
-  it("preserves the intended route through reseller signup", () => {
+  it("preserves the intended route through reseller signup without email confirmation", () => {
     const auth = read("src/pages/Auth.tsx");
     const reseller = read("src/pages/CadastroCNPJ.tsx");
 
@@ -36,8 +36,10 @@ describe("Customer auth return flow", () => {
     expect(reseller).toContain("useSearchParams");
     expect(reseller).toContain('rawNext.startsWith("/")');
     expect(reseller).toContain('!rawNext.startsWith("//")');
-    expect(reseller).toContain('const emailRedirectTo = `${window.location.origin}${nextPath}`');
-    expect(reseller).toContain('/auth?next=');
+    expect(reseller).toContain('reseller_registration');
+    expect(reseller).toContain('navigate(`/auth?next=${encodeURIComponent(nextPath)}`, { replace: true })');
+    expect(reseller).not.toContain("CONFIRME SEU E-MAIL");
+    expect(reseller).not.toContain("supabase.auth.resend");
   });
 
   it("replaces auth history entries so the account back button cannot loop through login", () => {

@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import {
   Truck, PackageCheck, Boxes, RefreshCw, AlertTriangle, Minus, Plus, MapPin,
 } from "lucide-react";
-import { formatCurrency, trackingLabel, pendingTrackingCode, DELIVERY_STAGES } from "@/lib/orderUtils";
+import { formatCurrency, trackingLabel, DELIVERY_STAGES } from "@/lib/orderUtils";
 import { logAudit } from "@/lib/audit";
 
 type OrderItem = {
@@ -29,7 +29,7 @@ type OrderItem = {
 type ExpOrder = {
   id: string;
   order_code: string;
-  tracking_code: string;
+  tracking_code: string | null;
   customer_name: string;
   address_city: string;
   address_state: string;
@@ -344,9 +344,9 @@ const ExpeditionManager = () => {
                         key={o.tracking_code}
                         maxLength={100}
                         placeholder="Informe o código fornecido pela transportadora"
-                        defaultValue={trackingLabel(o.tracking_code) === "Aguardando envio" ? "" : o.tracking_code}
+                        defaultValue={trackingLabel(o.tracking_code) === "Aguardando envio" ? "" : (o.tracking_code ?? "")}
                         onBlur={(e) => {
-                          const value = e.target.value.trim() || pendingTrackingCode(o.order_code);
+                          const value = e.target.value.trim() || null;
                           if (value !== o.tracking_code) void patchOrder(o.id, { tracking_code: value }, "Rastreio atualizado");
                         }}
                       />

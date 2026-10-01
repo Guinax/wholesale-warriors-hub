@@ -410,7 +410,7 @@ export type Database = {
           payment_provider: string | null
           payment_status: string
           total_amount: number
-          tracking_code: string
+          tracking_code: string | null
           user_id: string | null
           vehicle_plate: string | null
         }
@@ -455,7 +455,7 @@ export type Database = {
           payment_provider?: string | null
           payment_status?: string
           total_amount: number
-          tracking_code: string
+          tracking_code?: string | null
           user_id?: string | null
           vehicle_plate?: string | null
         }
@@ -500,7 +500,7 @@ export type Database = {
           payment_provider?: string | null
           payment_status?: string
           total_amount?: number
-          tracking_code?: string
+          tracking_code?: string | null
           user_id?: string | null
           vehicle_plate?: string | null
         }
@@ -1293,7 +1293,7 @@ export type Database = {
           payment_provider: string | null
           payment_status: string
           total_amount: number
-          tracking_code: string
+          tracking_code: string | null
           user_id: string | null
           vehicle_plate: string | null
         }[]

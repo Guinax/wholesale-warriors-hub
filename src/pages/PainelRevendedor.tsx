@@ -186,10 +186,13 @@ export default function PainelRevendedor() {
     await load();
   };
 
+  const approvedStores = stores.filter((s) => s.status === "approved");
+  const pendingStores = stores.filter((s) => s.status !== "approved");
+  const hasApprovedStore = approvedStores.length > 0;
   const activeRequests = requests.filter((r) => ["accepted","quoted","paid","delivering"].includes(r.status));
   const waitingPayout = payouts.filter((p) => ["eligible","approved"].includes(p.status)).reduce((sum,p)=>sum+Number(p.amount||0),0);
   const paidPayout = payouts.filter((p) => p.status === "paid").reduce((sum,p)=>sum+Number(p.amount||0),0);
-  const openStore = stores.find((s) => s.is_open) ?? stores[0] ?? null;
+  const openStore = approvedStores.find((s) => s.is_open) ?? approvedStores[0] ?? null;
   const totalAvailable = inventory.reduce((sum, item) => sum + Math.max(0, Number(item.on_hand) - Number(item.reserved)), 0);
 
   return (
@@ -202,13 +205,13 @@ export default function PainelRevendedor() {
             <p className="mt-2 text-[10px] uppercase tracking-[0.22em] text-zinc-500">Área do parceiro</p>
           </div>
           <nav className="mt-6 space-y-2 text-sm">
-            {[
+            {(hasApprovedStore ? [
               [Home, "Visão geral", "#visao-geral"],
               [Package, "Pedidos", "#pedidos"],
               [Boxes, "Meu estoque", "#estoque"],
               [WalletCards, "Repasses", "#repasses"],
               [StoreIcon, "Minha loja", "#minha-loja"],
-            ].map(([Icon,label,href],i)=><a key={String(label)} href={String(href)} className={`flex items-center gap-3 rounded-xl px-3 py-3 transition ${i===0?"bg-yellow-400/15 text-yellow-300":"text-zinc-400 hover:bg-white/5 hover:text-white"}`}><Icon className="h-4 w-4"/><span>{label}</span></a>)}
+            ] : [[StoreIcon, "Cadastro / aprovação", "#visao-geral"]]).map(([Icon,label,href],i)=><a key={String(label)} href={String(href)} className={`flex items-center gap-3 rounded-xl px-3 py-3 transition ${i===0?"bg-yellow-400/15 text-yellow-300":"text-zinc-400 hover:bg-white/5 hover:text-white"}`}><Icon className="h-4 w-4"/><span>{label}</span></a>)}
           </nav>
           <div className="mt-auto rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs text-zinc-500">
             Pagamento centralizado na plataforma. Entrega liberada somente após confirmação.
@@ -224,7 +227,7 @@ export default function PainelRevendedor() {
               </div>
               <div className="hidden md:block">
                 <h1 className="text-2xl font-black">Olá, parceiro</h1>
-                <p className="text-sm text-zinc-400">Gerencie pedidos, estoque, entregas e repasses.</p>
+                <p className="text-sm text-zinc-400">{hasApprovedStore ? "Gerencie pedidos, estoque, entregas e repasses." : "Cadastre sua loja ou acompanhe a aprovação."}</p>
               </div>
               <div className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold ${openStore?.is_open?"border-emerald-500/30 bg-emerald-500/10 text-emerald-300":"border-zinc-700 bg-zinc-900 text-zinc-400"}`}>
                 <span className={`h-2 w-2 rounded-full ${openStore?.is_open?"bg-emerald-400":"bg-zinc-500"}`} />
@@ -234,6 +237,19 @@ export default function PainelRevendedor() {
           </header>
 
           <div className="space-y-6 p-4 md:p-7">
+            {!hasApprovedStore && <section id="visao-geral" className="rounded-2xl border border-yellow-400/20 bg-yellow-400/5 p-5">
+              <div className="flex items-start gap-3">
+                <StoreIcon className="mt-0.5 h-5 w-5 shrink-0 text-yellow-300"/>
+                <div>
+                  <h1 className="text-xl font-black">Área do parceiro / revendedor</h1>
+                  <p className="mt-1 text-sm text-zinc-300">{stores.length===0 ? "Cadastre sua loja abaixo para entrar na rede de parceiros." : "Seu cadastro de loja está aguardando liberação para operar."}</p>
+                </div>
+              </div>
+              {pendingStores.length>0&&<div className="mt-4 space-y-2">{pendingStores.map((store)=><div key={store.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-black/20 p-3"><div><p className="font-semibold">{store.name}</p><p className="text-xs text-zinc-500">CNPJ cadastrado · situação da loja</p></div><span className="rounded-lg border border-yellow-400/30 bg-yellow-400/10 px-2 py-1 text-xs font-semibold text-yellow-200">{store.status==="pending"?"Em análise":store.status==="rejected"?"Revisão necessária":"Aguardando liberação"}</span></div>)}</div>}
+              <p className="mt-4 text-xs text-zinc-400">Pedidos, estoque, entregas e repasses são liberados somente para lojas aprovadas.</p>
+            </section>}
+
+            {hasApprovedStore && <>
             <section id="visao-geral" className="space-y-4">
               <div className="md:hidden">
                 <h1 className="text-2xl font-black">Pedidos</h1>
@@ -310,6 +326,8 @@ export default function PainelRevendedor() {
               </div>
             </section>}
 
+            </>}
+
             {stores.length===0&&<section id="minha-loja" className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
               <h2 className="text-lg font-black">Ativar operação como revendedor</h2>
               <p className="mt-1 text-sm text-zinc-400">Cadastre sua loja para entrar na rede local.</p>
@@ -326,7 +344,7 @@ export default function PainelRevendedor() {
               <Button className="mt-4 bg-yellow-400 font-black text-black hover:bg-yellow-300" disabled={registering} onClick={()=>void registerStore()}>{registering?"Enviando...":"Enviar loja para aprovação"}</Button>
             </section>}
 
-            {stores.map((store)=><section id="minha-loja" key={store.id} className="space-y-4">
+            {approvedStores.map((store)=><section id="minha-loja" key={store.id} className="space-y-4">
               <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div><h2 className="text-lg font-black">{store.name}</h2><p className="text-xs text-zinc-500">Cadastro: {store.status}</p></div>
@@ -362,7 +380,7 @@ export default function PainelRevendedor() {
               </div>
             </section>)}
 
-            {payouts.length>0&&<section className="space-y-2">
+            {hasApprovedStore&&payouts.length>0&&<section className="space-y-2">
               <h2 className="text-lg font-black">Histórico de repasses</h2>
               {payouts.map((p)=><div key={p.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.025] p-4"><div><p className="font-bold">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(Number(p.amount))}</p><p className="text-xs text-zinc-500">{stores.find((s)=>s.id===p.store_id)?.name??"Loja parceira"}</p></div><div className="text-right text-sm"><p>{p.status==="eligible"?"Aguardando aprovação":p.status==="approved"?"Aprovado para pagamento":p.status==="paid"?"Pago":p.status==="cancelled"?"Cancelado":p.status}</p>{p.status==="paid"&&<p className="text-xs text-zinc-500">{p.paid_at?new Date(p.paid_at).toLocaleString("pt-BR"):""}{p.receipt_reference?` · ${p.receipt_reference}`:""}</p>}</div></div>)}
             </section>}
@@ -374,8 +392,8 @@ export default function PainelRevendedor() {
         </div>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-white/10 bg-[#0d0f12]/95 px-2 py-2 backdrop-blur md:hidden">
-        {[[Home,"Início","#visao-geral"],[Package,"Pedidos","#pedidos"],[Boxes,"Estoque","#estoque"],[WalletCards,"Repasses","#repasses"]].map(([Icon,label,href])=><a key={String(label)} href={String(href)} className="flex flex-col items-center gap-1 py-1 text-[10px] text-zinc-400 hover:text-yellow-300"><Icon className="h-5 w-5"/><span>{label}</span></a>)}
+      <nav className={`fixed inset-x-0 bottom-0 z-30 grid ${hasApprovedStore?"grid-cols-4":"grid-cols-1"} border-t border-white/10 bg-[#0d0f12]/95 px-2 py-2 backdrop-blur md:hidden`}>
+        {(hasApprovedStore ? [[Home,"Início","#visao-geral"],[Package,"Pedidos","#pedidos"],[Boxes,"Estoque","#estoque"],[WalletCards,"Repasses","#repasses"]] : [[StoreIcon,"Cadastro / aprovação","#visao-geral"]]).map(([Icon,label,href])=><a key={String(label)} href={String(href)} className="flex flex-col items-center gap-1 py-1 text-[10px] text-zinc-400 hover:text-yellow-300"><Icon className="h-5 w-5"/><span>{label}</span></a>)}
       </nav>
     </main>
   );

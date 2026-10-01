@@ -6,9 +6,10 @@ interface PageHeaderProps {
   eyebrow?: string;
   title: string;
   subtitle?: string;
+  backTo?: string;
 }
 
-const PageHeader = ({ eyebrow, title, subtitle }: PageHeaderProps) => {
+const PageHeader = ({ eyebrow, title, subtitle, backTo }: PageHeaderProps) => {
   const navigate = useNavigate();
   const { totalItems, openCart } = useCart();
 
@@ -16,7 +17,7 @@ const PageHeader = ({ eyebrow, title, subtitle }: PageHeaderProps) => {
     <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border">
       <div className="container flex items-center justify-between h-14">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => backTo ? navigate(backTo) : navigate(-1)}
           className="flex items-center gap-2 text-foreground hover:text-primary transition-colors"
           aria-label="Voltar"
         >

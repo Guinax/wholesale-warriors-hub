@@ -37,9 +37,9 @@ const Auth = () => {
   useEffect(() => {
     document.title = "Cadastro e Login | Família Maromba";
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) window.location.href = nextPath;
+      if (session) navigate(nextPath, { replace: true });
     });
-  }, [nextPath]);
+  }, [navigate, nextPath]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +50,7 @@ const Auth = () => {
         if (error) throw error;
         await logAudit("login", { details: { email } });
         toast.success("Login realizado!");
-        window.location.href = nextPath;
+        navigate(nextPath, { replace: true });
       }
     } catch (err: unknown) {
       const authError = getAuthError(err);

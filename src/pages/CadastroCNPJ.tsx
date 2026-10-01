@@ -176,8 +176,8 @@ const CadastroCNPJ = () => {
             {resending ? "REENVIANDO..." : "REENVIAR CONFIRMAÇÃO"}
           </Button>}
           <Button onClick={() => confirmed
-            ? (window.location.href = nextPath)
-            : navigate(`/auth?next=${encodeURIComponent(nextPath)}`)
+            ? navigate(nextPath, { replace: true })
+            : navigate(`/auth?next=${encodeURIComponent(nextPath)}`, { replace: true })
           } className="w-full font-heading font-bold tracking-wider">
             {nextPath === "/minha-conta" ? "ACESSAR MINHA CONTA" : "CONTINUAR"}
           </Button>

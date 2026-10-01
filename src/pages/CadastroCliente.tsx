@@ -58,7 +58,7 @@ export default function CadastroCliente() {
       }
       setSecret("");
       setConfirmSecret("");
-      if (data.session) window.location.href = nextPath;
+      if (data.session) navigate(nextPath, { replace: true });
       else {
         setSentTo(normalizedEmail);
         setResendAfter(Date.now() + 60_000);
@@ -107,7 +107,7 @@ export default function CadastroCliente() {
           <Button variant="outline" className="w-full" disabled={resending} onClick={() => void resendConfirmation()}>
             {resending ? "REENVIANDO..." : "REENVIAR CONFIRMAÇÃO"}
           </Button>
-          <Button className="w-full" onClick={() => navigate(`/auth?next=${encodeURIComponent(nextPath)}`)}>IR PARA O LOGIN</Button>
+          <Button className="w-full" onClick={() => navigate(`/auth?next=${encodeURIComponent(nextPath)}`, { replace: true })}>IR PARA O LOGIN</Button>
         </Card>
       </div>
     );

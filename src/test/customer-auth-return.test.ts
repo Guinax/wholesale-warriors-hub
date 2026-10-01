@@ -40,6 +40,21 @@ describe("Customer auth return flow", () => {
     expect(reseller).toContain('/auth?next=');
   });
 
+  it("replaces auth history entries so the account back button cannot loop through login", () => {
+    const auth = read("src/pages/Auth.tsx");
+    const signup = read("src/pages/CadastroCliente.tsx");
+    const reseller = read("src/pages/CadastroCNPJ.tsx");
+    const account = read("src/pages/MinhaConta.tsx");
+    const header = read("src/components/PageHeader.tsx");
+
+    expect(auth).toContain("navigate(nextPath, { replace: true })");
+    expect(auth).not.toContain("window.location.href = nextPath");
+    expect(signup).toContain("navigate(nextPath, { replace: true })");
+    expect(reseller).toContain("navigate(nextPath, { replace: true })");
+    expect(account).toContain('backTo="/"');
+    expect(header).toContain("backTo ? navigate(backTo) : navigate(-1)");
+  });
+
   it("does not accept protocol-relative redirect targets", () => {
     const auth = read("src/pages/Auth.tsx");
     const signup = read("src/pages/CadastroCliente.tsx");

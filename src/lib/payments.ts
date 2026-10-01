@@ -9,7 +9,7 @@ export interface PaymentCheckResult {
   error?: string;
 }
 
-const CANONICAL_SITE_ORIGIN = "https://wholesale-warriors-hub.lovable.app";
+const CANONICAL_SITE_ORIGIN = "https://wholesale-warriors-hub.vercel.app";
 
 /**
  * Gera o link de checkout da InfinitePay para um pedido.

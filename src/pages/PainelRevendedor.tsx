@@ -237,10 +237,9 @@ export default function PainelRevendedor() {
   const paidPayout = payouts.filter((p) => p.status === "paid").reduce((sum,p)=>sum+Number(p.amount||0),0);
   const openStore = approvedStores.find((s) => s.is_open) ?? approvedStores[0] ?? null;
   const totalAvailable = inventory.reduce((sum, item) => sum + Math.max(0, Number(item.on_hand) - Number(item.reserved)), 0);
-  const featuredProduct = catalogProducts.find((product) => Boolean(product.image_url));
 
   return (
-    <main className="min-h-screen bg-[#07090b] text-zinc-100 pb-24 md:pb-8">
+    <main className="min-h-screen bg-[#0a0b0d] text-zinc-100 pb-24 md:pb-8">
       <div className="mx-auto min-h-screen max-w-[1500px] md:grid md:grid-cols-[220px_1fr]">
         <aside className="hidden md:flex min-h-screen flex-col border-r border-white/10 bg-[#0d0f12] p-4">
           <div className="px-2 py-4">
@@ -265,7 +264,7 @@ export default function PainelRevendedor() {
           <header className="sticky top-0 z-20 border-b border-white/10 bg-[#0a0b0d]/95 px-4 py-3 backdrop-blur md:px-7">
             <div className="flex items-center justify-between gap-3">
               <div className="md:hidden">
-                <p className="font-heading text-sm font-black tracking-wide text-[#f3c84b]">MANSÃO MAROMBA</p>
+                <p className="font-heading text-sm font-black">MANSÃO MAROMBA</p>
                 <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">Parceiro</p>
               </div>
               <div className="hidden md:block">
@@ -279,7 +278,7 @@ export default function PainelRevendedor() {
             </div>
           </header>
 
-          <div className="space-y-5 p-3 sm:p-4 md:p-7">
+          <div className="space-y-6 p-4 md:p-7">
             {!hasApprovedStore && <section id="visao-geral" className="relative overflow-hidden rounded-3xl border border-yellow-400/20 bg-gradient-to-br from-[#1c170a] via-[#101114] to-[#090a0c] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.38)] sm:p-6">
               <div className="pointer-events-none absolute -right-14 -top-20 h-52 w-52 rounded-full bg-yellow-400/10 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-24 left-10 h-44 w-44 rounded-full bg-amber-500/10 blur-3xl" />
@@ -336,116 +335,27 @@ export default function PainelRevendedor() {
 
             {hasApprovedStore && <>
             {activeTab==="inicio" && <section id="visao-geral" className="space-y-4">
-              <div className="relative overflow-hidden rounded-3xl border border-yellow-400/20 bg-gradient-to-br from-[#2a090b] via-[#15100c] to-[#090a0c] p-5 shadow-[0_28px_90px_rgba(0,0,0,0.5)] sm:p-6 lg:p-7">
-                <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-red-600/20 blur-3xl" />
-                <div className="pointer-events-none absolute -bottom-28 left-1/3 h-60 w-60 rounded-full bg-yellow-400/10 blur-3xl" />
-                <div className="pointer-events-none absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-yellow-400/[0.04] to-transparent" />
-                <div className="relative grid gap-6 lg:grid-cols-[1.3fr_.7fr] lg:items-end">
-                  <div>
-                    <div className="inline-flex items-center gap-2 rounded-full border border-yellow-400/25 bg-black/25 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-yellow-300">
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Painel do parceiro
-                    </div>
-                    <p className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">Operação local Mansão Maromba</p>
-                    <h1 className="mt-1 max-w-2xl text-3xl font-black leading-tight sm:text-4xl">{openStore?.name ?? "Loja parceira"}</h1>
-                    <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-300 sm:text-base">Pedidos próximos, estoque, entregas e repasses reunidos em uma operação rápida e visual. Use os atalhos abaixo para entrar direto em cada área.</p>
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-black ${openStore?.is_open?"border-emerald-400/30 bg-emerald-400/10 text-emerald-200":"border-zinc-600/50 bg-black/25 text-zinc-300"}`}>
-                        <span className={`h-2 w-2 rounded-full ${openStore?.is_open?"bg-emerald-400":"bg-zinc-500"}`} />
-                        {openStore?.is_open ? "Recebendo pedidos" : "Operação pausada"}
-                      </span>
-                      <span className="inline-flex items-center gap-2 rounded-full border border-yellow-400/20 bg-yellow-400/[0.07] px-3 py-1.5 text-xs font-semibold text-yellow-100">
-                        <ShieldCheck className="h-3.5 w-3.5" />
-                        Loja aprovada
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="rounded-3xl border border-white/10 bg-black/30 p-4 backdrop-blur-sm">
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Resumo financeiro</p>
-                    <p className="mt-2 text-xs text-zinc-400">Aguardando repasse</p>
-                    <p className="mt-1 text-3xl font-black text-yellow-300">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p>
-                    <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-xs">
-                      <span className="text-zinc-500">Já repassado</span>
-                      <span className="font-black text-zinc-200">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(paidPayout)}</span>
-                    </div>
-                  </div>
-                </div>
+              <div className="md:hidden">
+                <h1 className="text-2xl font-black">Visão geral</h1>
+                <p className="text-sm text-zinc-400">Operação local em tempo real.</p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <button type="button" onClick={()=>switchTab("pedidos")} className="group rounded-2xl border border-yellow-400/15 bg-gradient-to-br from-yellow-400/[0.09] to-white/[0.02] p-4 text-left transition hover:-translate-y-0.5 hover:border-yellow-400/35 hover:bg-yellow-400/[0.11]">
-                  <div className="flex items-center justify-between"><span className="text-xs font-semibold text-zinc-300">Novas solicitações</span><Clock3 className="h-4 w-4 text-yellow-300"/></div>
-                  <p className="mt-3 text-3xl font-black">{offers.length}</p>
-                  <p className="mt-1 text-[11px] text-zinc-500">Toque para ver pedidos próximos</p>
-                </button>
-                <button type="button" onClick={()=>switchTab("pedidos")} className="group rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-left transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.055]">
-                  <div className="flex items-center justify-between"><span className="text-xs font-semibold text-zinc-300">Em andamento</span><Truck className="h-4 w-4 text-yellow-300"/></div>
-                  <p className="mt-3 text-3xl font-black">{activeRequests.length}</p>
-                  <p className="mt-1 text-[11px] text-zinc-500">Aceitos, pagos ou em entrega</p>
-                </button>
-                <button type="button" onClick={()=>switchTab("estoque")} className="group rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-left transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.055]">
-                  <div className="flex items-center justify-between"><span className="text-xs font-semibold text-zinc-300">Estoque disponível</span><Boxes className="h-4 w-4 text-yellow-300"/></div>
-                  <p className="mt-3 text-3xl font-black">{totalAvailable}</p>
-                  <p className="mt-1 text-[11px] text-zinc-500">Unidades livres para venda</p>
-                </button>
-                <button type="button" onClick={()=>switchTab("repasses")} className="group rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-left transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.055]">
-                  <div className="flex items-center justify-between"><span className="text-xs font-semibold text-zinc-300">Aguardando repasse</span><CircleDollarSign className="h-4 w-4 text-yellow-300"/></div>
-                  <p className="mt-3 text-2xl font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p>
-                  <p className="mt-1 text-[11px] text-zinc-500">Toque para dados e histórico PIX</p>
-                </button>
-              </div>
-
-              <div className="grid gap-4 xl:grid-cols-[1.15fr_.85fr]">
-                <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-yellow-300">Acesso rápido</p>
-                      <h2 className="mt-1 text-lg font-black">Central de operação</h2>
-                    </div>
-                    <Settings2 className="h-5 w-5 text-zinc-500"/>
-                  </div>
-                  <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                    <button type="button" onClick={()=>switchTab("pedidos")} className="rounded-2xl border border-white/10 bg-black/20 p-4 text-left transition hover:border-yellow-400/30 hover:bg-yellow-400/[0.06]">
-                      <Package className="h-5 w-5 text-yellow-300"/>
-                      <p className="mt-3 text-sm font-black">Pedidos</p>
-                      <p className="mt-1 text-[11px] leading-4 text-zinc-500">Aceite e acompanhe entregas.</p>
-                    </button>
-                    <button type="button" onClick={()=>switchTab("estoque")} className="rounded-2xl border border-white/10 bg-black/20 p-4 text-left transition hover:border-yellow-400/30 hover:bg-yellow-400/[0.06]">
-                      <Boxes className="h-5 w-5 text-yellow-300"/>
-                      <p className="mt-3 text-sm font-black">Estoque</p>
-                      <p className="mt-1 text-[11px] leading-4 text-zinc-500">Atualize disponibilidade por produto.</p>
-                    </button>
-                    <button type="button" onClick={()=>switchTab("repasses")} className="rounded-2xl border border-white/10 bg-black/20 p-4 text-left transition hover:border-yellow-400/30 hover:bg-yellow-400/[0.06]">
-                      <WalletCards className="h-5 w-5 text-yellow-300"/>
-                      <p className="mt-3 text-sm font-black">Repasses</p>
-                      <p className="mt-1 text-[11px] leading-4 text-zinc-500">Conta PIX e histórico financeiro.</p>
-                    </button>
-                  </div>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+                  <div className="flex items-center justify-between"><span className="text-xs text-zinc-400">Novas solicitações</span><Clock3 className="h-4 w-4 text-yellow-300"/></div>
+                  <p className="mt-2 text-3xl font-black">{offers.length}</p>
                 </div>
-
-                <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-yellow-300">Agora</p>
-                      <h2 className="mt-1 text-lg font-black">Pulso da operação</h2>
-                    </div>
-                    <div className={`h-2.5 w-2.5 rounded-full ${openStore?.is_open?"bg-emerald-400 shadow-[0_0_18px_rgba(52,211,153,0.9)]":"bg-zinc-600"}`} />
-                  </div>
-                  <div className="mt-4 space-y-3">
-                    <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                      <span className="text-xs text-zinc-400">Fila de oportunidades</span>
-                      <span className="text-sm font-black text-zinc-100">{offers.length}</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                      <span className="text-xs text-zinc-400">Pedidos ativos</span>
-                      <span className="text-sm font-black text-zinc-100">{activeRequests.length}</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                      <span className="text-xs text-zinc-400">Produtos disponíveis</span>
-                      <span className="text-sm font-black text-zinc-100">{totalAvailable}</span>
-                    </div>
-                  </div>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+                  <div className="flex items-center justify-between"><span className="text-xs text-zinc-400">Em andamento</span><Truck className="h-4 w-4 text-yellow-300"/></div>
+                  <p className="mt-2 text-3xl font-black">{activeRequests.length}</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+                  <div className="flex items-center justify-between"><span className="text-xs text-zinc-400">Aguardando repasse</span><CircleDollarSign className="h-4 w-4 text-yellow-300"/></div>
+                  <p className="mt-2 text-2xl font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+                  <div className="flex items-center justify-between"><span className="text-xs text-zinc-400">Estoque disponível</span><Boxes className="h-4 w-4 text-yellow-300"/></div>
+                  <p className="mt-2 text-3xl font-black">{totalAvailable}</p>
                 </div>
               </div>
             </section>}
@@ -586,45 +496,7 @@ export default function PainelRevendedor() {
 
             {approvedStores.map((store)=><section id="minha-loja" key={store.id} className="space-y-4">
               {activeTab==="inicio" && <>
-              <section className="relative overflow-hidden rounded-[24px] border border-[#d5a92f]/35 bg-[radial-gradient(circle_at_78%_28%,rgba(170,20,10,.45),transparent_34%),linear-gradient(135deg,#260805_0%,#120b08_45%,#080a0c_100%)] shadow-[0_22px_70px_rgba(0,0,0,.5)]">
-                <div className="relative min-h-[260px] p-5 sm:min-h-[300px] sm:p-7">
-                  <div className="relative z-10 max-w-[58%] sm:max-w-[52%]">
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f2c94c]">Mansão Maromba</p>
-                    <h2 className="mt-3 text-3xl font-black uppercase leading-[.92] sm:text-5xl">Seja um<br/><span className="text-[#f2c94c]">parceiro</span></h2>
-                    <p className="mt-3 max-w-sm text-sm font-semibold uppercase leading-5 text-zinc-200">Venda mais. Entregue mais rápido. Faça parte da Família Maromba.</p>
-                    <Button className="mt-5 rounded-xl bg-[#f2c94c] px-5 font-black text-black hover:bg-[#ffd95a]" onClick={()=>switchTab("estoque")}>Ver produtos</Button>
-                  </div>
-                  <div className="absolute inset-y-0 right-0 w-[48%]">
-                    <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-[#160a07]"/>
-                    {featuredProduct?.image_url
-                      ? <img src={featuredProduct.image_url} alt={featuredProduct.name} className="h-full w-full object-cover object-center opacity-95" />
-                      : <div className="flex h-full items-center justify-center"><Package className="h-24 w-24 text-[#f2c94c]/25"/></div>}
-                  </div>
-                </div>
-              </section>
-
-              <section>
-                <div className="mb-3 flex items-end justify-between">
-                  <div><p className="text-xs text-zinc-500">Resumo de hoje</p><h2 className="text-xl font-black">{store.name}</h2></div>
-                  <span className="rounded-lg border border-[#d5a92f]/30 bg-[#d5a92f]/10 px-3 py-1 text-xs font-bold text-[#f2c94c]">{store.is_open?"Operação ativa":"Operação pausada"}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                  <button type="button" onClick={()=>switchTab("pedidos")} className="rounded-2xl border border-[#d5a92f]/25 bg-gradient-to-br from-[#21180c] to-[#111315] p-4 text-left shadow-lg">
-                    <Package className="h-6 w-6 text-[#f2c94c]"/><p className="mt-3 text-xs text-zinc-400">Pedidos</p><p className="text-2xl font-black">{activeRequests.length}</p>
-                  </button>
-                  <button type="button" onClick={()=>switchTab("estoque")} className="rounded-2xl border border-[#d5a92f]/25 bg-gradient-to-br from-[#21180c] to-[#111315] p-4 text-left shadow-lg">
-                    <Boxes className="h-6 w-6 text-[#f2c94c]"/><p className="mt-3 text-xs text-zinc-400">Itens disponíveis</p><p className="text-2xl font-black">{totalAvailable}</p>
-                  </button>
-                  <button type="button" onClick={()=>switchTab("repasses")} className="rounded-2xl border border-[#d5a92f]/25 bg-gradient-to-br from-[#21180c] to-[#111315] p-4 text-left shadow-lg">
-                    <CircleDollarSign className="h-6 w-6 text-[#f2c94c]"/><p className="mt-3 text-xs text-zinc-400">A liberar</p><p className="text-lg font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p>
-                  </button>
-                  <div className="rounded-2xl border border-[#d5a92f]/25 bg-gradient-to-br from-[#21180c] to-[#111315] p-4 shadow-lg">
-                    <WalletCards className="h-6 w-6 text-[#f2c94c]"/><p className="mt-3 text-xs text-zinc-400">Já repassado</p><p className="text-lg font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(paidPayout)}</p>
-                  </div>
-                </div>
-              </section>
-
-              <div className="rounded-2xl border border-[#d5a92f]/20 bg-[#0d1012] p-5">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div><h2 className="text-lg font-black">{store.name}</h2><p className="text-xs text-zinc-500">Cadastro: {store.status}</p></div>
                   <Settings2 className="h-5 w-5 text-yellow-300"/>
@@ -642,25 +514,25 @@ export default function PainelRevendedor() {
               </div>
               </>}
 
-              {activeTab==="estoque" && <div id="estoque" className="rounded-2xl border border-[#d5a92f]/20 bg-[#0b0e10] p-4 sm:p-5">
+              {activeTab==="estoque" && <div id="estoque" className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
                 <div className="flex items-center justify-between gap-3">
                   <div><h2 className="text-lg font-black">Meu estoque</h2><p className="text-xs text-zinc-500">Disponível = físico menos reservado.</p></div>
                   <Boxes className="h-5 w-5 text-yellow-300"/>
                 </div>
-                {catalogProducts.length===0?<p className="mt-3 text-sm text-zinc-500">Nenhum produto ativo no catálogo.</p>:<div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
-                  {catalogProducts.map((p)=>{const i=inventory.find((x)=>x.store_id===store.id&&x.product_id===p.id)??{store_id:store.id,product_id:p.id,on_hand:0,reserved:0,name:p.name};const key=i.store_id+":"+i.product_id;return <div key={key} className="overflow-hidden rounded-2xl border border-[#d5a92f]/25 bg-[#101315] shadow-[0_12px_30px_rgba(0,0,0,.28)]">
-                    <div className="block">
-                      <div className="relative aspect-[4/3] w-full overflow-hidden border-b border-[#d5a92f]/20 bg-white/[0.04]">
+                {catalogProducts.length===0?<p className="mt-3 text-sm text-zinc-500">Nenhum produto ativo no catálogo.</p>:<div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {catalogProducts.map((p)=>{const i=inventory.find((x)=>x.store_id===store.id&&x.product_id===p.id)??{store_id:store.id,product_id:p.id,on_hand:0,reserved:0,name:p.name};const key=i.store_id+":"+i.product_id;return <div key={key} className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                    <div className="flex items-start gap-3">
+                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]">
                         <Package className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-zinc-600"/>
                         {p.image_url&&<img src={p.image_url} alt={p.name} loading="lazy" className="relative h-full w-full object-cover" onError={(e)=>{e.currentTarget.style.display="none";}}/>}
                       </div>
-                      <div className="min-w-0 flex-1 p-3">
-                        <p className="line-clamp-2 text-sm font-black">{i.name}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="line-clamp-2 text-sm font-bold">{i.name}</p>
                         <p className="mt-1 text-xs text-zinc-500">Físico {i.on_hand} · reservado {i.reserved}</p>
                         <p className="mt-1 text-xs font-semibold text-yellow-300">Disponível {i.on_hand-i.reserved}</p>
                       </div>
                     </div>
-                    <div className="grid gap-2 px-3 pb-3">
+                    <div className="mt-3 grid gap-2">
                       <input className="h-9 rounded-lg border border-white/10 bg-black/30 px-2" type="number" min="0" step="1" placeholder={String(i.on_hand)} value={stockDraft[key]??""} onChange={(e)=>setStockDraft((x)=>({...x,[key]:e.target.value}))}/>
                       <input className="h-9 rounded-lg border border-white/10 bg-black/30 px-2" placeholder="Motivo do ajuste" value={stockReason[key]??""} onChange={(e)=>setStockReason((x)=>({...x,[key]:e.target.value}))}/>
                       <Button size="sm" variant="outline" className="border-yellow-400/25 bg-yellow-400/5 text-yellow-200 hover:bg-yellow-400/10" disabled={saving==="stock-"+key} onClick={()=>void saveStock(i.store_id,i.product_id,i.on_hand)}>Atualizar estoque</Button>
@@ -669,9 +541,9 @@ export default function PainelRevendedor() {
                 </div>}
               </div>}
 
-              {activeTab==="repasses" && <div id="repasses" className="rounded-2xl border border-[#d5a92f]/20 bg-[#0b0e10] p-4 sm:p-5">
+              {activeTab==="repasses" && <div id="repasses" className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
                 <div className="flex items-center justify-between"><div><h2 className="text-lg font-black">Repasses</h2><p className="text-xs text-zinc-500">Cliente paga à plataforma; sua loja recebe depois da entrega.</p></div><WalletCards className="h-5 w-5 text-yellow-300"/></div>
-                <div className="mt-4 rounded-2xl border border-[#e0b437]/45 bg-gradient-to-br from-[#5a3706] via-[#2c1c08] to-[#111315] p-5 shadow-lg"><p className="text-sm font-bold text-zinc-200">Saldo disponível</p><p className="mt-1 text-3xl font-black text-[#ffd85a]">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p></div><div className="mt-3 grid gap-2 sm:grid-cols-2"><div className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs text-zinc-500">Aguardando liberação</p><p className="mt-1 text-xl font-black text-yellow-300">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p></div><div className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs text-zinc-500">Já repassado</p><p className="mt-1 text-xl font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(paidPayout)}</p></div></div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2"><div className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs text-zinc-500">Aguardando liberação</p><p className="mt-1 text-xl font-black text-yellow-300">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p></div><div className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs text-zinc-500">Já repassado</p><p className="mt-1 text-xl font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(paidPayout)}</p></div></div>
                 <div className="mt-4 grid gap-2 md:grid-cols-2">
                   <Select value={pix[store.id]?.pix_key_type??"cnpj"} onValueChange={(v)=>setPix((x)=>({...x,[store.id]:{...(x[store.id]??{pix_key:"",holder_name:"",holder_document:""}),pix_key_type:v}}))}><SelectTrigger className="border-white/10 bg-black/20"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="cpf">CPF</SelectItem><SelectItem value="cnpj">CNPJ</SelectItem><SelectItem value="email">E-mail</SelectItem><SelectItem value="phone">Telefone</SelectItem><SelectItem value="random">Aleatória</SelectItem></SelectContent></Select>
                   <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" placeholder="Chave PIX" value={pix[store.id]?.pix_key??""} onChange={(e)=>setPix((x)=>({...x,[store.id]:{...(x[store.id]??{pix_key_type:"cnpj",holder_name:"",holder_document:""}),pix_key:e.target.value}}))}/>
@@ -698,7 +570,7 @@ export default function PainelRevendedor() {
         {hasApprovedStore ? <>
           <button type="button" onClick={()=>switchTab("inicio")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="inicio"?"text-yellow-300":"text-zinc-400"}`}><Home className="h-5 w-5"/><span>Início</span></button>
           <button type="button" onClick={()=>switchTab("pedidos")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="pedidos"?"text-yellow-300":"text-zinc-400"}`}><Package className="h-5 w-5"/><span>Pedidos</span></button>
-          <button type="button" onClick={()=>navigate("/")} className="mx-1 flex flex-col items-center gap-1 rounded-xl px-2 py-1 text-[10px] font-semibold text-zinc-400 hover:text-[#f2c94c]" aria-label="Voltar para a Home"><Home className="h-5 w-5"/><span>Home</span></button>
+          <button type="button" onClick={()=>navigate("/")} className="mx-1 flex flex-col items-center gap-1 rounded-xl bg-yellow-400 px-2 py-1 text-[10px] font-black text-black hover:bg-yellow-300" aria-label="Voltar para a Home"><Home className="h-5 w-5"/><span>Home</span></button>
           <button type="button" onClick={()=>switchTab("estoque")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="estoque"?"text-yellow-300":"text-zinc-400"}`}><Boxes className="h-5 w-5"/><span>Estoque</span></button>
           <button type="button" onClick={()=>switchTab("repasses")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="repasses"?"text-yellow-300":"text-zinc-400"}`}><WalletCards className="h-5 w-5"/><span>Repasses</span></button>
         </> : <>

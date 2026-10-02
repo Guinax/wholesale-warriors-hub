@@ -338,100 +338,37 @@ export default function PainelRevendedor() {
             </section>}
 
             {hasApprovedStore && <>
-            {activeTab==="inicio" && <section id="visao-geral" className="space-y-4">
-              <div className="md:hidden">
-                <h1 className="text-2xl font-black">Início</h1>
-                <p className="text-sm text-zinc-400">Operação local em tempo real.</p>
+            {activeTab==="inicio" && <section className="space-y-4">
+              <div className="relative overflow-hidden rounded-2xl border border-[#8a5d18] bg-gradient-to-br from-[#2b0805] via-[#5b1009] to-[#120b08] p-5 shadow-[0_18px_45px_rgba(0,0,0,.45)]">
+                <div className="absolute -right-6 -top-8 text-[120px] font-black text-yellow-400/[0.07]">M</div>
+                <div className="relative max-w-[72%]"><p className="text-3xl font-black uppercase leading-[.9] text-[#ffe1a1]">Seja um<br/>parceiro</p><p className="mt-3 text-sm font-bold uppercase leading-5 text-white">e faça parte<br/>da família Maromba</p><Button className="mt-5 rounded-full bg-gradient-to-r from-[#f4b522] to-[#ffd85a] px-6 font-black text-black hover:opacity-90" onClick={()=>navigate("/")}>Ver produtos</Button></div>
+                <StoreIcon className="absolute bottom-5 right-7 h-24 w-24 text-yellow-400/30"/>
               </div>
-
-              <div className="relative overflow-hidden rounded-3xl border border-yellow-400/25 bg-gradient-to-br from-[#241807] via-[#111214] to-[#090a0c] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.4)] sm:p-6">
-                <div className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full bg-amber-500/15 blur-3xl" />
-                <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-                  <div className="max-w-xl">
-                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-yellow-300">Mansão Maromba • Parceiro</p>
-                    <h2 className="mt-2 text-3xl font-black leading-none sm:text-4xl">Venda mais na sua região.</h2>
-                    <p className="mt-3 text-sm leading-6 text-zinc-300">Receba pedidos próximos, controle seu estoque e acompanhe entregas e repasses em um único painel.</p>
-                  </div>
-                  <Button type="button" className="h-11 shrink-0 rounded-xl bg-yellow-400 px-5 font-black text-black hover:bg-yellow-300" onClick={()=>navigate("/")}>
-                    Ver produtos
-                  </Button>
+              <div><div className="mb-3 flex items-end justify-between"><div><h2 className="text-lg font-black">Resumo de hoje</h2><p className="text-xs text-zinc-500">{new Date().toLocaleDateString("pt-BR")}</p></div><span className="rounded-lg border border-white/10 bg-white/[.03] px-3 py-2 text-xs">Hoje</span></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl border border-[#5f4b27] bg-[#111416] p-4"><CircleDollarSign className="h-6 w-6 text-yellow-400"/><p className="mt-2 text-xs text-zinc-400">Aguardando repasse</p><p className="text-xl font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p></div>
+                  <div className="rounded-2xl border border-[#5f4b27] bg-[#111416] p-4"><Package className="h-6 w-6 text-yellow-400"/><p className="mt-2 text-xs text-zinc-400">Pedidos</p><p className="text-xl font-black">{offers.length+activeRequests.length}</p></div>
+                  <div className="rounded-2xl border border-[#5f4b27] bg-[#111416] p-4"><WalletCards className="h-6 w-6 text-yellow-400"/><p className="mt-2 text-xs text-zinc-400">Já repassado</p><p className="text-xl font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(paidPayout)}</p></div>
+                  <div className="rounded-2xl border border-[#5f4b27] bg-[#111416] p-4"><Boxes className="h-6 w-6 text-yellow-400"/><p className="mt-2 text-xs text-zinc-400">Itens disponíveis</p><p className="text-xl font-black">{totalAvailable}</p></div>
                 </div>
               </div>
-
-              <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-                  <div className="flex items-center justify-between"><span className="text-xs text-zinc-400">Pedidos novos</span><Clock3 className="h-4 w-4 text-yellow-300"/></div>
-                  <p className="mt-2 text-3xl font-black">{offers.length}</p>
-                  <p className="mt-1 text-[11px] text-zinc-600">Aguardando sua decisão</p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-                  <div className="flex items-center justify-between"><span className="text-xs text-zinc-400">Em andamento</span><Truck className="h-4 w-4 text-yellow-300"/></div>
-                  <p className="mt-2 text-3xl font-black">{activeRequests.length}</p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-                  <div className="flex items-center justify-between"><span className="text-xs text-zinc-400">Aguardando repasse</span><CircleDollarSign className="h-4 w-4 text-yellow-300"/></div>
-                  <p className="mt-2 text-2xl font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-                  <div className="flex items-center justify-between"><span className="text-xs text-zinc-400">Estoque disponível</span><Boxes className="h-4 w-4 text-yellow-300"/></div>
-                  <p className="mt-2 text-3xl font-black">{totalAvailable}</p>
-                </div>
-              </div>
+              <button type="button" onClick={()=>switchTab("pedidos")} className="flex w-full items-center gap-4 rounded-2xl border border-yellow-400/70 bg-gradient-to-r from-[#24180b] to-[#0f1112] p-4 text-left"><Truck className="h-10 w-10 text-yellow-400"/><div><p className="font-black uppercase text-yellow-200">Entregas mais rápidas<br/>na sua região</p><p className="mt-1 text-xs text-zinc-400">Atenda seus clientes e aumente suas vendas.</p></div><span className="ml-auto text-2xl text-yellow-300">›</span></button>
+              <div><div className="mb-3 flex justify-between"><h2 className="font-black">Produtos em destaque</h2><button onClick={()=>switchTab("estoque")} className="text-xs font-bold text-yellow-300">Ver todos</button></div><div className="grid grid-cols-4 gap-2">{catalogProducts.slice(0,4).map(p=><div key={p.id} className="aspect-[.78] overflow-hidden rounded-xl border border-[#6a5129] bg-[#111416]">{p.image_url?<img src={p.image_url} alt={p.name} className="h-full w-full object-cover"/>:<Package className="m-auto mt-8 h-7 w-7 text-zinc-600"/>}</div>)}</div></div>
             </section>}
 
-            {activeTab==="pedidos" && <div className="space-y-6">
-            {offers.length > 0 && <section id="pedidos" className="space-y-3">
-              <div className="flex items-center justify-between"><h2 className="text-lg font-black">Solicitações próximas</h2><span className="text-xs text-zinc-500">{offers.length} aguardando decisão</span></div>
-              <div className="grid gap-3 xl:grid-cols-2">
-                {offers.map((offer) => <div key={offer.id} className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-black">Pedido próximo</p>
-                      <p className="mt-1 flex items-center gap-1 text-xs text-zinc-400"><MapPin className="h-3.5 w-3.5"/>{offer.city} · {Number(offer.distance_km).toFixed(1)} km</p>
-                    </div>
-                    <span className="rounded-lg border border-yellow-400/40 bg-yellow-400/10 px-2 py-1 text-[11px] font-semibold text-yellow-300">Aguardando aceite</span>
-                  </div>
-                  <p className="mt-3 text-sm text-zinc-300">{offer.items.map((i)=>`${i.qty}× ${i.name}`).join(" • ")}</p>
-                  <div className="mt-4 grid grid-cols-2 gap-2">
-                    <Button className="bg-yellow-400 font-black text-black hover:bg-yellow-300" disabled={saving===offer.id} onClick={()=>void command("accept",{request_id:offer.id},"Pedido aceito. Informe a rota para calcular a entrega.")}>Aceitar solicitação</Button>
-                    <Button variant="outline" className="border-white/15 bg-transparent text-zinc-200 hover:bg-white/5" disabled={saving===offer.id} onClick={()=>void command("decline",{request_id:offer.id},"Oferta recusada.")}>Recusar</Button>
-                  </div>
-                  <p className="mt-3 text-[11px] text-zinc-500">Após o aceite, o frete é calculado e o cliente confirma o pagamento.</p>
-                </div>)}
-              </div>
+            {activeTab==="pedidos" && <section className="space-y-4">
+              <div className="flex items-center justify-between"><h1 className="text-2xl font-black">Meus pedidos</h1><span className="rounded-xl border border-white/15 bg-[#121517] px-4 py-2 text-sm">Todos⌄</span></div>
+              <div className="flex gap-2 overflow-x-auto pb-1"><span className="whitespace-nowrap rounded-xl bg-yellow-400 px-4 py-2 text-xs font-black text-black">Todos ({offers.length+activeRequests.length})</span><span className="whitespace-nowrap rounded-xl bg-[#171a1d] px-4 py-2 text-xs">Em preparo ({activeRequests.filter(r=>["accepted","quoted","paid"].includes(r.status)).length})</span><span className="whitespace-nowrap rounded-xl bg-[#171a1d] px-4 py-2 text-xs">Em entrega ({activeRequests.filter(r=>r.status==="delivering").length})</span></div>
+              {offers.map(o=><div key={o.id} className="rounded-2xl border border-white/10 bg-[#111416] p-4"><div className="flex justify-between"><div><p className="font-black">Nova solicitação</p><p className="text-xs text-zinc-400">{o.city} · {Number(o.distance_km).toFixed(1)} km</p></div><span className="rounded-lg bg-yellow-400/15 px-2 py-1 text-xs font-bold text-yellow-300">Aguardando</span></div><p className="mt-3 text-sm text-zinc-300">{o.items.map(i=>`${i.qty}× ${i.name}`).join(" • ")}</p><div className="mt-4 grid grid-cols-2 gap-2"><Button className="bg-yellow-400 font-black text-black hover:bg-yellow-300" disabled={saving===o.id} onClick={()=>void command("accept",{request_id:o.id},"Pedido aceito.")}>Aceitar</Button><Button variant="outline" disabled={saving===o.id} onClick={()=>void command("decline",{request_id:o.id},"Oferta recusada.")}>Recusar</Button></div></div>)}
+              {activeRequests.map(r=><div key={r.id} className="rounded-2xl border border-white/10 bg-[#111416] p-4"><div className="flex items-start justify-between"><div><p className="font-black">{r.order_code??"Pedido"}</p><p className="mt-1 text-xs text-zinc-500">{r.store_name??"Loja parceira"}</p></div><span className={`rounded-lg px-2 py-1 text-xs font-bold ${r.status==="delivering"?"bg-blue-500/20 text-blue-300":"bg-yellow-400/15 text-yellow-300"}`}>{r.status==="delivering"?"Em entrega":r.status==="paid"?"Pago":r.status==="quoted"?"Frete calculado":"Em preparo"}</span></div><p className="mt-3 text-sm text-zinc-300">{r.items?.map(i=>`${i.qty}× ${i.name}`).join(" • ")}</p>{r.status==="paid"&&<Button className="mt-3 bg-yellow-400 text-black" onClick={()=>void command("dispatch",{request_id:r.id},"Pedido saiu para entrega.")}>Saiu para entrega</Button>}</div>)}
+              {offers.length===0&&activeRequests.length===0&&<div className="rounded-2xl border border-white/10 bg-[#111416] p-8 text-center text-zinc-500">Nenhum pedido agora.</div>}
             </section>}
 
-            {activeRequests.length > 0 && <section className="space-y-3">
-              <div className="flex items-center justify-between"><h2 className="text-lg font-black">Pedidos em andamento</h2><span className="text-xs text-zinc-500">Atualização em tempo real</span></div>
-              <div className="space-y-3">
-                {activeRequests.map((r)=><div key={r.id} className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <p className="font-black">{r.order_code ?? "Pedido em preparação"}</p>
-                      <p className="text-xs text-zinc-400">{r.store_name ?? "Loja parceira"} · {r.items?.map((i)=>`${i.qty}× ${i.name}`).join(" • ")}</p>
-                    </div>
-                    <span className={`rounded-lg px-2 py-1 text-[11px] font-semibold ${r.status==="paid"||r.status==="delivering"?"bg-emerald-500/10 text-emerald-300":"bg-yellow-400/10 text-yellow-300"}`}>
-                      {r.status==="accepted"?"Aceito":r.status==="quoted"?"Frete calculado":r.status==="paid"?"Pagamento confirmado":"Em entrega"}
-                    </span>
-                  </div>
-                  {r.status==="accepted"&&<div className="mt-4 grid gap-2 md:grid-cols-4">
-                    <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3 text-sm" placeholder="Rota km" inputMode="decimal" value={routeKm[r.id]??""} onChange={(e)=>setRouteKm((x)=>({...x,[r.id]:e.target.value}))}/>
-                    <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3 text-sm" placeholder="Peso kg" inputMode="decimal" value={weightKg[r.id]??""} onChange={(e)=>setWeightKg((x)=>({...x,[r.id]:e.target.value}))}/>
-                    <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3 text-sm" placeholder="Prazo min" inputMode="numeric" value={eta[r.id]??""} onChange={(e)=>setEta((x)=>({...x,[r.id]:e.target.value}))}/>
-                    <Button className="bg-yellow-400 font-bold text-black hover:bg-yellow-300" onClick={()=>void command("quote",{request_id:r.id,route_km:Number(routeKm[r.id]),weight_kg:Number(weightKg[r.id]),eta_minutes:Number(eta[r.id])},"Frete calculado e enviado ao cliente.")}>Calcular entrega</Button>
-                  </div>}
-                  {r.status==="quoted"&&<p className="mt-4 rounded-xl border border-yellow-400/20 bg-yellow-400/5 p-3 text-sm text-yellow-200">Frete: R$ {Number(r.shipping??0).toFixed(2).replace(".",",")} · aguardando pagamento do cliente.</p>}
-                  {r.status==="paid"&&<div className="mt-4"><Button className="bg-yellow-400 font-bold text-black hover:bg-yellow-300" onClick={()=>void command("dispatch",{request_id:r.id},"Pedido saiu para entrega.")}><Truck className="mr-2 h-4 w-4"/>Saiu para entrega</Button></div>}
-                  {r.status==="delivering"&&<div className="mt-4 space-y-3">
-                    <label className="flex items-start gap-2 text-sm text-zinc-300"><input type="checkbox" className="mt-1" checked={adultVerified[r.id]??false} onChange={(e)=>setAdultVerified((x)=>({...x,[r.id]:e.target.checked}))}/><span>Confirmei documento oficial com foto e maioridade do recebedor.</span></label>
-                    <div className="flex gap-2"><input className="h-10 min-w-0 flex-1 rounded-lg border border-white/10 bg-black/20 px-3 uppercase" placeholder="Código do cliente" maxLength={8} value={deliveryCode[r.id]??""} onChange={(e)=>setDeliveryCode((x)=>({...x,[r.id]:e.target.value.toUpperCase()}))}/><Button className="bg-yellow-400 font-bold text-black hover:bg-yellow-300" disabled={(deliveryCode[r.id]??"").length<4||!(adultVerified[r.id]??false)||saving===r.id} onClick={()=>void command("deliver",{request_id:r.id,code:deliveryCode[r.id],adult_verified:adultVerified[r.id]===true},"Entrega confirmada e estoque baixado.")}>Confirmar entrega</Button></div>
-                  </div>}
-                </div>)}
-              </div>
-            </section>}
-            {offers.length===0 && activeRequests.length===0 && <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-8 text-center"><Package className="mx-auto h-8 w-8 text-zinc-600"/><h2 className="mt-3 font-black">Nenhum pedido agora</h2><p className="mt-1 text-sm text-zinc-500">Novas solicitações e pedidos em andamento aparecerão aqui.</p></div>}
-            </div>}
-
+            {approvedStores.map(store=><section key={store.id} className="space-y-4">
+              {activeTab==="estoque"&&<div><h1 className="text-2xl font-black">Meu estoque</h1><div className="mt-4 rounded-xl border border-[#6a5129] bg-[#111416] px-4 py-3 text-sm text-zinc-400">⌕ &nbsp; Buscar produto...</div><div className="mt-4 grid grid-cols-2 gap-3">{catalogProducts.map(p=>{const i=inventory.find(x=>x.store_id===store.id&&x.product_id===p.id)??{store_id:store.id,product_id:p.id,on_hand:0,reserved:0,name:p.name};const key=i.store_id+":"+i.product_id;return <div key={key} className="overflow-hidden rounded-xl border border-[#5f4b27] bg-[#101315]"><div className="aspect-[1.15] bg-black/30">{p.image_url?<img src={p.image_url} alt={p.name} className="h-full w-full object-cover"/>:<Package className="m-auto pt-10 text-zinc-600"/>}</div><div className="p-3"><p className="line-clamp-2 text-sm font-bold">{i.name}</p><p className="mt-1 text-xs text-zinc-400">Estoque: {i.on_hand-i.reserved}</p><input className="mt-2 h-8 w-full rounded-lg border border-white/10 bg-black/30 px-2 text-xs" type="number" placeholder="Novo estoque" value={stockDraft[key]??""} onChange={e=>setStockDraft(x=>({...x,[key]:e.target.value}))}/><input className="mt-2 h-8 w-full rounded-lg border border-white/10 bg-black/30 px-2 text-xs" placeholder="Motivo" value={stockReason[key]??""} onChange={e=>setStockReason(x=>({...x,[key]:e.target.value}))}/><Button size="sm" className="mt-2 w-full bg-yellow-400 text-black" onClick={()=>void saveStock(i.store_id,i.product_id,i.on_hand)}>Atualizar</Button></div></div>})}</div></div>}
+              {activeTab==="repasses"&&<div><h1 className="text-2xl font-black">Meus repasses</h1><div className="mt-4 rounded-2xl border border-yellow-400/60 bg-gradient-to-br from-[#5b3608] to-[#1b1208] p-5"><p className="text-sm">Saldo disponível</p><p className="mt-1 text-3xl font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p><Button className="mt-4 w-full rounded-xl bg-yellow-400 font-black text-black">Solicitar repasse</Button></div><div className="mt-3 grid grid-cols-2 gap-3"><div className="rounded-xl border border-white/10 bg-[#111416] p-4"><p className="text-xs text-zinc-400">Aguardando</p><p className="mt-1 text-lg font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p></div><div className="rounded-xl border border-white/10 bg-[#111416] p-4"><p className="text-xs text-zinc-400">Total repassado</p><p className="mt-1 text-lg font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(paidPayout)}</p></div></div><h2 className="mb-2 mt-5 font-black">Histórico de repasses</h2>{payouts.map(p=><div key={p.id} className="mb-2 flex items-center justify-between rounded-xl border border-white/10 bg-[#111416] p-4"><div><p className="font-bold">#{p.id.slice(0,8)}</p><p className="text-xs text-zinc-500">{p.paid_at?new Date(p.paid_at).toLocaleDateString("pt-BR"):"Aguardando"}</p></div><div className="text-right"><span className="rounded-lg bg-emerald-500/15 px-2 py-1 text-[10px] text-emerald-300">{p.status==="paid"?"Pago":"Pendente"}</span><p className="mt-1 font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(Number(p.amount))}</p></div></div>)}<div className="mt-5 rounded-2xl border border-yellow-400/50 bg-[#1c1509] p-5"><p className="font-black text-yellow-200">Precisa de ajuda?</p><p className="text-sm text-zinc-400">Fale com nosso suporte</p></div></div>}
+              {activeTab==="inicio"&&<div className="rounded-2xl border border-white/10 bg-[#111416] p-4"><div className="flex items-center justify-between"><div><p className="font-black">{store.name}</p><p className="text-xs text-zinc-500">Configurações da operação</p></div><Settings2 className="text-yellow-300"/></div><div className="mt-3 flex items-center justify-between"><span className="text-sm">Loja recebendo pedidos</span><Switch checked={store.is_open} onCheckedChange={checked=>setStores(prev=>prev.map(s=>s.id===store.id?{...s,is_open:checked}:s))}/></div><Button className="mt-3 bg-yellow-400 text-black" disabled={saving==="settings-"+store.id} onClick={()=>void saveStoreSettings(store)}>Salvar operação</Button></div>}
+            </section>)}
             </>}
 
             {stores.length===0&&<section id="minha-loja" className="overflow-hidden rounded-3xl border border-yellow-400/20 bg-gradient-to-br from-[#17130a] via-[#0f1013] to-[#090a0c] shadow-[0_20px_70px_rgba(0,0,0,0.35)]">

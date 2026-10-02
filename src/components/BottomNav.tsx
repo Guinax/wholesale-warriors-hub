@@ -10,7 +10,7 @@ const BottomNav = () => {
     { icon: Home, label: "HOME", path: "/", badge: 0, action: () => navigate("/") },
     { icon: Store, label: "SACOLA", path: null, badge: totalItems, action: openCart },
     { icon: Receipt, label: "PEDIDOS", path: "/meus-pedidos", badge: 0, action: () => navigate("/meus-pedidos") },
-    { icon: Building2, label: "PARCEIRO", path: "/revendedor", badge: 0, action: () => navigate("/revendedor") },
+    { icon: Building2, label: "PARCEIROS", path: "/parceiros", badge: 0, action: () => navigate("/parceiros") },
     { icon: UserCircle, label: "CONTA", path: "/minha-conta", badge: 0, action: () => navigate("/minha-conta") },
   ];
 

@@ -648,16 +648,19 @@ export default function PainelRevendedor() {
                 </div>
                 {catalogProducts.length===0?<p className="mt-3 text-sm text-zinc-500">Nenhum produto ativo no catálogo.</p>:<div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
                   {catalogProducts.map((p)=>{const i=inventory.find((x)=>x.store_id===store.id&&x.product_id===p.id)??{store_id:store.id,product_id:p.id,on_hand:0,reserved:0,name:p.name};const key=i.store_id+":"+i.product_id;return <div key={key} className="overflow-hidden rounded-2xl border border-[#d5a92f]/25 bg-[#101315] shadow-[0_12px_30px_rgba(0,0,0,.28)]">
-                    <div className="block">\n                      <div className="relative aspect-[4/3] w-full overflow-hidden border-b border-[#d5a92f]/20 bg-white/[0.04]">
+                    <div className="block">
+                      <div className="relative aspect-[4/3] w-full overflow-hidden border-b border-[#d5a92f]/20 bg-white/[0.04]">
                         <Package className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-zinc-600"/>
                         {p.image_url&&<img src={p.image_url} alt={p.name} loading="lazy" className="relative h-full w-full object-cover" onError={(e)=>{e.currentTarget.style.display="none";}}/>}
                       </div>
-                      <div className="min-w-0 flex-1 p-3">\n                        <p className="line-clamp-2 text-sm font-black">{i.name}</p>
+                      <div className="min-w-0 flex-1 p-3">
+                        <p className="line-clamp-2 text-sm font-black">{i.name}</p>
                         <p className="mt-1 text-xs text-zinc-500">Físico {i.on_hand} · reservado {i.reserved}</p>
                         <p className="mt-1 text-xs font-semibold text-yellow-300">Disponível {i.on_hand-i.reserved}</p>
                       </div>
                     </div>
-                    <div className="grid gap-2 px-3 pb-3">\n                      <input className="h-9 rounded-lg border border-white/10 bg-black/30 px-2" type="number" min="0" step="1" placeholder={String(i.on_hand)} value={stockDraft[key]??""} onChange={(e)=>setStockDraft((x)=>({...x,[key]:e.target.value}))}/>
+                    <div className="grid gap-2 px-3 pb-3">
+                      <input className="h-9 rounded-lg border border-white/10 bg-black/30 px-2" type="number" min="0" step="1" placeholder={String(i.on_hand)} value={stockDraft[key]??""} onChange={(e)=>setStockDraft((x)=>({...x,[key]:e.target.value}))}/>
                       <input className="h-9 rounded-lg border border-white/10 bg-black/30 px-2" placeholder="Motivo do ajuste" value={stockReason[key]??""} onChange={(e)=>setStockReason((x)=>({...x,[key]:e.target.value}))}/>
                       <Button size="sm" variant="outline" className="border-yellow-400/25 bg-yellow-400/5 text-yellow-200 hover:bg-yellow-400/10" disabled={saving==="stock-"+key} onClick={()=>void saveStock(i.store_id,i.product_id,i.on_hand)}>Atualizar estoque</Button>
                     </div>

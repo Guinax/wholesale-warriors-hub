@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { lookupCep, maskCepValue, onlyDigitsCep } from "@/lib/shipping";
-import { Boxes, CheckCircle2, CircleDollarSign, Clock3, Home, MapPin, Package, Settings2, ShieldCheck, Sparkles, Store as StoreIcon, Truck, WalletCards } from "lucide-react";
+import { Bell, Boxes, CheckCircle2, CircleDollarSign, Clock3, Home, MapPin, Menu, Package, Settings2, ShieldCheck, Sparkles, Store as StoreIcon, Truck, UserCircle2, WalletCards } from "lucide-react";
 
 type Offer = { id: string; items: Array<{ name: string; qty: number }>; subtotal: number; city: string; distance_km: number; partner_merchandise: number };
 type Request = { id: string; status: string; store_id?: string | null; store_name?: string | null; order_code?: string | null; payment_status?: string | null; shipping?: number | null; route_km?: number | null; eta_minutes?: number | null; items: Array<{ name: string; qty: number }> };
@@ -261,19 +261,23 @@ export default function PainelRevendedor() {
         </aside>
 
         <div className="min-w-0">
-          <header className="sticky top-0 z-20 border-b border-white/10 bg-[#0a0b0d]/95 px-4 py-3 backdrop-blur md:px-7">
+          <header className="sticky top-0 z-20 border-b border-yellow-400/20 bg-[#090b0c]/95 px-4 py-3 backdrop-blur md:px-7">
             <div className="flex items-center justify-between gap-3">
-              <div className="md:hidden">
-                <p className="font-heading text-sm font-black">MANSÃO MAROMBA</p>
-                <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">Parceiro</p>
+              <div className="flex items-center gap-3 md:hidden">
+                <Menu className="h-6 w-6 text-zinc-100"/>
+                <div className="flex items-center gap-2">
+                  <div className="grid h-9 w-9 place-items-center rounded-full border border-yellow-400/30 bg-yellow-400/10"><StoreIcon className="h-5 w-5 text-yellow-300"/></div>
+                  <div><p className="font-heading text-sm font-black leading-none text-yellow-200">MANSÃO</p><p className="font-heading text-sm font-black leading-none text-yellow-200">MAROMBA</p></div>
+                </div>
               </div>
               <div className="hidden md:block">
                 <h1 className="text-2xl font-black">Olá, parceiro</h1>
                 <p className="text-sm text-zinc-400">{hasApprovedStore ? "Gerencie pedidos, estoque, entregas e repasses." : "Cadastre sua loja ou acompanhe a aprovação."}</p>
               </div>
-              <div className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold ${openStore?.is_open?"border-emerald-500/30 bg-emerald-500/10 text-emerald-300":"border-zinc-700 bg-zinc-900 text-zinc-400"}`}>
-                <span className={`h-2 w-2 rounded-full ${openStore?.is_open?"bg-emerald-400":"bg-zinc-500"}`} />
-                {openStore?.is_open ? "Loja aberta" : "Loja fechada"}
+              <div className="flex items-center gap-2">
+                <button type="button" aria-label="Notificações" className="relative grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.03]"><Bell className="h-5 w-5"/>{offers.length>0&&<span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-red-600 px-1 text-[9px] font-black text-white">{Math.min(offers.length,9)}</span>}</button>
+                <div className="grid h-10 w-10 place-items-center rounded-full border border-yellow-400/25 bg-gradient-to-br from-yellow-400/20 to-amber-950"><UserCircle2 className="h-6 w-6 text-yellow-200"/></div>
+                <div className={`hidden items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold sm:inline-flex ${openStore?.is_open?"border-emerald-500/30 bg-emerald-500/10 text-emerald-300":"border-zinc-700 bg-zinc-900 text-zinc-400"}`}><span className={`h-2 w-2 rounded-full ${openStore?.is_open?"bg-emerald-400":"bg-zinc-500"}`}/>{openStore?.is_open?"Loja aberta":"Loja fechada"}</div>
               </div>
             </div>
           </header>
@@ -309,7 +313,7 @@ export default function PainelRevendedor() {
                       <p className="mt-2 text-xs font-black text-yellow-100">Análise da parceria</p>
                       <p className="mt-1 text-[11px] leading-4 text-zinc-400">Validação de segurança e condições.</p>
                     </div>
-                    <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                    <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#101315] p-3 shadow-[0_12px_30px_rgba(0,0,0,0.22)]">
                       <Sparkles className="h-5 w-5 text-zinc-400"/>
                       <p className="mt-2 text-xs font-black text-zinc-200">Liberação do painel</p>
                       <p className="mt-1 text-[11px] leading-4 text-zinc-500">Pedidos, estoque, entrega e repasses.</p>
@@ -537,7 +541,7 @@ export default function PainelRevendedor() {
                 {catalogProducts.length===0?<p className="mt-3 text-sm text-zinc-500">Nenhum produto ativo no catálogo.</p>:<div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {catalogProducts.map((p)=>{const i=inventory.find((x)=>x.store_id===store.id&&x.product_id===p.id)??{store_id:store.id,product_id:p.id,on_hand:0,reserved:0,name:p.name};const key=i.store_id+":"+i.product_id;return <div key={key} className="rounded-2xl border border-white/10 bg-black/20 p-3">
                     <div className="flex items-start gap-3">
-                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]">
+                      <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-yellow-400/15 bg-white/[0.04]">
                         <Package className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-zinc-600"/>
                         {p.image_url&&<img src={p.image_url} alt={p.name} loading="lazy" className="relative h-full w-full object-cover" onError={(e)=>{e.currentTarget.style.display="none";}}/>}
                       </div>
@@ -581,7 +585,7 @@ export default function PainelRevendedor() {
         </div>
       </div>
 
-      <nav className={`fixed inset-x-0 bottom-0 z-30 grid ${hasApprovedStore?"grid-cols-5":"grid-cols-2"} border-t border-white/10 bg-[#0d0f12]/95 px-2 py-2 backdrop-blur md:hidden`}>
+      <nav className={`fixed inset-x-0 bottom-0 z-30 grid ${hasApprovedStore?"grid-cols-5":"grid-cols-2"} border-t border-yellow-400/20 bg-[#090b0c]/95 px-2 py-2.5 shadow-[0_-12px_35px_rgba(0,0,0,0.45)] backdrop-blur md:hidden`}>
         {hasApprovedStore ? <>
           <button type="button" onClick={()=>switchTab("inicio")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="inicio"?"text-yellow-300":"text-zinc-400"}`}><Home className="h-5 w-5"/><span>Início</span></button>
           <button type="button" onClick={()=>switchTab("pedidos")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="pedidos"?"text-yellow-300":"text-zinc-400"}`}><Package className="h-5 w-5"/><span>Pedidos</span></button>

@@ -11,7 +11,6 @@ const CatalogSection = () => {
   const [items, setItems] = useState<DbProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [catalogTitle, setCatalogTitle] = useState("CATÁLOGO VIGENTE");
-  const [catalogSubtitle, setCatalogSubtitle] = useState("ESTILO CIMED x MAROMBA");
 
   const load = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -30,7 +29,6 @@ const CatalogSection = () => {
     setItems(((products ?? []) as unknown) as DbProduct[]);
     if (settings) {
       setCatalogTitle(settings.title || "CATÁLOGO VIGENTE");
-      setCatalogSubtitle(settings.subtitle || "ESTILO CIMED x MAROMBA");
     }
     if (showLoading) setLoading(false);
   }, []);
@@ -67,9 +65,6 @@ const CatalogSection = () => {
             <h2 className="font-heading font-black text-lg tracking-wide text-foreground">
               {catalogTitle}
             </h2>
-            <p className="text-xs text-primary font-heading font-semibold tracking-wider mt-1">
-              {catalogSubtitle}
-            </p>
           </div>
           <div className="flex items-center gap-1 bg-secondary rounded-lg p-1">
             <button

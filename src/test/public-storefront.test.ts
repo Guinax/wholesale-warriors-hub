@@ -26,9 +26,13 @@ describe("Public storefront and auth routing contracts", () => {
     const top = read("src/components/TopNav.tsx");
     const bottom = read("src/components/BottomNav.tsx");
     const panel = read("src/pages/PainelRevendedor.tsx");
-    expect(top).toContain("ÁREA DO PARCEIRO");
+    expect(top).toContain("PARCEIROS");
+    expect(top).toContain('navigate("/parceiros")');
     expect(top).toContain('navigate("/revendedor")');
-    expect(bottom).toContain('label: "PARCEIRO"');
+    expect(bottom).toContain('label: "PARCEIROS"');
+    expect(bottom).toContain('navigate("/parceiros")');
+    expect(read("src/App.tsx")).toContain('<Route path="/parceiros" element={<Partners />} />');
+    expect(read("src/pages/Partners.tsx")).toContain('navigate("/revendedor")');
     expect(panel).toContain('const approvedStores = stores.filter((s) => s.status === "approved");');
     expect(panel).toContain("{hasApprovedStore && <>");
     expect(panel).toContain("{approvedStores.map((store)=>");

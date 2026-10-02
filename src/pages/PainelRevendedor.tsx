@@ -347,12 +347,12 @@ export default function PainelRevendedor() {
                       Painel do parceiro
                     </div>
                     <p className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">Operação local Mansão Maromba</p>
-                    <h1 className="mt-1 max-w-2xl text-3xl font-black leading-tight sm:text-4xl">{store.name}</h1>
+                    <h1 className="mt-1 max-w-2xl text-3xl font-black leading-tight sm:text-4xl">{openStore?.name ?? "Loja parceira"}</h1>
                     <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-300 sm:text-base">Pedidos próximos, estoque, entregas e repasses reunidos em uma operação rápida e visual. Use os atalhos abaixo para entrar direto em cada área.</p>
                     <div className="mt-5 flex flex-wrap gap-2">
-                      <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-black ${store.is_open?"border-emerald-400/30 bg-emerald-400/10 text-emerald-200":"border-zinc-600/50 bg-black/25 text-zinc-300"}`}>
-                        <span className={`h-2 w-2 rounded-full ${store.is_open?"bg-emerald-400":"bg-zinc-500"}`} />
-                        {store.is_open ? "Recebendo pedidos" : "Operação pausada"}
+                      <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-black ${openStore?.is_open?"border-emerald-400/30 bg-emerald-400/10 text-emerald-200":"border-zinc-600/50 bg-black/25 text-zinc-300"}`}>
+                        <span className={`h-2 w-2 rounded-full ${openStore?.is_open?"bg-emerald-400":"bg-zinc-500"}`} />
+                        {openStore?.is_open ? "Recebendo pedidos" : "Operação pausada"}
                       </span>
                       <span className="inline-flex items-center gap-2 rounded-full border border-yellow-400/20 bg-yellow-400/[0.07] px-3 py-1.5 text-xs font-semibold text-yellow-100">
                         <ShieldCheck className="h-3.5 w-3.5" />
@@ -430,7 +430,7 @@ export default function PainelRevendedor() {
                       <p className="text-[10px] font-black uppercase tracking-[0.16em] text-yellow-300">Agora</p>
                       <h2 className="mt-1 text-lg font-black">Pulso da operação</h2>
                     </div>
-                    <div className={`h-2.5 w-2.5 rounded-full ${store.is_open?"bg-emerald-400 shadow-[0_0_18px_rgba(52,211,153,0.9)]":"bg-zinc-600"}`} />
+                    <div className={`h-2.5 w-2.5 rounded-full ${openStore?.is_open?"bg-emerald-400 shadow-[0_0_18px_rgba(52,211,153,0.9)]":"bg-zinc-600"}`} />
                   </div>
                   <div className="mt-4 space-y-3">
                     <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-4 py-3">

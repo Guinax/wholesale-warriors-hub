@@ -11,7 +11,7 @@ const previewMetrics = [
 
 const Partners = () => {
   const navigate = useNavigate();
-  const startRegistration = () => navigate("/auth?next=%2Frevendedor");
+  const startRegistration = () => navigate("/revendedor");
 
   return (
     <div className="min-h-screen bg-[#090b0c] pb-24 text-zinc-100 md:pb-0">

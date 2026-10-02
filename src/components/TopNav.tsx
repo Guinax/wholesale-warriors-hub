@@ -1,4 +1,4 @@
-import { ShoppingCart, LogOut, Store as StoreIcon, User as UserIcon } from "lucide-react";
+import { Menu, ShoppingCart, LogOut, Store as StoreIcon, User as UserIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import logo from "@/assets/logo.png";
 import { useCart } from "@/contexts/CartContext";
@@ -28,10 +28,8 @@ const TopNav = () => {
     <nav className="sticky top-0 z-50 bg-background/90 backdrop-blur-xl border-b border-border">
       <div className="container flex items-center justify-between h-14">
         <div className="flex items-center gap-2">
-          <img src={logo} alt="Família Maromba" className="w-8 h-8 object-contain" width={32} height={32} />
-          <span className="font-heading font-bold text-xs tracking-wider text-foreground">
-            REPRESENTANTE OFICIAL DA FAMÍLIA MAROMBA
-          </span>
+          <button type="button" onClick={() => navigate("/")} aria-label="Ir para a página inicial" className="shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><img src={logo} alt="Família Maromba" className="w-8 h-8 object-contain" width={32} height={32} /></button>
+          <button type="button" onClick={() => navigate("/")} className="text-left font-heading font-bold text-xs tracking-wider text-foreground hover:text-primary transition-colors">REPRESENTANTE OFICIAL DA FAMÍLIA MAROMBA</button>
         </div>
 
         <div className="hidden md:flex items-center gap-6 text-xs font-heading font-semibold tracking-widest text-muted-foreground">
@@ -44,6 +42,21 @@ const TopNav = () => {
         </div>
 
         <div className="flex items-center gap-1">
+          <DropdownMenu>
+            <DropdownMenuTrigger className="p-2 md:hidden" aria-label="Abrir menu de navegação">
+              <Menu className="w-5 h-5 text-foreground" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 md:hidden">
+              <DropdownMenuItem onClick={() => navigate("/")}>Início</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/suplementos")}>Suplementos</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/mais-vendidos")}>Mais vendidos</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/comissoes")}>Comissões</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/avaliacoes")}>Avaliações</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/compartilhar")}>Compartilhar</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate("/revendedor")}><StoreIcon className="w-4 h-4 mr-2" /> Área do parceiro</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           {!session && (
             <button
               onClick={() => navigate("/auth")}

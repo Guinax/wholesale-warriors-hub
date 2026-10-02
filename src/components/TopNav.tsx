@@ -38,7 +38,7 @@ const TopNav = () => {
           <button onClick={() => navigate("/comissoes")} className="hover:text-primary transition-colors">COMISSÕES</button>
           <button onClick={() => navigate("/avaliacoes")} className="hover:text-primary transition-colors">AVALIAÇÕES</button>
           <button onClick={() => navigate("/compartilhar")} className="hover:text-primary transition-colors">COMPARTILHAR</button>
-          <button onClick={() => navigate("/revendedor")} className="hover:text-primary transition-colors">ÁREA DO PARCEIRO</button>
+          <button onClick={() => navigate("/parceiros")} className="hover:text-primary transition-colors">PARCEIROS</button>
         </div>
 
         <div className="flex items-center gap-1">
@@ -54,7 +54,7 @@ const TopNav = () => {
               <DropdownMenuItem onClick={() => navigate("/avaliacoes")}>Avaliações</DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/compartilhar")}>Compartilhar</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate("/revendedor")}><StoreIcon className="w-4 h-4 mr-2" /> Área do parceiro</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/parceiros")}><StoreIcon className="w-4 h-4 mr-2" /> Parceiros</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           {!session && (

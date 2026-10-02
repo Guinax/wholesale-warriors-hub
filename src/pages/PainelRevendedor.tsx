@@ -53,6 +53,7 @@ export default function PainelRevendedor() {
   const [pix, setPix] = useState<Record<string,{pix_key_type:string;pix_key:string;holder_name:string;holder_document:string}>>({});
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [activeTab, setActiveTab] = useState<"inicio"|"pedidos"|"estoque"|"repasses">("inicio");
+  const [orderFilter, setOrderFilter] = useState<"todos"|"novos"|"preparo"|"entrega">("todos");
   const switchTab = (tab: "inicio"|"pedidos"|"estoque"|"repasses") => {
     setActiveTab(tab);
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -237,6 +238,13 @@ export default function PainelRevendedor() {
   const paidPayout = payouts.filter((p) => p.status === "paid").reduce((sum,p)=>sum+Number(p.amount||0),0);
   const openStore = approvedStores.find((s) => s.is_open) ?? approvedStores[0] ?? null;
   const totalAvailable = inventory.reduce((sum, item) => sum + Math.max(0, Number(item.on_hand) - Number(item.reserved)), 0);
+  const visibleOffers = orderFilter === "todos" || orderFilter === "novos" ? offers : [];
+  const visibleRequests = activeRequests.filter((request) => {
+    if (orderFilter === "todos") return true;
+    if (orderFilter === "preparo") return ["accepted","quoted","paid"].includes(request.status);
+    if (orderFilter === "entrega") return request.status === "delivering";
+    return false;
+  });
 
   return (
     <main className="min-h-screen bg-[#0a0b0d] text-zinc-100 pb-24 md:pb-8">
@@ -357,11 +365,18 @@ export default function PainelRevendedor() {
             </section>}
 
             {activeTab==="pedidos" && <section className="space-y-4">
-              <div className="flex items-center justify-between"><h1 className="text-2xl font-black">Meus pedidos</h1><span className="rounded-xl border border-white/15 bg-[#121517] px-4 py-2 text-sm">Todos⌄</span></div>
-              <div className="flex gap-2 overflow-x-auto pb-1"><span className="whitespace-nowrap rounded-xl bg-yellow-400 px-4 py-2 text-xs font-black text-black">Todos ({offers.length+activeRequests.length})</span><span className="whitespace-nowrap rounded-xl bg-[#171a1d] px-4 py-2 text-xs">Em preparo ({activeRequests.filter(r=>["accepted","quoted","paid"].includes(r.status)).length})</span><span className="whitespace-nowrap rounded-xl bg-[#171a1d] px-4 py-2 text-xs">Em entrega ({activeRequests.filter(r=>r.status==="delivering").length})</span></div>
-              {offers.map(o=><div key={o.id} className="rounded-2xl border border-white/10 bg-[#111416] p-4"><div className="flex justify-between"><div><p className="font-black">Nova solicitação</p><p className="text-xs text-zinc-400">{o.city} · {Number(o.distance_km).toFixed(1)} km</p></div><span className="rounded-lg bg-yellow-400/15 px-2 py-1 text-xs font-bold text-yellow-300">Aguardando</span></div><p className="mt-3 text-sm text-zinc-300">{o.items.map(i=>`${i.qty}× ${i.name}`).join(" • ")}</p><div className="mt-4 grid grid-cols-2 gap-2"><Button className="bg-yellow-400 font-black text-black hover:bg-yellow-300" disabled={saving===o.id} onClick={()=>void command("accept",{request_id:o.id},"Pedido aceito.")}>Aceitar</Button><Button variant="outline" disabled={saving===o.id} onClick={()=>void command("decline",{request_id:o.id},"Oferta recusada.")}>Recusar</Button></div></div>)}
-              {activeRequests.map(r=><div key={r.id} className="rounded-2xl border border-white/10 bg-[#111416] p-4"><div className="flex items-start justify-between"><div><p className="font-black">{r.order_code??"Pedido"}</p><p className="mt-1 text-xs text-zinc-500">{r.store_name??"Loja parceira"}</p></div><span className={`rounded-lg px-2 py-1 text-xs font-bold ${r.status==="delivering"?"bg-blue-500/20 text-blue-300":"bg-yellow-400/15 text-yellow-300"}`}>{r.status==="delivering"?"Em entrega":r.status==="paid"?"Pago":r.status==="quoted"?"Frete calculado":"Em preparo"}</span></div><p className="mt-3 text-sm text-zinc-300">{r.items?.map(i=>`${i.qty}× ${i.name}`).join(" • ")}</p>{r.status==="paid"&&<Button className="mt-3 bg-yellow-400 text-black" onClick={()=>void command("dispatch",{request_id:r.id},"Pedido saiu para entrega.")}>Saiu para entrega</Button>}</div>)}
-              {offers.length===0&&activeRequests.length===0&&<div className="rounded-2xl border border-white/10 bg-[#111416] p-8 text-center text-zinc-500">Nenhum pedido agora.</div>}
+              <div className="flex items-center justify-between gap-3"><div><h1 className="text-2xl font-black">Meus pedidos</h1><p className="mt-1 text-xs text-zinc-500">Selecione uma etapa para acompanhar somente os pedidos que precisam da sua atenção.</p></div><span className="hidden rounded-xl border border-white/15 bg-[#121517] px-4 py-2 text-sm sm:inline-flex">{offers.length+activeRequests.length} ativos</span></div>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {([
+                  ["todos",`Todos (${offers.length+activeRequests.length})`],
+                  ["novos",`Novos (${offers.length})`],
+                  ["preparo",`Em preparo (${activeRequests.filter(r=>["accepted","quoted","paid"].includes(r.status)).length})`],
+                  ["entrega",`Em entrega (${activeRequests.filter(r=>r.status==="delivering").length})`],
+                ] as const).map(([key,label])=><button key={key} type="button" onClick={()=>setOrderFilter(key)} aria-pressed={orderFilter===key} className={`whitespace-nowrap rounded-xl px-4 py-2 text-xs transition ${orderFilter===key?"bg-yellow-400 font-black text-black":"bg-[#171a1d] text-zinc-300 hover:bg-white/10"}`}>{label}</button>)}
+              </div>
+              {visibleOffers.map(o=><div key={o.id} className="rounded-2xl border border-white/10 bg-[#111416] p-4"><div className="flex justify-between"><div><p className="font-black">Nova solicitação</p><p className="text-xs text-zinc-400">{o.city} · {Number(o.distance_km).toFixed(1)} km</p></div><span className="rounded-lg bg-yellow-400/15 px-2 py-1 text-xs font-bold text-yellow-300">Aguardando</span></div><p className="mt-3 text-sm text-zinc-300">{o.items.map(i=>`${i.qty}× ${i.name}`).join(" • ")}</p><div className="mt-4 grid grid-cols-2 gap-2"><Button className="bg-yellow-400 font-black text-black hover:bg-yellow-300" disabled={saving===o.id} onClick={()=>void command("accept",{request_id:o.id},"Pedido aceito.")}>Aceitar</Button><Button variant="outline" disabled={saving===o.id} onClick={()=>void command("decline",{request_id:o.id},"Oferta recusada.")}>Recusar</Button></div></div>)}
+              {visibleRequests.map(r=><div key={r.id} className="rounded-2xl border border-white/10 bg-[#111416] p-4"><div className="flex items-start justify-between"><div><p className="font-black">{r.order_code??"Pedido"}</p><p className="mt-1 text-xs text-zinc-500">{r.store_name??"Loja parceira"}</p></div><span className={`rounded-lg px-2 py-1 text-xs font-bold ${r.status==="delivering"?"bg-blue-500/20 text-blue-300":"bg-yellow-400/15 text-yellow-300"}`}>{r.status==="delivering"?"Em entrega":r.status==="paid"?"Pago":r.status==="quoted"?"Frete calculado":"Em preparo"}</span></div><p className="mt-3 text-sm text-zinc-300">{r.items?.map(i=>`${i.qty}× ${i.name}`).join(" • ")}</p>{r.status==="paid"&&<Button className="mt-3 bg-yellow-400 text-black" onClick={()=>void command("dispatch",{request_id:r.id},"Pedido saiu para entrega.")}>Saiu para entrega</Button>}</div>)}
+              {visibleOffers.length===0&&visibleRequests.length===0&&<div className="rounded-2xl border border-white/10 bg-[#111416] p-8 text-center text-zinc-500">{offers.length===0&&activeRequests.length===0?"Nenhum pedido agora.":"Nenhum pedido nesta etapa."}</div>}
             </section>}
 
             {approvedStores.map(store=><section key={store.id} className="space-y-4">

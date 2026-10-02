@@ -237,6 +237,7 @@ export default function PainelRevendedor() {
   const paidPayout = payouts.filter((p) => p.status === "paid").reduce((sum,p)=>sum+Number(p.amount||0),0);
   const openStore = approvedStores.find((s) => s.is_open) ?? approvedStores[0] ?? null;
   const totalAvailable = inventory.reduce((sum, item) => sum + Math.max(0, Number(item.on_hand) - Number(item.reserved)), 0);
+  const featuredProduct = catalogProducts.find((product) => Boolean(product.image_url));
 
   return (
     <main className="min-h-screen bg-[#07090b] text-zinc-100 pb-24 md:pb-8">
@@ -595,8 +596,8 @@ export default function PainelRevendedor() {
                   </div>
                   <div className="absolute inset-y-0 right-0 w-[48%]">
                     <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-[#160a07]"/>
-                    {catalogProducts.find((p)=>p.image_url)?.image_url
-                      ? <img src={catalogProducts.find((p)=>p.image_url)?.image_url ?? ""} alt="Produto em destaque" className="h-full w-full object-cover object-center opacity-95" />
+                    {featuredProduct?.image_url
+                      ? <img src={featuredProduct.image_url} alt={featuredProduct.name} className="h-full w-full object-cover object-center opacity-95" />
                       : <div className="flex h-full items-center justify-center"><Package className="h-24 w-24 text-[#f2c94c]/25"/></div>}
                   </div>
                 </div>

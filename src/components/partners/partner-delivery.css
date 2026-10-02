@@ -107,9 +107,8 @@
   .delivery-workspace-list .delivery-cards { display: flex; }
 }
 
-/* Dark cartography only; markers and map labels retain their own contrast. */
-.partner-map-canvas.leaflet-container { background: #191919; }
-.partner-map-canvas .leaflet-tile-pane { filter: grayscale(1) invert(1) brightness(.72) contrast(.9); }
+/* Keep the street map light within the black and gold dashboard. */
+.partner-map-canvas.leaflet-container { background: #f5f5f3; color-scheme: light; }
 .partner-map-canvas .leaflet-control-zoom a { background: #191816; color: #e5c66c; border-color: #4a4030; }
 .partner-map-canvas .leaflet-control-attribution { background: #171614ed; color: #c9bea8; }
 .partner-map-canvas .leaflet-control-attribution a { color: #e5c66c; }

@@ -248,8 +248,8 @@ export default function PainelRevendedor() {
     }
   };
 
-  if (loading) return <main className="grid min-h-screen place-items-center bg-[#f4f7fa] text-slate-600"><p role="status">Carregando seu painel...</p></main>;
-  if (loadFailed) return <main className="grid min-h-screen place-items-center bg-[#f4f7fa] p-6 text-slate-700"><div className="space-y-4 text-center"><p>Não foi possível carregar o painel.</p><Button onClick={()=>void load()}>Tentar novamente</Button></div></main>;
+  if (loading) return <main className="grid min-h-screen place-items-center bg-[#0c0c0c] text-[#c9bea8]"><p role="status">Carregando seu painel...</p></main>;
+  if (loadFailed) return <main className="grid min-h-screen place-items-center bg-[#0c0c0c] p-6 text-[#c9bea8]"><div className="space-y-4 text-center"><p>Não foi possível carregar o painel.</p><Button onClick={()=>void load()}>Tentar novamente</Button></div></main>;
 
   const approvedStores = stores.filter((s) => s.status === "approved");
   const pendingStores = stores.filter((s) => s.status !== "approved");
@@ -260,35 +260,35 @@ export default function PainelRevendedor() {
   const totalAvailable = inventory.filter(i => approvedStores.some(s => s.id === i.store_id)).reduce((sum, item) => sum + Math.max(0, Number(item.on_hand) - Number(item.reserved)), 0);
 
   return (
-    <main className={hasApprovedStore && ["inicio", "pedidos"].includes(activeTab) ? "min-h-screen bg-[#f4f7fa] pb-24 text-slate-900 md:pb-8" : "min-h-screen bg-[#0a0b0d] text-zinc-100 pb-24 md:pb-8"}>
+    <main className={hasApprovedStore && ["inicio", "pedidos"].includes(activeTab) ? "min-h-screen bg-[#0c0c0c] pb-24 text-[#f5efdf] md:pb-8" : "min-h-screen bg-[#0a0b0d] text-zinc-100 pb-24 md:pb-8"}>
       <div className="mx-auto min-h-screen max-w-[1600px]">
         <div className="min-w-0">
-          <header className="sticky top-0 z-20 border-b border-white/10 bg-[#11191f] px-4 py-3 text-white md:px-7">
+          <header className="sticky top-0 z-20 border-b border-white/10 bg-[#11100e] px-4 py-3 text-white md:px-7">
             <div className="flex items-center justify-between gap-3">
-              <button type="button" onClick={()=>navigate("/")} className="text-left font-heading text-base font-black leading-tight text-yellow-300" aria-label="Voltar à Home">MANSÃO<br className="sm:hidden"/> MAROMBA</button>
+              <button type="button" onClick={()=>navigate("/")} className="text-left font-heading text-base font-black leading-tight text-[#e5c66c]" aria-label="Voltar à Home">MANSÃO<br className="sm:hidden"/> MAROMBA</button>
               {hasApprovedStore && <nav className="hidden items-center gap-1 md:flex" aria-label="Painel do parceiro">
-                {([{id:"inicio",label:"Entregas",icon:MapPin},{id:"pedidos",label:"Pedidos",icon:Package},{id:"estoque",label:"Estoque",icon:Boxes},{id:"repasses",label:"Repasses",icon:WalletCards},{id:"loja",label:"Minha loja",icon:StoreIcon}] as const).map(item=><button key={item.id} type="button" onClick={()=>switchTab(item.id)} aria-current={activeTab===item.id?"page":undefined} className={"flex items-center gap-2 rounded-lg px-3 py-3 text-xs font-semibold transition "+(activeTab===item.id?"bg-white/10 text-yellow-300":"text-slate-300 hover:bg-white/5")}><item.icon className="h-4 w-4"/>{item.label}</button>)}
+                {([{id:"inicio",label:"Entregas",icon:MapPin},{id:"pedidos",label:"Pedidos",icon:Package},{id:"estoque",label:"Estoque",icon:Boxes},{id:"repasses",label:"Repasses",icon:WalletCards},{id:"loja",label:"Minha loja",icon:StoreIcon}] as const).map(item=><button key={item.id} type="button" onClick={()=>switchTab(item.id)} aria-current={activeTab===item.id?"page":undefined} className={"flex items-center gap-2 rounded-lg px-3 py-3 text-xs font-semibold transition "+(activeTab===item.id?"bg-white/10 text-[#e5c66c]":"text-slate-300 hover:bg-white/5")}><item.icon className="h-4 w-4"/>{item.label}</button>)}
               </nav>}
               <div className="flex items-center gap-2">
                 {hasApprovedStore && <button type="button" onClick={()=>switchTab("loja")} className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs"><span className={"h-2 w-2 rounded-full "+(openStore?.is_open?"bg-emerald-400":"bg-slate-500")}/>{openStore?.is_open?"Loja aberta":"Loja fechada"}</button>}
-                {hasApprovedStore && <button type="button" onClick={()=>switchTab("pedidos")} aria-label={"Ver pedidos: "+offers.length+" novas solicitações"} className="relative grid h-10 w-10 place-items-center rounded-lg hover:bg-white/5"><Bell className="h-5 w-5"/>{offers.length>0&&<span className="absolute right-0 top-0 rounded-full bg-yellow-400 px-1.5 text-[10px] font-black text-black">{offers.length}</span>}</button>}
+                {hasApprovedStore && <button type="button" onClick={()=>switchTab("pedidos")} aria-label={"Ver pedidos: "+offers.length+" novas solicitações"} className="relative grid h-10 w-10 place-items-center rounded-lg hover:bg-white/5"><Bell className="h-5 w-5"/>{offers.length>0&&<span className="absolute right-0 top-0 rounded-full bg-[#d4af37] px-1.5 text-[10px] font-black text-black">{offers.length}</span>}</button>}
                 {!hasApprovedStore && <span className="text-xs text-slate-300">Cadastro de parceiro</span>}
               </div>
             </div>
           </header>
 
           <div className="space-y-6 p-4 md:p-7">
-            {!hasApprovedStore && <section id="visao-geral" className="relative overflow-hidden rounded-3xl border border-yellow-400/20 bg-gradient-to-br from-[#1c170a] via-[#101114] to-[#090a0c] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.38)] sm:p-6">
-              <div className="pointer-events-none absolute -right-14 -top-20 h-52 w-52 rounded-full bg-yellow-400/10 blur-3xl" />
+            {!hasApprovedStore && <section id="visao-geral" className="relative overflow-hidden rounded-3xl border border-[#d4af37]/20 bg-gradient-to-br from-[#1c170a] via-[#101114] to-[#090a0c] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.38)] sm:p-6">
+              <div className="pointer-events-none absolute -right-14 -top-20 h-52 w-52 rounded-full bg-[#d4af37]/10 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-24 left-10 h-44 w-44 rounded-full bg-amber-500/10 blur-3xl" />
               <div className="relative">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
-                    <div className="rounded-2xl border border-yellow-400/25 bg-yellow-400/10 p-2.5">
-                      <StoreIcon className="h-5 w-5 text-yellow-300"/>
+                    <div className="rounded-2xl border border-[#d4af37]/25 bg-[#d4af37]/10 p-2.5">
+                      <StoreIcon className="h-5 w-5 text-[#e5c66c]"/>
                     </div>
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-yellow-300">Área do parceiro</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#e5c66c]">Área do parceiro</p>
                       <h1 className="mt-1 text-xl font-black sm:text-2xl">{stores.length===0 ? "Ative sua operação local" : "Cadastro recebido com sucesso"}</h1>
                       <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-300">{stores.length===0 ? "Cadastre sua loja abaixo para entrar na rede de parceiros Mansão Maromba." : "Sua loja já está salva. Agora ela passa pela análise de segurança e condições comerciais antes da liberação operacional."}</p>
                     </div>
@@ -303,8 +303,8 @@ export default function PainelRevendedor() {
                       <p className="mt-2 text-xs font-black text-emerald-100">Cadastro recebido</p>
                       <p className="mt-1 text-[11px] leading-4 text-zinc-400">Dados da loja registrados.</p>
                     </div>
-                    <div className="rounded-2xl border border-yellow-400/25 bg-yellow-400/[0.08] p-3">
-                      <ShieldCheck className="h-5 w-5 text-yellow-300"/>
+                    <div className="rounded-2xl border border-[#d4af37]/25 bg-[#d4af37]/[0.08] p-3">
+                      <ShieldCheck className="h-5 w-5 text-[#e5c66c]"/>
                       <p className="mt-2 text-xs font-black text-yellow-100">Análise da parceria</p>
                       <p className="mt-1 text-[11px] leading-4 text-zinc-400">Validação de segurança e condições.</p>
                     </div>
@@ -315,14 +315,14 @@ export default function PainelRevendedor() {
                     </div>
                   </div>
 
-                  <div className="mt-4 space-y-2">{pendingStores.map((store)=><div key={store.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/25 p-4"><div><p className="font-black text-zinc-100">{store.name}</p><p className="mt-1 text-xs text-zinc-500">CNPJ cadastrado · operação ainda bloqueada até aprovação</p></div><span className="rounded-xl border border-yellow-400/30 bg-yellow-400/10 px-3 py-1.5 text-xs font-black text-yellow-200">{store.status==="pending"?"Em análise":store.status==="rejected"?"Revisão necessária":"Aguardando liberação"}</span></div>)}</div>
+                  <div className="mt-4 space-y-2">{pendingStores.map((store)=><div key={store.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/25 p-4"><div><p className="font-black text-zinc-100">{store.name}</p><p className="mt-1 text-xs text-zinc-500">CNPJ cadastrado · operação ainda bloqueada até aprovação</p></div><span className="rounded-xl border border-[#d4af37]/30 bg-[#d4af37]/10 px-3 py-1.5 text-xs font-black text-yellow-200">{store.status==="pending"?"Em análise":store.status==="rejected"?"Revisão necessária":"Aguardando liberação"}</span></div>)}</div>
 
-                  <div className="mt-4 rounded-2xl border border-yellow-400/15 bg-yellow-400/[0.06] p-3 text-xs leading-5 text-yellow-100">
+                  <div className="mt-4 rounded-2xl border border-[#d4af37]/15 bg-[#d4af37]/[0.06] p-3 text-xs leading-5 text-yellow-100">
                     Seu cadastro já está ativo no sistema como solicitação. Não é necessário enviar novamente; a operação será liberada após a aprovação.
                   </div>
                   <Button
                     type="button"
-                    className="mt-4 h-11 w-full rounded-xl border border-yellow-300 bg-yellow-400 font-black text-black shadow-[0_10px_28px_rgba(250,204,21,0.18)] hover:bg-yellow-300 hover:text-black sm:w-auto"
+                    className="mt-4 h-11 w-full rounded-xl border border-yellow-300 bg-[#d4af37] font-black text-black shadow-[0_10px_28px_rgba(250,204,21,0.18)] hover:bg-[#e8c65a] hover:text-black sm:w-auto"
                     onClick={() => navigate("/")}
                   >
                     <Home className="mr-2 h-4 w-4" />
@@ -340,12 +340,12 @@ export default function PainelRevendedor() {
               /></Suspense>}
             </>}
 
-            {stores.length===0&&<section id="minha-loja" className="overflow-hidden rounded-3xl border border-yellow-400/20 bg-gradient-to-br from-[#17130a] via-[#0f1013] to-[#090a0c] shadow-[0_20px_70px_rgba(0,0,0,0.35)]">
-              <div className="relative overflow-hidden border-b border-yellow-400/15 px-4 py-6 sm:px-6 sm:py-7">
-                <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-yellow-400/10 blur-3xl" />
+            {stores.length===0&&<section id="minha-loja" className="overflow-hidden rounded-3xl border border-[#d4af37]/20 bg-gradient-to-br from-[#17130a] via-[#0f1013] to-[#090a0c] shadow-[0_20px_70px_rgba(0,0,0,0.35)]">
+              <div className="relative overflow-hidden border-b border-[#d4af37]/15 px-4 py-6 sm:px-6 sm:py-7">
+                <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-[#d4af37]/10 blur-3xl" />
                 <div className="pointer-events-none absolute -bottom-20 left-10 h-36 w-36 rounded-full bg-amber-500/10 blur-3xl" />
                 <div className="relative">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-yellow-400/25 bg-yellow-400/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] text-yellow-300">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-[#d4af37]/25 bg-[#d4af37]/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] text-[#e5c66c]">
                     <StoreIcon className="h-3.5 w-3.5"/>
                     Seja um parceiro Mansão Maromba
                   </div>
@@ -353,15 +353,15 @@ export default function PainelRevendedor() {
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-300 sm:text-base">Receba oportunidades de pedidos próximos, opere seu estoque pelo app e acompanhe entregas e repasses em um só lugar.</p>
                   <div className="mt-5 grid grid-cols-3 gap-2">
                     <div className="rounded-2xl border border-white/10 bg-black/25 p-3 text-center">
-                      <Package className="mx-auto h-5 w-5 text-yellow-300"/>
+                      <Package className="mx-auto h-5 w-5 text-[#e5c66c]"/>
                       <p className="mt-2 text-[11px] font-bold text-zinc-200">Pedidos locais</p>
                     </div>
                     <div className="rounded-2xl border border-white/10 bg-black/25 p-3 text-center">
-                      <Truck className="mx-auto h-5 w-5 text-yellow-300"/>
+                      <Truck className="mx-auto h-5 w-5 text-[#e5c66c]"/>
                       <p className="mt-2 text-[11px] font-bold text-zinc-200">Entrega rápida</p>
                     </div>
                     <div className="rounded-2xl border border-white/10 bg-black/25 p-3 text-center">
-                      <WalletCards className="mx-auto h-5 w-5 text-yellow-300"/>
+                      <WalletCards className="mx-auto h-5 w-5 text-[#e5c66c]"/>
                       <p className="mt-2 text-[11px] font-bold text-zinc-200">Repasse centralizado</p>
                     </div>
                   </div>
@@ -370,32 +370,32 @@ export default function PainelRevendedor() {
 
               <div className="p-4 sm:p-6">
                 <div className="mb-4">
-                  <p className="text-xs font-black uppercase tracking-[0.14em] text-yellow-300">Cadastro da loja</p>
+                  <p className="text-xs font-black uppercase tracking-[0.14em] text-[#e5c66c]">Cadastro da loja</p>
                   <p className="mt-1 text-sm text-zinc-400">Preencha os dados abaixo. Depois da análise, as funções operacionais são liberadas no painel.</p>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   <label className="space-y-1.5">
                     <span className="text-xs font-semibold text-zinc-300">Nome da loja</span>
-                    <input className="h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 text-sm outline-none transition placeholder:text-zinc-600 focus:border-yellow-400/60 focus:ring-2 focus:ring-yellow-400/10" placeholder="Ex.: Adega Central" value={newStore.name} onChange={(e)=>setNewStore({...newStore,name:e.target.value})}/>
+                    <input className="h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 text-sm outline-none transition placeholder:text-zinc-600 focus:border-[#d4af37]/60 focus:ring-2 focus:ring-yellow-400/10" placeholder="Ex.: Adega Central" value={newStore.name} onChange={(e)=>setNewStore({...newStore,name:e.target.value})}/>
                   </label>
                   <label className="space-y-1.5">
                     <span className="text-xs font-semibold text-zinc-300">CNPJ</span>
-                    <input className="h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 text-sm outline-none transition placeholder:text-zinc-600 focus:border-yellow-400/60 focus:ring-2 focus:ring-yellow-400/10" placeholder="00.000.000/0000-00" inputMode="numeric" value={newStore.document} onChange={(e)=>setNewStore({...newStore,document:e.target.value})}/>
+                    <input className="h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 text-sm outline-none transition placeholder:text-zinc-600 focus:border-[#d4af37]/60 focus:ring-2 focus:ring-yellow-400/10" placeholder="00.000.000/0000-00" inputMode="numeric" value={newStore.document} onChange={(e)=>setNewStore({...newStore,document:e.target.value})}/>
                   </label>
                   <label className="space-y-1.5">
                     <span className="text-xs font-semibold text-zinc-300">Telefone / WhatsApp</span>
-                    <input className="h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 text-sm outline-none transition placeholder:text-zinc-600 focus:border-yellow-400/60 focus:ring-2 focus:ring-yellow-400/10" placeholder="(19) 99999-9999" value={newStore.phone} onChange={(e)=>setNewStore({...newStore,phone:e.target.value})}/>
+                    <input className="h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 text-sm outline-none transition placeholder:text-zinc-600 focus:border-[#d4af37]/60 focus:ring-2 focus:ring-yellow-400/10" placeholder="(19) 99999-9999" value={newStore.phone} onChange={(e)=>setNewStore({...newStore,phone:e.target.value})}/>
                   </label>
                   <div className="space-y-1.5">
                     <span className="text-xs font-semibold text-zinc-300">CEP da loja</span>
                     <div className="flex flex-col gap-2 sm:flex-row">
-                      <input className="h-12 min-w-0 flex-1 rounded-xl border border-white/10 bg-black/30 px-4 text-sm outline-none transition placeholder:text-zinc-600 focus:border-yellow-400/60 focus:ring-2 focus:ring-yellow-400/10" placeholder="00000-000" inputMode="numeric" value={newStore.cep} onChange={(e)=>setNewStore({...newStore,cep:maskCepValue(e.target.value),lat:"",lng:""})}/>
-                      <Button variant="outline" className="h-12 shrink-0 border-yellow-400/25 bg-yellow-400/5 px-4 text-yellow-200 hover:bg-yellow-400/10 hover:text-yellow-100" disabled={locatingStore} onClick={()=>void locateStore()}>{locatingStore?"Localizando...":"Buscar CEP"}</Button>
+                      <input className="h-12 min-w-0 flex-1 rounded-xl border border-white/10 bg-black/30 px-4 text-sm outline-none transition placeholder:text-zinc-600 focus:border-[#d4af37]/60 focus:ring-2 focus:ring-yellow-400/10" placeholder="00000-000" inputMode="numeric" value={newStore.cep} onChange={(e)=>setNewStore({...newStore,cep:maskCepValue(e.target.value),lat:"",lng:""})}/>
+                      <Button variant="outline" className="h-12 shrink-0 border-[#d4af37]/25 bg-[#d4af37]/5 px-4 text-yellow-200 hover:bg-[#d4af37]/10 hover:text-yellow-100" disabled={locatingStore} onClick={()=>void locateStore()}>{locatingStore?"Localizando...":"Buscar CEP"}</Button>
                     </div>
                   </div>
                   <label className="space-y-1.5 md:col-span-2">
                     <span className="text-xs font-semibold text-zinc-300">Endereço da loja</span>
-                    <input className="h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 text-sm outline-none transition placeholder:text-zinc-600 focus:border-yellow-400/60 focus:ring-2 focus:ring-yellow-400/10" placeholder="Rua, número e complemento" value={newStore.address} onChange={(e)=>setNewStore({...newStore,address:e.target.value})}/>
+                    <input className="h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 text-sm outline-none transition placeholder:text-zinc-600 focus:border-[#d4af37]/60 focus:ring-2 focus:ring-yellow-400/10" placeholder="Rua, número e complemento" value={newStore.address} onChange={(e)=>setNewStore({...newStore,address:e.target.value})}/>
                   </label>
                   <label className="space-y-1.5">
                     <span className="text-xs font-semibold text-zinc-300">Cidade / UF</span>
@@ -404,7 +404,7 @@ export default function PainelRevendedor() {
                   <label className="space-y-1.5">
                     <span className="text-xs font-semibold text-zinc-300">Raio de atendimento</span>
                     <div className="relative">
-                      <input className="h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 pr-12 text-sm outline-none transition placeholder:text-zinc-600 focus:border-yellow-400/60 focus:ring-2 focus:ring-yellow-400/10" inputMode="decimal" placeholder="15" value={newStore.radius_km} onChange={(e)=>setNewStore({...newStore,radius_km:e.target.value})}/>
+                      <input className="h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 pr-12 text-sm outline-none transition placeholder:text-zinc-600 focus:border-[#d4af37]/60 focus:ring-2 focus:ring-yellow-400/10" inputMode="decimal" placeholder="15" value={newStore.radius_km} onChange={(e)=>setNewStore({...newStore,radius_km:e.target.value})}/>
                       <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-zinc-500">km</span>
                     </div>
                   </label>
@@ -415,7 +415,7 @@ export default function PainelRevendedor() {
                   <span><strong className="text-zinc-100">Aceito as condições da operação parceira.</strong><br/><span className="text-xs text-zinc-500">Pedidos, estoque, entregas e repasses são liberados somente para lojas aprovadas.</span></span>
                 </label>
 
-                <Button className="mt-4 h-12 w-full rounded-xl bg-yellow-400 text-sm font-black text-black shadow-[0_10px_30px_rgba(250,204,21,0.12)] hover:bg-yellow-300 sm:w-auto sm:px-6" disabled={registering} onClick={()=>void registerStore()}>{registering?"Enviando...":"Enviar loja para aprovação"}</Button>
+                <Button className="mt-4 h-12 w-full rounded-xl bg-[#d4af37] text-sm font-black text-black shadow-[0_10px_30px_rgba(250,204,21,0.12)] hover:bg-[#e8c65a] sm:w-auto sm:px-6" disabled={registering} onClick={()=>void registerStore()}>{registering?"Enviando...":"Enviar loja para aprovação"}</Button>
               </div>
             </section>}
 
@@ -424,9 +424,9 @@ export default function PainelRevendedor() {
               <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div><h2 className="text-lg font-black">{store.name}</h2><p className="text-xs text-zinc-500">Cadastro: {store.status}</p></div>
-                  <Settings2 className="h-5 w-5 text-yellow-300"/>
+                  <Settings2 className="h-5 w-5 text-[#e5c66c]"/>
                 </div>
-                {store.status==="approved"&&store.accepted_terms_version!==store.terms_version&&<div className="mt-4 rounded-xl border border-yellow-400/20 bg-yellow-400/5 p-4"><p className="font-semibold text-yellow-200">Condições atualizadas</p><p className="mt-1 text-xs text-zinc-400">Aceite a versão {store.terms_version} para reabrir a operação.</p><Button className="mt-3 bg-yellow-400 font-bold text-black hover:bg-yellow-300" disabled={saving==="terms-"+store.id} onClick={()=>void acceptTerms(store)}>Aceitar condições</Button></div>}
+                {store.status==="approved"&&store.accepted_terms_version!==store.terms_version&&<div className="mt-4 rounded-xl border border-[#d4af37]/20 bg-[#d4af37]/5 p-4"><p className="font-semibold text-yellow-200">Condições atualizadas</p><p className="mt-1 text-xs text-zinc-400">Aceite a versão {store.terms_version} para reabrir a operação.</p><Button className="mt-3 bg-[#d4af37] font-bold text-black hover:bg-[#e8c65a]" disabled={saving==="terms-"+store.id} onClick={()=>void acceptTerms(store)}>Aceitar condições</Button></div>}
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                   <div><Label className="text-zinc-300">Modalidade de entrega</Label><Select value={store.delivery_mode} onValueChange={(value:Store["delivery_mode"])=>setStores((prev)=>prev.map((s)=>s.id===store.id?{...s,delivery_mode:value,own_driver_available:value==="third_party"?false:s.own_driver_available}:s))}><SelectTrigger className="mt-1 border-white/10 bg-black/20"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="own">Entregador próprio</SelectItem><SelectItem value="third_party">Entregador terceirizado</SelectItem><SelectItem value="hybrid">Híbrido</SelectItem></SelectContent></Select></div>
                   <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/20 p-4"><div><Label className="text-zinc-300">Motoqueiro disponível</Label><p className="text-xs text-zinc-500">Prioriza entrega própria.</p></div><Switch disabled={store.delivery_mode==="third_party"} checked={store.own_driver_available} onCheckedChange={(checked)=>setStores((prev)=>prev.map((s)=>s.id===store.id?{...s,own_driver_available:checked}:s))}/></div>
@@ -434,7 +434,7 @@ export default function PainelRevendedor() {
                 <div className="mt-3 rounded-xl border border-white/10 bg-black/20 p-4">
                   <div className="flex items-center justify-between gap-3"><div><Label className="text-zinc-300">Loja recebendo pedidos</Label><p className="text-xs text-zinc-500">Abra somente com estoque e operação prontos.</p></div><Switch disabled={store.status!=="approved"} checked={store.is_open} onCheckedChange={(checked)=>setStores((prev)=>prev.map((s)=>s.id===store.id?{...s,is_open:checked}:s))}/></div>
                   <div className="mt-3 grid gap-2 md:grid-cols-3"><input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" type="number" min="0" step="0.01" aria-label="Taxa base" value={store.delivery_base} onChange={(e)=>setStores((prev)=>prev.map((s)=>s.id===store.id?{...s,delivery_base:Number(e.target.value)}:s))}/><input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" type="number" min="0" step="0.01" aria-label="Valor por km" value={store.delivery_per_km} onChange={(e)=>setStores((prev)=>prev.map((s)=>s.id===store.id?{...s,delivery_per_km:Number(e.target.value)}:s))}/><input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" type="number" min="0" step="0.01" aria-label="Valor por kg" value={store.delivery_per_kg} onChange={(e)=>setStores((prev)=>prev.map((s)=>s.id===store.id?{...s,delivery_per_kg:Number(e.target.value)}:s))}/></div>
-                  <div className="mt-3 flex flex-wrap gap-2"><Button variant="outline" className="border-white/15 bg-transparent" disabled={saving==="settings-"+store.id||store.status!=="approved"} onClick={()=>void saveStoreSettings(store)}>Salvar tarifas e abertura</Button><Button className="bg-yellow-400 font-bold text-black hover:bg-yellow-300" disabled={saving===store.id} onClick={()=>void saveDelivery(store)}>Salvar operação</Button></div>
+                  <div className="mt-3 flex flex-wrap gap-2"><Button variant="outline" className="border-white/15 bg-transparent" disabled={saving==="settings-"+store.id||store.status!=="approved"} onClick={()=>void saveStoreSettings(store)}>Salvar tarifas e abertura</Button><Button className="bg-[#d4af37] font-bold text-black hover:bg-[#e8c65a]" disabled={saving===store.id} onClick={()=>void saveDelivery(store)}>Salvar operação</Button></div>
                 </div>
               </div>
               </>}
@@ -442,33 +442,33 @@ export default function PainelRevendedor() {
               {activeTab==="estoque" && <div id="estoque" className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
                 <div className="flex items-center justify-between gap-3">
                   <div><h2 className="text-lg font-black">Meu estoque</h2><p className="text-xs text-zinc-500">Disponível = físico menos reservado.</p></div>
-                  <Boxes className="h-5 w-5 text-yellow-300"/>
+                  <Boxes className="h-5 w-5 text-[#e5c66c]"/>
                 </div>
                 {catalogProducts.length===0?<p className="mt-3 text-sm text-zinc-500">Nenhum produto ativo no catálogo.</p>:<div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {catalogProducts.map((p)=>{const i=inventory.find((x)=>x.store_id===store.id&&x.product_id===p.id)??{store_id:store.id,product_id:p.id,on_hand:0,reserved:0,name:p.name};const key=i.store_id+":"+i.product_id;return <div key={key} className="rounded-2xl border border-white/10 bg-black/20 p-3">
                     <div className="flex items-start gap-3">
-                      <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-yellow-400/15 bg-white/[0.04]">
+                      <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[#d4af37]/15 bg-white/[0.04]">
                         <Package className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-zinc-600"/>
                         {p.image_url&&<img src={p.image_url} alt={p.name} loading="lazy" className="relative h-full w-full object-cover" onError={(e)=>{e.currentTarget.style.display="none";}}/>}
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="line-clamp-2 text-sm font-bold">{i.name}</p>
                         <p className="mt-1 text-xs text-zinc-500">Físico {i.on_hand} · reservado {i.reserved}</p>
-                        <p className="mt-1 text-xs font-semibold text-yellow-300">Disponível {i.on_hand-i.reserved}</p>
+                        <p className="mt-1 text-xs font-semibold text-[#e5c66c]">Disponível {i.on_hand-i.reserved}</p>
                       </div>
                     </div>
                     <div className="mt-3 grid gap-2">
                       <input className="h-9 rounded-lg border border-white/10 bg-black/30 px-2" type="number" min="0" step="1" placeholder={String(i.on_hand)} value={stockDraft[key]??""} onChange={(e)=>setStockDraft((x)=>({...x,[key]:e.target.value}))}/>
                       <input className="h-9 rounded-lg border border-white/10 bg-black/30 px-2" placeholder="Motivo do ajuste" value={stockReason[key]??""} onChange={(e)=>setStockReason((x)=>({...x,[key]:e.target.value}))}/>
-                      <Button size="sm" variant="outline" className="border-yellow-400/25 bg-yellow-400/5 text-yellow-200 hover:bg-yellow-400/10" disabled={saving==="stock-"+key} onClick={()=>void saveStock(i.store_id,i.product_id,i.on_hand)}>Atualizar estoque</Button>
+                      <Button size="sm" variant="outline" className="border-[#d4af37]/25 bg-[#d4af37]/5 text-yellow-200 hover:bg-[#d4af37]/10" disabled={saving==="stock-"+key} onClick={()=>void saveStock(i.store_id,i.product_id,i.on_hand)}>Atualizar estoque</Button>
                     </div>
                   </div>})}
                 </div>}
               </div>}
 
               {activeTab==="repasses" && <div id="repasses" className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
-                <div className="flex items-center justify-between"><div><h2 className="text-lg font-black">Repasses</h2><p className="text-xs text-zinc-500">Cliente paga à plataforma; sua loja recebe depois da entrega.</p></div><WalletCards className="h-5 w-5 text-yellow-300"/></div>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2"><div className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs text-zinc-500">Aguardando liberação</p><p className="mt-1 text-xl font-black text-yellow-300">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p></div><div className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs text-zinc-500">Já repassado</p><p className="mt-1 text-xl font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(paidPayout)}</p></div></div>
+                <div className="flex items-center justify-between"><div><h2 className="text-lg font-black">Repasses</h2><p className="text-xs text-zinc-500">Cliente paga à plataforma; sua loja recebe depois da entrega.</p></div><WalletCards className="h-5 w-5 text-[#e5c66c]"/></div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2"><div className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs text-zinc-500">Aguardando liberação</p><p className="mt-1 text-xl font-black text-[#e5c66c]">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p></div><div className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs text-zinc-500">Já repassado</p><p className="mt-1 text-xl font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(paidPayout)}</p></div></div>
                 <div className="mt-4 grid gap-2 md:grid-cols-2">
                   <Select value={pix[store.id]?.pix_key_type??"cnpj"} onValueChange={(v)=>setPix((x)=>({...x,[store.id]:{...(x[store.id]??{pix_key:"",holder_name:"",holder_document:""}),pix_key_type:v}}))}><SelectTrigger className="border-white/10 bg-black/20"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="cpf">CPF</SelectItem><SelectItem value="cnpj">CNPJ</SelectItem><SelectItem value="email">E-mail</SelectItem><SelectItem value="phone">Telefone</SelectItem><SelectItem value="random">Aleatória</SelectItem></SelectContent></Select>
                   <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" placeholder="Chave PIX" value={pix[store.id]?.pix_key??""} onChange={(e)=>setPix((x)=>({...x,[store.id]:{...(x[store.id]??{pix_key_type:"cnpj",holder_name:"",holder_document:""}),pix_key:e.target.value}}))}/>
@@ -484,24 +484,24 @@ export default function PainelRevendedor() {
               {payouts.map((p)=><div key={p.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.025] p-4"><div><p className="font-bold">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(Number(p.amount))}</p><p className="text-xs text-zinc-500">{stores.find((s)=>s.id===p.store_id)?.name??"Loja parceira"}</p></div><div className="text-right text-sm"><p>{p.status==="eligible"?"Aguardando aprovação":p.status==="approved"?"Aprovado para pagamento":p.status==="paid"?"Pago":p.status==="cancelled"?"Cancelado":p.status}</p>{p.status==="paid"&&<p className="text-xs text-zinc-500">{p.paid_at?new Date(p.paid_at).toLocaleString("pt-BR"):""}{p.receipt_reference?` · ${p.receipt_reference}`:""}</p>}</div></div>)}
             </section>}
 
-            {(!hasApprovedStore || activeTab==="loja") && <div className="rounded-2xl border border-yellow-400/20 bg-yellow-400/5 p-4 text-sm text-yellow-200">
+            {(!hasApprovedStore || activeTab==="loja") && <div className="rounded-2xl border border-[#d4af37]/20 bg-[#d4af37]/5 p-4 text-sm text-yellow-200">
               A entrega só é liberada depois que o pagamento do cliente é confirmado pela plataforma.
             </div>}
           </div>
         </div>
       </div>
 
-      <nav className={`fixed inset-x-0 bottom-0 z-30 grid ${hasApprovedStore?"grid-cols-6":"grid-cols-2"} border-t border-yellow-400/20 bg-[#090b0c]/95 px-2 py-2.5 shadow-[0_-12px_35px_rgba(0,0,0,0.45)] backdrop-blur md:hidden`}>
+      <nav className={`fixed inset-x-0 bottom-0 z-30 grid ${hasApprovedStore?"grid-cols-6":"grid-cols-2"} border-t border-[#d4af37]/20 bg-[#090b0c]/95 px-2 py-2.5 shadow-[0_-12px_35px_rgba(0,0,0,0.45)] backdrop-blur md:hidden`}>
         {hasApprovedStore ? <>
-          <button type="button" onClick={()=>switchTab("inicio")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="inicio"?"text-yellow-300":"text-zinc-400"}`}><MapPin className="h-5 w-5"/><span>Mapa</span></button>
-          <button type="button" onClick={()=>switchTab("pedidos")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="pedidos"?"text-yellow-300":"text-zinc-400"}`}><Package className="h-5 w-5"/><span>Pedidos</span></button>
-          <button type="button" onClick={()=>navigate("/")} className="mx-1 flex flex-col items-center gap-1 rounded-xl bg-yellow-400 px-2 py-1 text-[10px] font-black text-black hover:bg-yellow-300" aria-label="Voltar para a Home"><Home className="h-5 w-5"/><span>Home</span></button>
-          <button type="button" onClick={()=>switchTab("estoque")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="estoque"?"text-yellow-300":"text-zinc-400"}`}><Boxes className="h-5 w-5"/><span>Estoque</span></button>
-          <button type="button" onClick={()=>switchTab("repasses")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="repasses"?"text-yellow-300":"text-zinc-400"}`}><WalletCards className="h-5 w-5"/><span>Repasses</span></button>
-          <button type="button" onClick={()=>switchTab("loja")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="loja"?"text-yellow-300":"text-zinc-400"}`}><StoreIcon className="h-5 w-5"/><span>Loja</span></button>
+          <button type="button" onClick={()=>switchTab("inicio")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="inicio"?"text-[#e5c66c]":"text-zinc-400"}`}><MapPin className="h-5 w-5"/><span>Mapa</span></button>
+          <button type="button" onClick={()=>switchTab("pedidos")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="pedidos"?"text-[#e5c66c]":"text-zinc-400"}`}><Package className="h-5 w-5"/><span>Pedidos</span></button>
+          <button type="button" onClick={()=>navigate("/")} className="mx-1 flex flex-col items-center gap-1 rounded-xl bg-[#d4af37] px-2 py-1 text-[10px] font-black text-black hover:bg-[#e8c65a]" aria-label="Voltar para a Home"><Home className="h-5 w-5"/><span>Home</span></button>
+          <button type="button" onClick={()=>switchTab("estoque")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="estoque"?"text-[#e5c66c]":"text-zinc-400"}`}><Boxes className="h-5 w-5"/><span>Estoque</span></button>
+          <button type="button" onClick={()=>switchTab("repasses")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="repasses"?"text-[#e5c66c]":"text-zinc-400"}`}><WalletCards className="h-5 w-5"/><span>Repasses</span></button>
+          <button type="button" onClick={()=>switchTab("loja")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="loja"?"text-[#e5c66c]":"text-zinc-400"}`}><StoreIcon className="h-5 w-5"/><span>Loja</span></button>
         </> : <>
-          <span className="flex flex-col items-center gap-1 py-1 text-[10px] text-yellow-300"><StoreIcon className="h-5 w-5"/><span>Cadastro</span></span>
-          <button type="button" onClick={()=>navigate("/")} className="mx-1 flex flex-col items-center gap-1 rounded-xl bg-yellow-400 px-2 py-1 text-[10px] font-black text-black hover:bg-yellow-300" aria-label="Voltar para a Home"><Home className="h-5 w-5"/><span>Home</span></button>
+          <span className="flex flex-col items-center gap-1 py-1 text-[10px] text-[#e5c66c]"><StoreIcon className="h-5 w-5"/><span>Cadastro</span></span>
+          <button type="button" onClick={()=>navigate("/")} className="mx-1 flex flex-col items-center gap-1 rounded-xl bg-[#d4af37] px-2 py-1 text-[10px] font-black text-black hover:bg-[#e8c65a]" aria-label="Voltar para a Home"><Home className="h-5 w-5"/><span>Home</span></button>
         </>}
       </nav>
     </main>

@@ -336,14 +336,29 @@ export default function PainelRevendedor() {
             {hasApprovedStore && <>
             {activeTab==="inicio" && <section id="visao-geral" className="space-y-4">
               <div className="md:hidden">
-                <h1 className="text-2xl font-black">Visão geral</h1>
+                <h1 className="text-2xl font-black">Início</h1>
                 <p className="text-sm text-zinc-400">Operação local em tempo real.</p>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="relative overflow-hidden rounded-3xl border border-yellow-400/25 bg-gradient-to-br from-[#241807] via-[#111214] to-[#090a0c] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.4)] sm:p-6">
+                <div className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full bg-amber-500/15 blur-3xl" />
+                <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+                  <div className="max-w-xl">
+                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-yellow-300">Mansão Maromba • Parceiro</p>
+                    <h2 className="mt-2 text-3xl font-black leading-none sm:text-4xl">Venda mais na sua região.</h2>
+                    <p className="mt-3 text-sm leading-6 text-zinc-300">Receba pedidos próximos, controle seu estoque e acompanhe entregas e repasses em um único painel.</p>
+                  </div>
+                  <Button type="button" className="h-11 shrink-0 rounded-xl bg-yellow-400 px-5 font-black text-black hover:bg-yellow-300" onClick={()=>navigate("/")}>
+                    Ver produtos
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
                 <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-                  <div className="flex items-center justify-between"><span className="text-xs text-zinc-400">Novas solicitações</span><Clock3 className="h-4 w-4 text-yellow-300"/></div>
+                  <div className="flex items-center justify-between"><span className="text-xs text-zinc-400">Pedidos novos</span><Clock3 className="h-4 w-4 text-yellow-300"/></div>
                   <p className="mt-2 text-3xl font-black">{offers.length}</p>
+                  <p className="mt-1 text-[11px] text-zinc-600">Aguardando sua decisão</p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
                   <div className="flex items-center justify-between"><span className="text-xs text-zinc-400">Em andamento</span><Truck className="h-4 w-4 text-yellow-300"/></div>

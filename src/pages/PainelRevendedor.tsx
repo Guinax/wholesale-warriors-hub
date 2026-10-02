@@ -239,7 +239,7 @@ export default function PainelRevendedor() {
   const totalAvailable = inventory.reduce((sum, item) => sum + Math.max(0, Number(item.on_hand) - Number(item.reserved)), 0);
 
   return (
-    <main className="min-h-screen bg-[#0a0b0d] text-zinc-100 pb-24 md:pb-8">
+    <main className="min-h-screen bg-[#07090b] text-zinc-100 pb-24 md:pb-8">
       <div className="mx-auto min-h-screen max-w-[1500px] md:grid md:grid-cols-[220px_1fr]">
         <aside className="hidden md:flex min-h-screen flex-col border-r border-white/10 bg-[#0d0f12] p-4">
           <div className="px-2 py-4">
@@ -264,7 +264,7 @@ export default function PainelRevendedor() {
           <header className="sticky top-0 z-20 border-b border-white/10 bg-[#0a0b0d]/95 px-4 py-3 backdrop-blur md:px-7">
             <div className="flex items-center justify-between gap-3">
               <div className="md:hidden">
-                <p className="font-heading text-sm font-black">MANSÃO MAROMBA</p>
+                <p className="font-heading text-sm font-black tracking-wide text-[#f3c84b]">MANSÃO MAROMBA</p>
                 <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">Parceiro</p>
               </div>
               <div className="hidden md:block">
@@ -278,7 +278,7 @@ export default function PainelRevendedor() {
             </div>
           </header>
 
-          <div className="space-y-6 p-4 md:p-7">
+          <div className="space-y-5 p-3 sm:p-4 md:p-7">
             {!hasApprovedStore && <section id="visao-geral" className="relative overflow-hidden rounded-3xl border border-yellow-400/20 bg-gradient-to-br from-[#1c170a] via-[#101114] to-[#090a0c] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.38)] sm:p-6">
               <div className="pointer-events-none absolute -right-14 -top-20 h-52 w-52 rounded-full bg-yellow-400/10 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-24 left-10 h-44 w-44 rounded-full bg-amber-500/10 blur-3xl" />
@@ -585,7 +585,45 @@ export default function PainelRevendedor() {
 
             {approvedStores.map((store)=><section id="minha-loja" key={store.id} className="space-y-4">
               {activeTab==="inicio" && <>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
+              <section className="relative overflow-hidden rounded-[24px] border border-[#d5a92f]/35 bg-[radial-gradient(circle_at_78%_28%,rgba(170,20,10,.45),transparent_34%),linear-gradient(135deg,#260805_0%,#120b08_45%,#080a0c_100%)] shadow-[0_22px_70px_rgba(0,0,0,.5)]">
+                <div className="relative min-h-[260px] p-5 sm:min-h-[300px] sm:p-7">
+                  <div className="relative z-10 max-w-[58%] sm:max-w-[52%]">
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f2c94c]">Mansão Maromba</p>
+                    <h2 className="mt-3 text-3xl font-black uppercase leading-[.92] sm:text-5xl">Seja um<br/><span className="text-[#f2c94c]">parceiro</span></h2>
+                    <p className="mt-3 max-w-sm text-sm font-semibold uppercase leading-5 text-zinc-200">Venda mais. Entregue mais rápido. Faça parte da Família Maromba.</p>
+                    <Button className="mt-5 rounded-xl bg-[#f2c94c] px-5 font-black text-black hover:bg-[#ffd95a]" onClick={()=>switchTab("estoque")}>Ver produtos</Button>
+                  </div>
+                  <div className="absolute inset-y-0 right-0 w-[48%]">
+                    <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-[#160a07]"/>
+                    {catalogProducts.find((p)=>p.image_url)?.image_url
+                      ? <img src={catalogProducts.find((p)=>p.image_url)?.image_url ?? ""} alt="Produto em destaque" className="h-full w-full object-cover object-center opacity-95" />
+                      : <div className="flex h-full items-center justify-center"><Package className="h-24 w-24 text-[#f2c94c]/25"/></div>}
+                  </div>
+                </div>
+              </section>
+
+              <section>
+                <div className="mb-3 flex items-end justify-between">
+                  <div><p className="text-xs text-zinc-500">Resumo de hoje</p><h2 className="text-xl font-black">{store.name}</h2></div>
+                  <span className="rounded-lg border border-[#d5a92f]/30 bg-[#d5a92f]/10 px-3 py-1 text-xs font-bold text-[#f2c94c]">{store.is_open?"Operação ativa":"Operação pausada"}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                  <button type="button" onClick={()=>switchTab("pedidos")} className="rounded-2xl border border-[#d5a92f]/25 bg-gradient-to-br from-[#21180c] to-[#111315] p-4 text-left shadow-lg">
+                    <Package className="h-6 w-6 text-[#f2c94c]"/><p className="mt-3 text-xs text-zinc-400">Pedidos</p><p className="text-2xl font-black">{activeRequests.length}</p>
+                  </button>
+                  <button type="button" onClick={()=>switchTab("estoque")} className="rounded-2xl border border-[#d5a92f]/25 bg-gradient-to-br from-[#21180c] to-[#111315] p-4 text-left shadow-lg">
+                    <Boxes className="h-6 w-6 text-[#f2c94c]"/><p className="mt-3 text-xs text-zinc-400">Itens disponíveis</p><p className="text-2xl font-black">{totalAvailable}</p>
+                  </button>
+                  <button type="button" onClick={()=>switchTab("repasses")} className="rounded-2xl border border-[#d5a92f]/25 bg-gradient-to-br from-[#21180c] to-[#111315] p-4 text-left shadow-lg">
+                    <CircleDollarSign className="h-6 w-6 text-[#f2c94c]"/><p className="mt-3 text-xs text-zinc-400">A liberar</p><p className="text-lg font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p>
+                  </button>
+                  <div className="rounded-2xl border border-[#d5a92f]/25 bg-gradient-to-br from-[#21180c] to-[#111315] p-4 shadow-lg">
+                    <WalletCards className="h-6 w-6 text-[#f2c94c]"/><p className="mt-3 text-xs text-zinc-400">Já repassado</p><p className="text-lg font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(paidPayout)}</p>
+                  </div>
+                </div>
+              </section>
+
+              <div className="rounded-2xl border border-[#d5a92f]/20 bg-[#0d1012] p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div><h2 className="text-lg font-black">{store.name}</h2><p className="text-xs text-zinc-500">Cadastro: {store.status}</p></div>
                   <Settings2 className="h-5 w-5 text-yellow-300"/>
@@ -603,26 +641,23 @@ export default function PainelRevendedor() {
               </div>
               </>}
 
-              {activeTab==="estoque" && <div id="estoque" className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
+              {activeTab==="estoque" && <div id="estoque" className="rounded-2xl border border-[#d5a92f]/20 bg-[#0b0e10] p-4 sm:p-5">
                 <div className="flex items-center justify-between gap-3">
                   <div><h2 className="text-lg font-black">Meu estoque</h2><p className="text-xs text-zinc-500">Disponível = físico menos reservado.</p></div>
                   <Boxes className="h-5 w-5 text-yellow-300"/>
                 </div>
-                {catalogProducts.length===0?<p className="mt-3 text-sm text-zinc-500">Nenhum produto ativo no catálogo.</p>:<div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {catalogProducts.map((p)=>{const i=inventory.find((x)=>x.store_id===store.id&&x.product_id===p.id)??{store_id:store.id,product_id:p.id,on_hand:0,reserved:0,name:p.name};const key=i.store_id+":"+i.product_id;return <div key={key} className="rounded-2xl border border-white/10 bg-black/20 p-3">
-                    <div className="flex items-start gap-3">
-                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]">
+                {catalogProducts.length===0?<p className="mt-3 text-sm text-zinc-500">Nenhum produto ativo no catálogo.</p>:<div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
+                  {catalogProducts.map((p)=>{const i=inventory.find((x)=>x.store_id===store.id&&x.product_id===p.id)??{store_id:store.id,product_id:p.id,on_hand:0,reserved:0,name:p.name};const key=i.store_id+":"+i.product_id;return <div key={key} className="overflow-hidden rounded-2xl border border-[#d5a92f]/25 bg-[#101315] shadow-[0_12px_30px_rgba(0,0,0,.28)]">
+                    <div className="block">\n                      <div className="relative aspect-[4/3] w-full overflow-hidden border-b border-[#d5a92f]/20 bg-white/[0.04]">
                         <Package className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-zinc-600"/>
                         {p.image_url&&<img src={p.image_url} alt={p.name} loading="lazy" className="relative h-full w-full object-cover" onError={(e)=>{e.currentTarget.style.display="none";}}/>}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="line-clamp-2 text-sm font-bold">{i.name}</p>
+                      <div className="min-w-0 flex-1 p-3">\n                        <p className="line-clamp-2 text-sm font-black">{i.name}</p>
                         <p className="mt-1 text-xs text-zinc-500">Físico {i.on_hand} · reservado {i.reserved}</p>
                         <p className="mt-1 text-xs font-semibold text-yellow-300">Disponível {i.on_hand-i.reserved}</p>
                       </div>
                     </div>
-                    <div className="mt-3 grid gap-2">
-                      <input className="h-9 rounded-lg border border-white/10 bg-black/30 px-2" type="number" min="0" step="1" placeholder={String(i.on_hand)} value={stockDraft[key]??""} onChange={(e)=>setStockDraft((x)=>({...x,[key]:e.target.value}))}/>
+                    <div className="grid gap-2 px-3 pb-3">\n                      <input className="h-9 rounded-lg border border-white/10 bg-black/30 px-2" type="number" min="0" step="1" placeholder={String(i.on_hand)} value={stockDraft[key]??""} onChange={(e)=>setStockDraft((x)=>({...x,[key]:e.target.value}))}/>
                       <input className="h-9 rounded-lg border border-white/10 bg-black/30 px-2" placeholder="Motivo do ajuste" value={stockReason[key]??""} onChange={(e)=>setStockReason((x)=>({...x,[key]:e.target.value}))}/>
                       <Button size="sm" variant="outline" className="border-yellow-400/25 bg-yellow-400/5 text-yellow-200 hover:bg-yellow-400/10" disabled={saving==="stock-"+key} onClick={()=>void saveStock(i.store_id,i.product_id,i.on_hand)}>Atualizar estoque</Button>
                     </div>
@@ -630,9 +665,9 @@ export default function PainelRevendedor() {
                 </div>}
               </div>}
 
-              {activeTab==="repasses" && <div id="repasses" className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
+              {activeTab==="repasses" && <div id="repasses" className="rounded-2xl border border-[#d5a92f]/20 bg-[#0b0e10] p-4 sm:p-5">
                 <div className="flex items-center justify-between"><div><h2 className="text-lg font-black">Repasses</h2><p className="text-xs text-zinc-500">Cliente paga à plataforma; sua loja recebe depois da entrega.</p></div><WalletCards className="h-5 w-5 text-yellow-300"/></div>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2"><div className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs text-zinc-500">Aguardando liberação</p><p className="mt-1 text-xl font-black text-yellow-300">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p></div><div className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs text-zinc-500">Já repassado</p><p className="mt-1 text-xl font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(paidPayout)}</p></div></div>
+                <div className="mt-4 rounded-2xl border border-[#e0b437]/45 bg-gradient-to-br from-[#5a3706] via-[#2c1c08] to-[#111315] p-5 shadow-lg"><p className="text-sm font-bold text-zinc-200">Saldo disponível</p><p className="mt-1 text-3xl font-black text-[#ffd85a]">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p></div><div className="mt-3 grid gap-2 sm:grid-cols-2"><div className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs text-zinc-500">Aguardando liberação</p><p className="mt-1 text-xl font-black text-yellow-300">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p></div><div className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs text-zinc-500">Já repassado</p><p className="mt-1 text-xl font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(paidPayout)}</p></div></div>
                 <div className="mt-4 grid gap-2 md:grid-cols-2">
                   <Select value={pix[store.id]?.pix_key_type??"cnpj"} onValueChange={(v)=>setPix((x)=>({...x,[store.id]:{...(x[store.id]??{pix_key:"",holder_name:"",holder_document:""}),pix_key_type:v}}))}><SelectTrigger className="border-white/10 bg-black/20"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="cpf">CPF</SelectItem><SelectItem value="cnpj">CNPJ</SelectItem><SelectItem value="email">E-mail</SelectItem><SelectItem value="phone">Telefone</SelectItem><SelectItem value="random">Aleatória</SelectItem></SelectContent></Select>
                   <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" placeholder="Chave PIX" value={pix[store.id]?.pix_key??""} onChange={(e)=>setPix((x)=>({...x,[store.id]:{...(x[store.id]??{pix_key_type:"cnpj",holder_name:"",holder_document:""}),pix_key:e.target.value}}))}/>
@@ -659,7 +694,7 @@ export default function PainelRevendedor() {
         {hasApprovedStore ? <>
           <button type="button" onClick={()=>switchTab("inicio")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="inicio"?"text-yellow-300":"text-zinc-400"}`}><Home className="h-5 w-5"/><span>Início</span></button>
           <button type="button" onClick={()=>switchTab("pedidos")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="pedidos"?"text-yellow-300":"text-zinc-400"}`}><Package className="h-5 w-5"/><span>Pedidos</span></button>
-          <button type="button" onClick={()=>navigate("/")} className="mx-1 flex flex-col items-center gap-1 rounded-xl bg-yellow-400 px-2 py-1 text-[10px] font-black text-black hover:bg-yellow-300" aria-label="Voltar para a Home"><Home className="h-5 w-5"/><span>Home</span></button>
+          <button type="button" onClick={()=>navigate("/")} className="mx-1 flex flex-col items-center gap-1 rounded-xl px-2 py-1 text-[10px] font-semibold text-zinc-400 hover:text-[#f2c94c]" aria-label="Voltar para a Home"><Home className="h-5 w-5"/><span>Home</span></button>
           <button type="button" onClick={()=>switchTab("estoque")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="estoque"?"text-yellow-300":"text-zinc-400"}`}><Boxes className="h-5 w-5"/><span>Estoque</span></button>
           <button type="button" onClick={()=>switchTab("repasses")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="repasses"?"text-yellow-300":"text-zinc-400"}`}><WalletCards className="h-5 w-5"/><span>Repasses</span></button>
         </> : <>

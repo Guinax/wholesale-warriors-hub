@@ -8,13 +8,13 @@ import "@/components/partners/partner-delivery.css";
 
 type DemoStage = "idle" | "broadcast" | "accepted" | "preparing" | "picked_up" | "delivering" | "delivered";
 
-const stages: Array<{ id: DemoStage; label: string; dot: string; active: string }> = [
-  { id: "broadcast", label: "Pedido enviado às lojas", dot: "bg-blue-500", active: "border-blue-500/50 bg-blue-500/10" },
-  { id: "accepted", label: "Loja aceitou", dot: "bg-amber-500", active: "border-amber-500/50 bg-amber-500/10" },
-  { id: "preparing", label: "Separando pedido", dot: "bg-orange-500", active: "border-orange-500/50 bg-orange-500/10" },
-  { id: "picked_up", label: "Motoqueiro retirou", dot: "bg-violet-500", active: "border-violet-500/50 bg-violet-500/10" },
-  { id: "delivering", label: "Saiu para entrega", dot: "bg-cyan-500", active: "border-cyan-500/50 bg-cyan-500/10" },
-  { id: "delivered", label: "Entregue", dot: "bg-emerald-500", active: "border-emerald-500/50 bg-emerald-500/10" },
+const stages: Array<{ id: DemoStage; label: string }> = [
+  { id: "broadcast", label: "Enviado" },
+  { id: "accepted", label: "Aceito" },
+  { id: "preparing", label: "Separando" },
+  { id: "picked_up", label: "Retirado" },
+  { id: "delivering", label: "Em rota" },
+  { id: "delivered", label: "Entregue" },
 ];
 
 const stores = [
@@ -146,14 +146,52 @@ export default function DemoOrderFlow() {
           </Card>
 
           <Card className="p-4">
-            <p className="text-sm font-bold mb-3">Acompanhamento em tempo real</p>
-            <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-bold">Acompanhamento em tempo real</p>
+                <p className="text-[11px] text-muted-foreground">Visão compacta do pedido, da aceitação até a entrega.</p>
+              </div>
+              <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Concluído</span>
+                <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-400" /> Atual</span>
+                <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" /> Pendente</span>
+              </div>
+            </div>
+
+            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-red-500/15">
+              <div
+                className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                style={{ width: `${current < 0 ? 0 : ((current + 1) / stages.length) * 100}%` }}
+              />
+            </div>
+
+            <div className="mt-3 grid grid-cols-3 gap-2 lg:grid-cols-6">
               {stages.map((item, index) => {
-                const reached = current >= index;
-                return <div key={item.id} className={`rounded-xl border p-3 text-xs transition-all ${reached ? item.active : "opacity-40"}`}>
-                  <div className={`mb-2 h-2.5 w-2.5 rounded-full ${reached ? item.dot : "bg-muted"}`} />
-                  <span className={reached ? "font-semibold" : ""}>{item.label}</span>
-                </div>;
+                const done = current > index;
+                const active = current === index;
+                const stateClass = done
+                  ? "border-emerald-500/40 bg-emerald-500/10"
+                  : active
+                    ? "border-amber-400/50 bg-amber-400/10 ring-1 ring-amber-400/20"
+                    : "border-red-500/25 bg-red-500/5";
+                const dotClass = done
+                  ? "bg-emerald-500 text-white"
+                  : active
+                    ? "bg-amber-400 text-black"
+                    : "bg-red-500/80 text-white";
+                return (
+                  <div key={item.id} className={`flex min-w-0 items-center gap-2 rounded-lg border px-2.5 py-2 transition-all ${stateClass}`}>
+                    <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-black ${dotClass}`}>
+                      {done ? "✓" : index + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-[11px] font-bold">{item.label}</p>
+                      <p className="text-[9px] text-muted-foreground">
+                        {done ? "Concluído" : active ? "Agora" : "Aguardando"}
+                      </p>
+                    </div>
+                  </div>
+                );
               })}
             </div>
           </Card>

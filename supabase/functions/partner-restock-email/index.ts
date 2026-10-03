@@ -39,13 +39,8 @@ Deno.serve(async (req) => {
     if (authError || !user) return json({ error: "Sessão inválida." }, 401);
     userId = user.id;
   } else {
-    const { data: config, error: configError } = await admin
-      .schema("private")
-      .from("partner_restock_webhook_config")
-      .select("secret")
-      .eq("singleton", true)
-      .maybeSingle();
-    if (configError || !config?.secret || !internalSecret || config.secret !== internalSecret) {
+    const { data: serverSecret, error: secretError } = await admin.rpc("service_get_restock_webhook_secret");
+    if (secretError || !serverSecret || !internalSecret || serverSecret !== internalSecret) {
       return json({ error: "Chamada não autorizada." }, 401);
     }
   }

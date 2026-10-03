@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Boxes, CheckCircle2, ChevronDown, MapPin, Navigation, Package, Search, Store, Truck, WalletCards } from "lucide-react";
 import PartnerMap, { type MapPoint } from "./PartnerMap";
+import PartnerCourierControls from "./PartnerCourierControls";
 import {
   assignedRequests, canDispatch, coordinates, deliveryStage, requestAddress, requestStatus, routeUrl,
   type DeliveryFilter, type PartnerMapStore, type PartnerOffer, type PartnerRequest,
@@ -118,7 +119,7 @@ export default function PartnerDeliveryBoard({ stores, offers, requests, saving,
               {selected && <div className="delivery-order-details">
                 {url ? <a className="delivery-button delivery-button-outline" href={url} target="_blank" rel="noopener noreferrer"><Navigation size={16} /> Consultar trajeto</a> : <p className="delivery-hint">Este pedido ainda não tem coordenadas válidas. Confira o endereço informado.</p>}
                 {r.shipping != null && <p className="delivery-hint">Entrega: {money(Number(r.shipping))}{r.eta_minutes ? " · prazo informado: " + r.eta_minutes + " min" : ""}</p>}
-                <OrderActions key={r.id + r.status} request={r} saving={saving} onCommand={onCommand} />
+                {r.status === "paid" && r.store_id ? <PartnerCourierControls requestId={r.id} storeId={r.store_id} /> : <OrderActions key={r.id + r.status} request={r} saving={saving} onCommand={onCommand} />}
               </div>}
             </article>;
           })}

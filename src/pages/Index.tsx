@@ -6,12 +6,14 @@ import CatalogSection from "@/components/CatalogSection";
 import LogisticsSection from "@/components/LogisticsSection";
 import Footer from "@/components/Footer";
 import BottomNav from "@/components/BottomNav";
+import CourierRecruitmentBanner from "@/components/CourierRecruitmentBanner";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <TopNav />
       <HeroSection />
+      <CourierRecruitmentBanner />
       <VideosSection />
       <CategoryTabs />
       <CatalogSection />

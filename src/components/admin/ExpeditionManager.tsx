@@ -55,9 +55,23 @@ type StockProduct = {
   id: string;
   name: string;
   category: string;
-  stock: number;
   wholesale_price: number;
   image_url: string | null;
+};
+
+type InventorySource = {
+  id: string;
+  name: string;
+  source_type: string;
+  active: boolean;
+};
+
+type InventoryBalance = {
+  id: string;
+  source_id: string;
+  product_id: string;
+  quantity: number;
+  reserved: number;
 };
 
 type Movement = {
@@ -90,6 +104,8 @@ const itemQty = (it: OrderItem) => Number(it.qty ?? it.quantity ?? 0);
 const ExpeditionManager = () => {
   const [orders, setOrders] = useState<ExpOrder[]>([]);
   const [products, setProducts] = useState<StockProduct[]>([]);
+  const [inventorySources, setInventorySources] = useState<InventorySource[]>([]);
+  const [inventoryBalances, setInventoryBalances] = useState<InventoryBalance[]>([]);
   const [movements, setMovements] = useState<Movement[]>([]);
   const [loading, setLoading] = useState(false);
   const [onlyDrinks, setOnlyDrinks] = useState(true);
@@ -97,14 +113,18 @@ const ExpeditionManager = () => {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [o, p, m] = await Promise.all([
+    const [o, p, s, b, m] = await Promise.all([
       supabase.from("orders").select("*").order("created_at", { ascending: false }).limit(100),
-      supabase.from("products").select("id,name,category,stock,wholesale_price,image_url").order("category").order("name"),
+      supabase.from("products").select("id,name,category,wholesale_price,image_url").order("category").order("name"),
+      supabase.from("inventory_sources" as never).select("id,name,source_type,active"),
+      supabase.from("inventory_balances" as never).select("id,source_id,product_id,quantity,reserved"),
       supabase.from("stock_movements").select("*").order("created_at", { ascending: false }).limit(30),
     ]);
-    if (o.error || p.error) toast.error("Erro ao carregar expedição");
+    if (o.error || p.error || s.error || b.error) toast.error("Erro ao carregar expedição");
     setOrders(((o.data ?? []) as unknown) as ExpOrder[]);
     setProducts(((p.data ?? []) as unknown) as StockProduct[]);
+    setInventorySources(((s.data ?? []) as unknown) as InventorySource[]);
+    setInventoryBalances(((b.data ?? []) as unknown) as InventoryBalance[]);
     setMovements(((m.data ?? []) as unknown) as Movement[]);
     setLoading(false);
   }, []);
@@ -117,16 +137,36 @@ const ExpeditionManager = () => {
       .channel("expedicao-estoque")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "inventory_sources" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "inventory_balances" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "stock_movements" }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [load]);
 
-  const stockByName = useMemo(() => {
-    const map = new Map<string, StockProduct>();
-    products.forEach((p) => map.set(p.name.trim().toLowerCase(), p));
+  const centralSourceId = useMemo(
+    () => inventorySources.find((s) => s.active && s.source_type === "warehouse" && s.name === "Estoque Central")?.id ?? null,
+    [inventorySources]
+  );
+
+  const centralBalanceByProduct = useMemo(() => {
+    const map = new Map<string, InventoryBalance>();
+    if (!centralSourceId) return map;
+    inventoryBalances
+      .filter((b) => b.source_id === centralSourceId)
+      .forEach((b) => map.set(b.product_id, b));
     return map;
-  }, [products]);
+  }, [inventoryBalances, centralSourceId]);
+
+  const stockByName = useMemo(() => {
+    const map = new Map<string, { product: StockProduct; available: number }>();
+    products.forEach((p) => {
+      const balance = centralBalanceByProduct.get(p.id);
+      const available = Math.max(0, (balance?.quantity ?? 0) - (balance?.reserved ?? 0));
+      map.set(p.name.trim().toLowerCase(), { product: p, available });
+    });
+    return map;
+  }, [products, centralBalanceByProduct]);
 
   const visibleStock = useMemo(
     () => (onlyDrinks ? products.filter((p) => p.category === "bebidas") : products),
@@ -152,18 +192,42 @@ const ExpeditionManager = () => {
   };
 
   const adjustStock = async (p: StockProduct, delta: number) => {
-    const next = Math.max(0, p.stock + delta);
-    const { error } = await supabase.rpc("admin_adjust_central_stock" as never, { _product_id: p.id, _delta: next - p.stock } as never);
-    if (error) { toast.error("Erro ao ajustar estoque"); return; }
+    if (!centralSourceId) {
+      toast.error("Origem Estoque Central não encontrada.");
+      return;
+    }
+    const balance = centralBalanceByProduct.get(p.id);
+    const currentQuantity = balance?.quantity ?? 0;
+    const reserved = balance?.reserved ?? 0;
+    const nextQuantity = Math.max(reserved, currentQuantity + delta);
+    const appliedDelta = nextQuantity - currentQuantity;
+    if (appliedDelta === 0) return;
+
+    const { error } = await supabase.rpc(
+      "admin_adjust_central_stock" as never,
+      { _product_id: p.id, _delta: appliedDelta } as never
+    );
+    if (error) { toast.error("Erro ao ajustar estoque central"); return; }
+
     await supabase.from("stock_movements").insert({
-      product_id: p.id, product_name: p.name, qty: next - p.stock, reason: "ajuste manual",
+      product_id: p.id,
+      product_name: p.name,
+      qty: appliedDelta,
+      reason: "ajuste manual estoque central",
     });
-    setProducts((prev) => prev.map((x) => (x.id === p.id ? { ...x, stock: next } : x)));
+    await load();
   };
 
   const setStock = async (p: StockProduct, value: number) => {
     if (Number.isNaN(value) || value < 0) return;
-    await adjustStock(p, value - p.stock);
+    const balance = centralBalanceByProduct.get(p.id);
+    const currentQuantity = balance?.quantity ?? 0;
+    const reserved = balance?.reserved ?? 0;
+    if (value < reserved) {
+      toast.error(`Quantidade não pode ser menor que o reservado (${reserved}).`);
+      return;
+    }
+    await adjustStock(p, value - currentQuantity);
   };
 
   const orderItems = (o: ExpOrder): OrderItem[] => (Array.isArray(o.items) ? o.items as OrderItem[] : []);
@@ -198,7 +262,6 @@ const ExpeditionManager = () => {
       delivery_status: "entregue",
     }, "Entrega concluída");
 
-  const lowStock = products.filter((p) => p.stock <= 5);
   const allocationIssues = queue.filter((o) => !o.inventory_allocated_at);
 
   return (
@@ -323,14 +386,14 @@ const ExpeditionManager = () => {
                       <p className="text-xs font-semibold mb-1">Itens da carga</p>
                       <ul className="space-y-1 text-sm">
                         {orderItems(o).map((it: OrderItem, i: number) => {
-                          const p = stockByName.get(String(it.name ?? "").trim().toLowerCase());
+                          const stock = stockByName.get(String(it.name ?? "").trim().toLowerCase());
                           const qty = itemQty(it);
-                          const ok = !p || p.stock >= qty;
+                          const ok = !stock || stock.available >= qty;
                           return (
                             <li key={i} className="flex justify-between border-b pb-1">
                               <span>{qty}× {it.name}</span>
                               <span className={ok ? "text-muted-foreground" : "text-destructive"}>
-                                {p ? `estoque ${p.stock}` : "sem controle"}
+                                {stock ? `disponível ${stock.available}` : "sem controle"}
                               </span>
                             </li>
                           );
@@ -427,7 +490,12 @@ const ExpeditionManager = () => {
               Todos os produtos
             </Button>
           </div>
-          {visibleStock.map((p) => (
+          {visibleStock.map((p) => {
+            const balance = centralBalanceByProduct.get(p.id);
+            const quantity = balance?.quantity ?? 0;
+            const reserved = balance?.reserved ?? 0;
+            const available = Math.max(0, quantity - reserved);
+            return (
             <Card key={p.id} className="p-3 flex items-center gap-3">
               <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border bg-muted">
                 <Package className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -438,6 +506,9 @@ const ExpeditionManager = () => {
                 <p className="text-xs text-muted-foreground">
                   {p.category} · {formatCurrency(Number(p.wholesale_price))}
                 </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Central: {quantity} físico · {reserved} reservado · {available} disponível
+                </p>
               </div>
               <div className="flex items-center gap-1">
                 <Button variant="outline" size="icon" onClick={() => adjustStock(p, -1)} aria-label="Remover 1">
@@ -446,8 +517,8 @@ const ExpeditionManager = () => {
                 <Input
                   className="w-20 text-center"
                   type="number"
-                  defaultValue={p.stock}
-                  key={`${p.id}-${p.stock}`}
+                  defaultValue={quantity}
+                  key={`${p.id}-${quantity}-${reserved}`}
                   onBlur={(e) => setStock(p, parseInt(e.target.value, 10))}
                 />
                 <Button variant="outline" size="icon" onClick={() => adjustStock(p, 1)} aria-label="Adicionar 1">
@@ -455,7 +526,8 @@ const ExpeditionManager = () => {
                 </Button>
               </div>
             </Card>
-          ))}
+            );
+          })}
           {visibleStock.length === 0 && (
             <Card className="p-8 text-center text-sm text-muted-foreground">Nenhum produto.</Card>
           )}

@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CheckCircle2, Clock3, RefreshCw, Store as StoreIcon, XCircle } from "lucide-react";
+import { CheckCircle2, Clock3, MapPinned, RefreshCw, Store as StoreIcon, XCircle } from "lucide-react";
+import PartnerNetworkMap from "@/components/admin/PartnerNetworkMap";
 
 type Store={
   id:string;
@@ -20,6 +21,8 @@ type Store={
   state:string|null;
   status:string;
   is_open:boolean;
+  lat:number|null;
+  lng:number|null;
   commission_bps:number;
   fee_bps:number;
   terms_version:number;
@@ -36,6 +39,7 @@ export default function PartnersManager(){
   const [inv,setInv]=useState<Inv[]>([]);
   const [saving,setSaving]=useState<string|null>(null);
   const [loading,setLoading]=useState(false);
+  const [selectedStoreId,setSelectedStoreId]=useState<string|null>(null);
 
   const load=useCallback(async()=>{
     setLoading(true);
@@ -97,6 +101,13 @@ export default function PartnersManager(){
   const pendingCount=stores.filter(s=>s.status==="pending").length;
   const approvedCount=stores.filter(s=>s.status==="approved").length;
   const rejectedCount=stores.filter(s=>s.status==="rejected").length;
+  const mappedCount=stores.filter(s=>Number.isFinite(Number(s.lat))&&Number.isFinite(Number(s.lng))&&Number(s.lat)>=-90&&Number(s.lat)<=90&&Number(s.lng)>=-180&&Number(s.lng)<=180).length;
+  const unmappedCount=stores.length-mappedCount;
+
+  const selectStoreFromMap=(id:string)=>{
+    setSelectedStoreId(id);
+    window.setTimeout(()=>document.getElementById(`partner-store-${id}`)?.scrollIntoView({behavior:"smooth",block:"center"}),50);
+  };
 
   return <div className="space-y-4">
     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -125,6 +136,28 @@ export default function PartnersManager(){
       </Card>
     </div>
 
+    <Card className="overflow-hidden">
+      <CardHeader className="border-b">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <MapPinned className="h-5 w-5 text-emerald-600"/>
+              <CardTitle className="text-lg">Mapa da rede de parceiros</CardTitle>
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">Visão exclusiva do administrador. As lojas cadastradas são atualizadas em tempo real no mapa.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary">{stores.length} cadastrada(s)</Badge>
+            <Badge variant="outline">{mappedCount} no mapa</Badge>
+            {unmappedCount>0&&<Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300">{unmappedCount} sem localização</Badge>}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="p-3 md:p-4">
+        <PartnerNetworkMap stores={stores} selectedId={selectedStoreId} onSelect={selectStoreFromMap}/>
+      </CardContent>
+    </Card>
+
     {orderedStores.length===0
       ?<Card className="p-8 text-center text-sm text-muted-foreground">{loading?"Carregando parceiros...":"Nenhum parceiro cadastrado."}</Card>
       :orderedStores.map(s=>{
@@ -143,7 +176,7 @@ export default function PartnersManager(){
             :suspended
               ?"border-slate-500/40 bg-slate-500/15 text-slate-700 dark:text-slate-300"
               :"border-amber-500/40 bg-amber-500/15 text-amber-700 dark:text-amber-300";
-        return <Card key={s.id} className={pending?"border-amber-400/50 shadow-[0_0_0_1px_rgba(251,191,36,0.08)]":approved?"border-emerald-500/30":""}>
+        return <Card id={`partner-store-${s.id}`} key={s.id} className={selectedStoreId===s.id?"ring-2 ring-emerald-500/50":pending?"border-amber-400/50 shadow-[0_0_0_1px_rgba(251,191,36,0.08)]":approved?"border-emerald-500/30":""}>
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>

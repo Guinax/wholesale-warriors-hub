@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Bike, CheckCircle2, Clock3, MapPin, Navigation, Power, RefreshCw, Route, ShieldCheck, Store, WalletCards } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,7 @@ type Dashboard = {
 const money = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
 
 export default function Motoqueiro() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [dashboard, setDashboard] = useState<Dashboard>({});
   const [saving, setSaving] = useState(false);
@@ -112,8 +113,8 @@ export default function Motoqueiro() {
     const { error } = await supabase.rpc("courier_command" as never, { p_action: "register", p_payload: registration } as never);
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success("Cadastro recebido. Aguarde a aprovação para ficar online.");
-    await load();
+    toast.success("Cadastro recebido. Você será avisado quando for aprovado.");
+    navigate("/", { replace: true });
   };
 
   const command = async (action: string, payload: Record<string, unknown>, success: string) => {

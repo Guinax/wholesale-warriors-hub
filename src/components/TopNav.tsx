@@ -1,4 +1,5 @@
-import { Menu, ShoppingCart, LogOut, Store as StoreIcon, User as UserIcon, Bike } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Menu, ShoppingCart, LogOut, Store as StoreIcon, User as UserIcon, Bike, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import logo from "@/assets/logo.png";
 import { useCart } from "@/contexts/CartContext";
@@ -13,10 +14,58 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+type UserNotification = {
+  id: string;
+  title: string;
+  message: string;
+  action_path: string | null;
+  read_at: string | null;
+  created_at: string;
+};
+
 const TopNav = () => {
   const { totalItems, openCart } = useCart();
   const { session, user, isAdmin, signOut } = useAdminAuth();
   const navigate = useNavigate();
+  const [notifications, setNotifications] = useState<UserNotification[]>([]);
+
+  const loadNotifications = useCallback(async () => {
+    if (!user?.id) {
+      setNotifications([]);
+      return;
+    }
+    const { data, error } = await supabase
+      .from("user_notifications" as never)
+      .select("id,title,message,action_path,read_at,created_at")
+      .order("created_at", { ascending: false })
+      .limit(8);
+    if (!error) setNotifications((data ?? []) as unknown as UserNotification[]);
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setNotifications([]);
+      return;
+    }
+    void loadNotifications();
+    const channel = supabase
+      .channel("topnav-notifications-" + user.id)
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_notifications", filter: `user_id=eq.${user.id}` }, () => void loadNotifications())
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [user?.id, loadNotifications]);
+
+  const markNotificationsRead = async () => {
+    if (!user?.id || notifications.every((n) => n.read_at)) return;
+    const { error } = await supabase
+      .from("user_notifications" as never)
+      .update({ read_at: new Date().toISOString() } as never)
+      .eq("user_id", user.id)
+      .is("read_at", null);
+    if (!error) setNotifications((current) => current.map((n) => ({ ...n, read_at: n.read_at ?? new Date().toISOString() })));
+  };
+
+  const unreadNotifications = notifications.filter((n) => !n.read_at).length;
 
   const handleSignOut = async () => {
     await signOut();
@@ -67,6 +116,34 @@ const TopNav = () => {
             >
               ENTRAR
             </button>
+          )}
+          {session && (
+            <DropdownMenu onOpenChange={(open) => { if (open) void markNotificationsRead(); }}>
+              <DropdownMenuTrigger className="relative p-2" aria-label="Notificações">
+                <Bell className="w-5 h-5 text-foreground" />
+                {unreadNotifications > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-black text-primary-foreground">
+                    {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                  </span>
+                )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80">
+                <DropdownMenuLabel>Notificações</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {notifications.length === 0 ? (
+                  <DropdownMenuItem disabled>Nenhuma notificação ainda.</DropdownMenuItem>
+                ) : notifications.map((notification) => (
+                  <DropdownMenuItem
+                    key={notification.id}
+                    className="flex cursor-pointer flex-col items-start gap-1 py-3"
+                    onClick={() => notification.action_path && navigate(notification.action_path)}
+                  >
+                    <strong className="text-xs">{notification.title}</strong>
+                    <span className="whitespace-normal text-xs text-muted-foreground">{notification.message}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
           {session && (
             <DropdownMenu>

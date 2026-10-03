@@ -15,6 +15,12 @@ type CourierProfile = {
   status: "pending" | "approved" | "suspended";
   is_online: boolean;
   max_active_jobs: number;
+  cpf?: string | null;
+  vehicle_type?: string | null;
+  vehicle_plate?: string | null;
+  cnh_number?: string | null;
+  cnh_category?: string | null;
+  cnh_expiry?: string | null;
 };
 
 type CourierJob = {
@@ -83,6 +89,20 @@ export default function Motoqueiro() {
   useEffect(() => { void load(); }, [load]);
 
   useEffect(() => {
+    const p = dashboard.profile;
+    if (!p) return;
+    setRegistration((current) => ({
+      ...current,
+      cpf: p.cpf ?? current.cpf,
+      vehicle_type: p.vehicle_type ?? current.vehicle_type,
+      vehicle_plate: p.vehicle_plate ?? current.vehicle_plate,
+      cnh_number: p.cnh_number ?? current.cnh_number,
+      cnh_category: p.cnh_category ?? current.cnh_category,
+      cnh_expiry: p.cnh_expiry ?? current.cnh_expiry,
+    }));
+  }, [dashboard.profile?.id]);
+
+  useEffect(() => {
     const channel = supabase.channel("courier-live-dashboard")
       .on("postgres_changes", { event: "*", schema: "public", table: "courier_jobs" }, () => void load())
       .subscribe();
@@ -134,6 +154,18 @@ export default function Motoqueiro() {
     if (error) return toast.error(error.message);
     toast.success("Cadastro recebido. Você será avisado quando for aprovado.");
     navigate("/", { replace: true });
+  };
+
+  const saveDocuments = async () => {
+    const cpfDigits = registration.cpf.replace(/\D/g, "");
+    const cnhDigits = registration.cnh_number.replace(/\D/g, "");
+    const motorized = registration.vehicle_type !== "bike";
+    if (cpfDigits.length !== 11) return toast.error("Informe um CPF com 11 dígitos.");
+    if (motorized && cnhDigits.length !== 11) return toast.error("Informe o número da CNH com 11 dígitos.");
+    if (motorized && !registration.cnh_category) return toast.error("Informe a categoria da CNH.");
+    if (motorized && !registration.cnh_expiry) return toast.error("Informe a validade da CNH.");
+    if (motorized && !registration.vehicle_plate.trim()) return toast.error("Informe a placa do veículo.");
+    await command("update_documents", registration, "Documentos atualizados. Seu cadastro continua em análise.");
   };
 
   const command = async (action: string, payload: Record<string, unknown>, success: string) => {
@@ -232,6 +264,34 @@ export default function Motoqueiro() {
         </header>
 
         {profile.status !== "approved" && <Card className="border-amber-400/20 bg-amber-400/[0.06] p-4 text-amber-100"><Clock3 className="mb-2 h-5 w-5" /><strong>Cadastro em análise.</strong><p className="mt-1 text-sm text-amber-100/70">O botão Online é liberado depois da aprovação administrativa.</p></Card>}
+
+        {profile.status === "pending" && <Card className="border-white/10 bg-[#101214] p-4 text-white">
+          <h2 className="font-black">Documentos do cadastro</h2>
+          <p className="mt-1 text-xs text-zinc-500">Complete ou corrija seus dados enquanto o cadastro estiver em análise.</p>
+          <div className="mt-4 grid gap-3">
+            <Input inputMode="numeric" maxLength={14} className="border-white/10 bg-black/30" placeholder="CPF — 11 dígitos" value={registration.cpf} onChange={(e) => setRegistration({ ...registration, cpf: e.target.value })} />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <select className="h-10 rounded-md border border-white/10 bg-black/30 px-3 text-sm" value={registration.vehicle_type} onChange={(e) => setRegistration({ ...registration, vehicle_type: e.target.value })}>
+                <option value="moto">Moto</option>
+                <option value="bike">Bicicleta</option>
+                <option value="carro">Carro</option>
+                <option value="utilitario">Utilitário / Fiorino</option>
+                <option value="caminhao">Caminhão leve</option>
+                <option value="outro">Outro</option>
+              </select>
+              {registration.vehicle_type !== "bike" && <Input className="border-white/10 bg-black/30 uppercase" placeholder="Placa do veículo" value={registration.vehicle_plate} onChange={(e) => setRegistration({ ...registration, vehicle_plate: e.target.value.toUpperCase() })} />}
+            </div>
+            {registration.vehicle_type !== "bike" && <div className="grid gap-3 sm:grid-cols-3">
+              <Input inputMode="numeric" maxLength={14} className="border-white/10 bg-black/30" placeholder="Número da CNH" value={registration.cnh_number} onChange={(e) => setRegistration({ ...registration, cnh_number: e.target.value })} />
+              <select className="h-10 rounded-md border border-white/10 bg-black/30 px-3 text-sm" value={registration.cnh_category} onChange={(e) => setRegistration({ ...registration, cnh_category: e.target.value })}>
+                <option value="">Categoria CNH</option>
+                <option value="A">A</option><option value="B">B</option><option value="AB">AB</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="AC">AC</option><option value="AD">AD</option><option value="AE">AE</option>
+              </select>
+              <Input type="date" className="border-white/10 bg-black/30" value={registration.cnh_expiry} onChange={(e) => setRegistration({ ...registration, cnh_expiry: e.target.value })} aria-label="Validade da CNH" />
+            </div>}
+            <Button disabled={saving} onClick={() => void saveDocuments()} className="bg-yellow-400 font-black text-black hover:bg-yellow-300">{saving ? "Salvando..." : "Salvar documentos"}</Button>
+          </div>
+        </Card>}
 
         <section className="grid gap-3 sm:grid-cols-4">
           <Card className="border-white/10 bg-[#101214] p-4 text-white"><p className="text-xs text-zinc-500">Disponibilidade</p><p className="mt-1 text-xl font-black">{profile.is_online ? "Online" : "Offline"}</p></Card>

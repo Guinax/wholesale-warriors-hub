@@ -35,6 +35,7 @@ import PartnersManager from "@/components/admin/PartnersManager";
 import ShippingIntegrationManager from "@/components/admin/ShippingIntegrationManager";
 import OperationReadiness from "@/components/admin/OperationReadiness";
 import DemoOrderFlow from "@/components/admin/DemoOrderFlow";
+import CouriersManager from "@/components/admin/CouriersManager";
 import { trackingLabel, formatCurrency, DELIVERY_STAGES } from "@/lib/orderUtils";
 import { logAudit } from "@/lib/audit";
 
@@ -291,6 +292,7 @@ const Admin = () => {
             <TabsTrigger value="inventory">Estoque unificado</TabsTrigger>
             <TabsTrigger value="payouts">Repasses</TabsTrigger>
             <TabsTrigger value="partners">Parceiros</TabsTrigger>
+            <TabsTrigger value="couriers">Entregadores</TabsTrigger>
             <TabsTrigger value="shipping">Logística</TabsTrigger>
             <TabsTrigger value="products">Produtos</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
@@ -450,6 +452,9 @@ const Admin = () => {
           </TabsContent>
           <TabsContent value="partners" className="mt-4">
             <PartnersManager />
+          </TabsContent>
+          <TabsContent value="couriers" className="mt-4">
+            <CouriersManager />
           </TabsContent>
           <TabsContent value="shipping" className="mt-4">
             <ShippingIntegrationManager />

@@ -68,14 +68,10 @@ export default function PartnerRestockRequest({storeId,products}:{storeId:string
     } as never);
     if(error){setSending(false);toast.error(error.message);return;}
 
-    try{
-      await supabase.functions.invoke("partner-restock-email",{body:{order_id:data}});
-    }catch{/* o pedido continua válido; o alerta interno já foi criado no banco */}
-
     setCart({});
     setNotes("");
     setSending(false);
-    toast.success("Pedido de reposição enviado à sede.",{description:"A administração recebeu o alerta no painel."});
+    toast.success("Pedido de reposição enviado à sede.",{description:"A administração recebeu o alerta no painel e o aviso por e-mail foi enfileirado no servidor."});
     await loadHistory();
   };
 

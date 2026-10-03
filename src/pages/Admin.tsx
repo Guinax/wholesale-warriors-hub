@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, Search, Package, RefreshCw, Eye, ShieldAlert, ArrowLeft, TriangleAlert } from "lucide-react";
+import { LogOut, Search, Package, RefreshCw, Eye, ShieldAlert, ArrowLeft, TriangleAlert, Bell } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProductsManager from "@/components/admin/ProductsManager";
 import UsersManager from "@/components/admin/UsersManager";
@@ -36,6 +36,7 @@ import ShippingIntegrationManager from "@/components/admin/ShippingIntegrationMa
 import OperationReadiness from "@/components/admin/OperationReadiness";
 import DemoOrderFlow from "@/components/admin/DemoOrderFlow";
 import CouriersManager from "@/components/admin/CouriersManager";
+import PartnerRestockOrdersManager from "@/components/admin/PartnerRestockOrdersManager";
 import { trackingLabel, formatCurrency, DELIVERY_STAGES } from "@/lib/orderUtils";
 import { logAudit } from "@/lib/audit";
 
@@ -109,7 +110,7 @@ const paymentColor: Record<string, string> = {
 };
 
 const Admin = () => {
-  const [activeTab, setActiveTab] = useState("orders");
+  const [activeTab, setActiveTab] = useState(()=>new URLSearchParams(window.location.search).get("tab")||"orders");
   const navigate = useNavigate();
   const { user, isAdmin, loading, signOut } = useAdminAuth();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -118,6 +119,8 @@ const Admin = () => {
   const [filterDelivery, setFilterDelivery] = useState<string>("all");
   const [filterPayment, setFilterPayment] = useState<string>("all");
   const [selected, setSelected] = useState<Order | null>(null);
+  const [restockUnread,setRestockUnread]=useState(0);
+  const [restockPending,setRestockPending]=useState(0);
 
   useEffect(() => {
     document.title = "Painel Admin | Família Maromba";
@@ -133,6 +136,38 @@ const Admin = () => {
       logAudit("admin_access");
     }
   }, [isAdmin]);
+
+  useEffect(() => {
+    if (!isAdmin || !user?.id) return;
+    const loadAdminNotifications=async()=>{
+      const {count}=await supabase
+        .from("user_notifications" as never)
+        .select("id",{count:"exact",head:true})
+        .eq("user_id",user.id)
+        .eq("type","partner_restock")
+        .is("read_at",null);
+      setRestockUnread(count??0);
+    };
+    void loadAdminNotifications();
+    const channel=supabase.channel("admin-restock-bell-"+user.id)
+      .on("postgres_changes",{event:"*",schema:"public",table:"user_notifications",filter:`user_id=eq.${user.id}`},()=>void loadAdminNotifications())
+      .subscribe();
+    return()=>{void supabase.removeChannel(channel);};
+  },[isAdmin,user?.id]);
+
+  const openRestock=async()=>{
+    setActiveTab("restock");
+    window.history.replaceState(null,"",window.location.pathname+"?tab=restock");
+    if(user?.id&&restockUnread>0){
+      const{error}=await supabase
+        .from("user_notifications" as never)
+        .update({read_at:new Date().toISOString()} as never)
+        .eq("user_id",user.id)
+        .eq("type","partner_restock")
+        .is("read_at",null);
+      if(!error)setRestockUnread(0);
+    }
+  };
 
   // Notificação em tempo real: pagamento confirmado -> pedido pode ser separado
   useEffect(() => {
@@ -272,6 +307,10 @@ const Admin = () => {
             <h1 className="font-heading font-bold tracking-wider text-sm">PAINEL ADMIN</h1>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="relative" onClick={()=>void openRestock()} aria-label={`Reposição de parceiros: ${restockUnread} nova(s)`}>
+              <Bell className="h-5 w-5"/>
+              {restockUnread>0&&<span className="absolute right-0 top-0 min-w-4 rounded-full bg-destructive px-1 text-[10px] font-black leading-4 text-destructive-foreground">{restockUnread>9?"9+":restockUnread}</span>}
+            </Button>
             <span className="hidden sm:inline text-xs text-muted-foreground">{user?.email}</span>
             <Button variant="ghost" size="sm" onClick={signOut}>
               <LogOut className="w-4 h-4" /> Sair
@@ -286,6 +325,7 @@ const Admin = () => {
             <TabsTrigger value="operation">Conferência</TabsTrigger>
             <TabsTrigger value="demo">Fluxo de demonstração</TabsTrigger>
             <TabsTrigger value="orders">Pedidos</TabsTrigger>
+            <TabsTrigger value="restock" className="relative">Reposição parceiros{restockPending>0&&<span className="ml-1 rounded-full bg-destructive px-1.5 text-[10px] text-destructive-foreground">{restockPending}</span>}</TabsTrigger>
             <TabsTrigger value="pages">Páginas</TabsTrigger>
             <TabsTrigger value="catalog">Catálogo</TabsTrigger>
             <TabsTrigger value="expedition">Expedição</TabsTrigger>
@@ -301,6 +341,7 @@ const Admin = () => {
           </TabsList>
           <TabsContent value="operation" className="mt-4"><OperationReadiness onNavigate={setActiveTab} /></TabsContent>
           <TabsContent value="demo" className="mt-4"><DemoOrderFlow /></TabsContent>
+          <TabsContent value="restock" className="mt-4"><PartnerRestockOrdersManager onPendingChange={setRestockPending}/></TabsContent>
           <TabsContent value="orders" className="space-y-4 mt-4">
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <Card className="p-3">

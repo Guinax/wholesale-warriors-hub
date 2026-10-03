@@ -35,6 +35,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import PainelRevendedor from "./pages/PainelRevendedor.tsx";
 import Partners from "./pages/Partners.tsx";
 import PedidoLocal from "./pages/PedidoLocal.tsx";
+import MotoqueiroPreview from "./pages/MotoqueiroPreview.tsx";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +62,7 @@ const App = () => (
             <Route path="/revendedor" element={<ProtectedRoute><PainelRevendedor /></ProtectedRoute>} />
             <Route path="/parceiros" element={<Partners />} />
             <Route path="/pedido-local/:id" element={<ProtectedRoute><PedidoLocal /></ProtectedRoute>} />
+            <Route path="/motoqueiro-preview" element={<MotoqueiroPreview />} />
             <Route path="/produto/:id" element={<Produto />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />

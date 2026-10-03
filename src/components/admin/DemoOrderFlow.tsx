@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CheckCircle2, MapPin, Navigation, PackageCheck, RotateCcw, Store, Truck } from "lucide-react";
 import PartnerMap, { type MapPoint } from "@/components/partners/PartnerMap";
+import "@/components/partners/partner-delivery.css";
 
 type DemoStage = "idle" | "broadcast" | "accepted" | "preparing" | "picked_up" | "delivering" | "delivered";
 

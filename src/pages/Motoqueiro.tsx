@@ -49,7 +49,7 @@ export default function Motoqueiro() {
   const [loading, setLoading] = useState(true);
   const [dashboard, setDashboard] = useState<Dashboard>({});
   const [saving, setSaving] = useState(false);
-  const [registration, setRegistration] = useState({ full_name: "", phone: "", cpf: "", vehicle_type: "moto", vehicle_plate: "" });
+  const [registration, setRegistration] = useState({ full_name: "", phone: "", cpf: "", vehicle_type: "moto", vehicle_plate: "", cnh_number: "", cnh_category: "", cnh_expiry: "" });
   const [deliveryCode, setDeliveryCode] = useState<Record<string, string>>({});
   const [adult, setAdult] = useState<Record<string, boolean>>({});
   const watchRef = useRef<number | null>(null);
@@ -108,7 +108,15 @@ export default function Motoqueiro() {
   }, [dashboard.profile?.is_online, startTracking, stopTracking]);
 
   const register = async () => {
+    const cpfDigits = registration.cpf.replace(/\D/g, "");
+    const cnhDigits = registration.cnh_number.replace(/\D/g, "");
+    const motorized = registration.vehicle_type !== "bike";
     if (registration.full_name.trim().length < 3 || registration.phone.replace(/\D/g, "").length < 8) return toast.error("Informe nome e telefone válidos.");
+    if (cpfDigits.length !== 11) return toast.error("Informe um CPF com 11 dígitos.");
+    if (motorized && cnhDigits.length !== 11) return toast.error("Informe o número da CNH com 11 dígitos.");
+    if (motorized && !registration.cnh_category) return toast.error("Informe a categoria da CNH.");
+    if (motorized && !registration.cnh_expiry) return toast.error("Informe a validade da CNH.");
+    if (motorized && !registration.vehicle_plate.trim()) return toast.error("Informe a placa do veículo.");
     setSaving(true);
     const { error } = await supabase.rpc("courier_command" as never, { p_action: "register", p_payload: registration } as never);
     setSaving(false);
@@ -163,13 +171,29 @@ export default function Motoqueiro() {
           <div className="mt-5 grid gap-3">
             <Input className="border-white/10 bg-black/30" placeholder="Nome completo" value={registration.full_name} onChange={(e) => setRegistration({ ...registration, full_name: e.target.value })} />
             <Input className="border-white/10 bg-black/30" placeholder="Telefone" value={registration.phone} onChange={(e) => setRegistration({ ...registration, phone: e.target.value })} />
-            <Input className="border-white/10 bg-black/30" placeholder="CPF" value={registration.cpf} onChange={(e) => setRegistration({ ...registration, cpf: e.target.value })} />
-            <div className="grid grid-cols-2 gap-3">
+            <Input inputMode="numeric" maxLength={14} className="border-white/10 bg-black/30" placeholder="CPF — 11 dígitos" value={registration.cpf} onChange={(e) => setRegistration({ ...registration, cpf: e.target.value })} />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <select className="h-10 rounded-md border border-white/10 bg-black/30 px-3 text-sm" value={registration.vehicle_type} onChange={(e) => setRegistration({ ...registration, vehicle_type: e.target.value })}>
-                <option value="moto">Moto</option><option value="bike">Bicicleta</option><option value="carro">Carro</option><option value="outro">Outro</option>
+                <option value="moto">Moto</option>
+                <option value="bike">Bicicleta</option>
+                <option value="carro">Carro</option>
+                <option value="utilitario">Utilitário / Fiorino</option>
+                <option value="caminhao">Caminhão leve</option>
+                <option value="outro">Outro</option>
               </select>
-              <Input className="border-white/10 bg-black/30" placeholder="Placa (opcional)" value={registration.vehicle_plate} onChange={(e) => setRegistration({ ...registration, vehicle_plate: e.target.value })} />
+              {registration.vehicle_type !== "bike" && <Input className="border-white/10 bg-black/30 uppercase" placeholder="Placa do veículo" value={registration.vehicle_plate} onChange={(e) => setRegistration({ ...registration, vehicle_plate: e.target.value.toUpperCase() })} />}
             </div>
+            {registration.vehicle_type !== "bike" && <div className="rounded-xl border border-yellow-400/20 bg-yellow-400/[0.04] p-3">
+              <p className="mb-3 text-xs font-bold uppercase tracking-wider text-yellow-300">Habilitação do condutor</p>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <Input inputMode="numeric" maxLength={14} className="border-white/10 bg-black/30" placeholder="Número da CNH" value={registration.cnh_number} onChange={(e) => setRegistration({ ...registration, cnh_number: e.target.value })} />
+                <select className="h-10 rounded-md border border-white/10 bg-black/30 px-3 text-sm" value={registration.cnh_category} onChange={(e) => setRegistration({ ...registration, cnh_category: e.target.value })}>
+                  <option value="">Categoria CNH</option>
+                  <option value="A">A</option><option value="B">B</option><option value="AB">AB</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="AC">AC</option><option value="AD">AD</option><option value="AE">AE</option>
+                </select>
+                <Input type="date" className="border-white/10 bg-black/30" value={registration.cnh_expiry} onChange={(e) => setRegistration({ ...registration, cnh_expiry: e.target.value })} aria-label="Validade da CNH" />
+              </div>
+            </div>}
             <Button disabled={saving} onClick={() => void register()} className="bg-yellow-400 font-black text-black hover:bg-yellow-300">{saving ? "Enviando..." : "Quero trabalhar na rede"}</Button>
           </div>
         </Card>

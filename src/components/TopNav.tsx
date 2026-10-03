@@ -1,4 +1,4 @@
-import { Menu, ShoppingCart, LogOut, Store as StoreIcon, User as UserIcon } from "lucide-react";
+import { Menu, ShoppingCart, LogOut, Store as StoreIcon, User as UserIcon, Bike } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import logo from "@/assets/logo.png";
 import { useCart } from "@/contexts/CartContext";
@@ -39,6 +39,7 @@ const TopNav = () => {
           <button onClick={() => navigate("/avaliacoes")} className="hover:text-primary transition-colors">AVALIAÇÕES</button>
           <button onClick={() => navigate("/compartilhar")} className="hover:text-primary transition-colors">COMPARTILHAR</button>
           <button onClick={() => navigate("/parceiros")} className="hover:text-primary transition-colors">PARCEIROS</button>
+          <button onClick={() => navigate("/entregadores")} className="hover:text-primary transition-colors">ENTREGADORES</button>
         </div>
 
         <div className="flex items-center gap-1">
@@ -55,6 +56,7 @@ const TopNav = () => {
               <DropdownMenuItem onClick={() => navigate("/compartilhar")}>Compartilhar</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate("/parceiros")}><StoreIcon className="w-4 h-4 mr-2" /> Parceiros</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/entregadores")}><Bike className="w-4 h-4 mr-2" /> Entregadores</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           {!session && (
@@ -78,6 +80,7 @@ const TopNav = () => {
                 <DropdownMenuItem onClick={() => navigate("/minha-conta")}>Meus dados</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/meus-pedidos")}>Meus pedidos</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/revendedor")}><StoreIcon className="w-4 h-4 mr-2" /> Área do parceiro</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/motoqueiro")}><Bike className="w-4 h-4 mr-2" /> Área do entregador</DropdownMenuItem>
                 {isAdmin && (
                   <DropdownMenuItem onClick={() => navigate("/admin")}>
                     Painel Admin

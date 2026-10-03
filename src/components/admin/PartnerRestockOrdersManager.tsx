@@ -22,6 +22,9 @@ type RestockOrder = {
   admin_notes:string|null;
   total_amount:number;
   created_at:string;
+  email_status:string;
+  email_sent_at:string|null;
+  email_error:string|null;
   partner_stores?:{name?:string;city?:string|null;state?:string|null}|null;
   partner_restock_order_items?:RestockItem[];
 };
@@ -45,7 +48,7 @@ export default function PartnerRestockOrdersManager({onPendingChange}:{onPending
     setLoading(true);
     const{data,error}=await supabase
       .from("partner_restock_orders" as never)
-      .select("id,store_id,status,notes,admin_notes,total_amount,created_at,partner_stores(name,city,state),partner_restock_order_items(id,product_id,quantity,unit_price,products(name,image_url))")
+      .select("id,store_id,status,notes,admin_notes,total_amount,created_at,email_status,email_sent_at,email_error,partner_stores(name,city,state),partner_restock_order_items(id,product_id,quantity,unit_price,products(name,image_url))")
       .order("created_at",{ascending:false});
     setLoading(false);
     if(error){toast.error("Não foi possível carregar os pedidos de reposição.");return;}
@@ -105,7 +108,16 @@ export default function PartnerRestockOrdersManager({onPendingChange}:{onPending
             <div className="flex items-center gap-2"><Store className="h-4 w-4"/><p className="font-bold">{order.partner_stores?.name??"Parceiro"}</p></div>
             <p className="mt-1 text-xs text-muted-foreground">{[order.partner_stores?.city,order.partner_stores?.state].filter(Boolean).join("/")} · {new Date(order.created_at).toLocaleString("pt-BR")}</p>
           </div>
-          <Badge variant={order.status==="requested"?"destructive":order.status==="received"?"secondary":"outline"}>{labels[order.status]??order.status}</Badge>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant={order.status==="requested"?"destructive":order.status==="received"?"secondary":"outline"}>{labels[order.status]??order.status}</Badge>
+            <Badge variant="outline" className={order.email_status==="sent"
+              ?"border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+              :order.email_status==="failed"
+                ?"border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300"
+                :"border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"}>
+              {order.email_status==="sent"?"E-mail enviado":order.email_status==="failed"?"E-mail falhou":"E-mail pendente"}
+            </Badge>
+          </div>
         </div>
         <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {(order.partner_restock_order_items??[]).map(item=><div key={item.id} className="flex items-center gap-3 rounded-lg border p-3">
@@ -116,6 +128,7 @@ export default function PartnerRestockOrdersManager({onPendingChange}:{onPending
         <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
           <div className="text-sm">
             {order.notes&&<p><strong>Observação:</strong> {order.notes}</p>}
+            {order.email_status==="failed"&&order.email_error&&<p className="mt-1 text-xs text-red-600 dark:text-red-300"><strong>Alerta por e-mail:</strong> {order.email_error}</p>}
             <p className="mt-1"><strong>Total:</strong> {new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(Number(order.total_amount))}</p>
           </div>
           <div className="min-w-[190px]">

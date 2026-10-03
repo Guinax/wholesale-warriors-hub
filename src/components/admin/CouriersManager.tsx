@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
-type Courier = { id:string; courier_code:string; full_name:string; phone:string; vehicle_type:string; vehicle_plate:string|null; status:"pending"|"approved"|"suspended"; is_online:boolean; created_at:string };
+type Courier = { id:string; courier_code:string; full_name:string; phone:string; cpf:string|null; vehicle_type:string; vehicle_plate:string|null; cnh_number:string|null; cnh_category:string|null; cnh_expiry:string|null; status:"pending"|"approved"|"suspended"; is_online:boolean; created_at:string };
 
 export default function CouriersManager() {
   const [rows,setRows]=useState<Courier[]>([]);
@@ -16,7 +16,7 @@ export default function CouriersManager() {
   const load=useCallback(async()=>{
     setLoading(true);
     const {data,error}=await supabase.from("courier_profiles" as never)
-      .select("id,courier_code,full_name,phone,vehicle_type,vehicle_plate,status,is_online,created_at")
+      .select("id,courier_code,full_name,phone,cpf,vehicle_type,vehicle_plate,cnh_number,cnh_category,cnh_expiry,status,is_online,created_at")
       .order("created_at",{ascending:false});
     setLoading(false);
     if(error) return toast.error(error.message);
@@ -54,7 +54,16 @@ export default function CouriersManager() {
     <div className="grid gap-3">{rows.map(c=><Card key={c.id} className="p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div><div className="flex items-center gap-2"><Bike className="h-4 w-4 text-primary"/><strong>{c.full_name}</strong><Badge variant="outline">{c.courier_code}</Badge></div>
-        <p className="mt-1 text-xs text-muted-foreground">{c.phone} · {c.vehicle_type}{c.vehicle_plate?" · "+c.vehicle_plate:""}</p></div>
+        <p className="mt-1 text-xs text-muted-foreground">{c.phone} · {c.vehicle_type}{c.vehicle_plate?" · "+c.vehicle_plate:""}</p>
+        <div className="mt-3 grid gap-2 rounded-lg border border-border/70 bg-muted/30 p-3 text-xs sm:grid-cols-2">
+          <p><span className="text-muted-foreground">CPF:</span> <strong>{c.cpf || "Não informado"}</strong></p>
+          <p><span className="text-muted-foreground">Veículo:</span> <strong>{c.vehicle_type}{c.vehicle_plate ? " · " + c.vehicle_plate : ""}</strong></p>
+          {c.vehicle_type!=="bike" && <>
+            <p><span className="text-muted-foreground">CNH:</span> <strong>{c.cnh_number || "Não informada"}</strong></p>
+            <p><span className="text-muted-foreground">Categoria:</span> <strong>{c.cnh_category || "—"}</strong></p>
+            <p><span className="text-muted-foreground">Validade:</span> <strong>{c.cnh_expiry ? new Date(c.cnh_expiry+"T12:00:00").toLocaleDateString("pt-BR") : "—"}</strong></p>
+          </>}
+        </div></div>
         <div className="flex items-center gap-2"><Badge variant={c.status==="approved"?"default":c.status==="suspended"?"destructive":"secondary"}>{c.status==="approved"?"Aprovado":c.status==="suspended"?"Suspenso":"Em análise"}</Badge>{c.status==="approved"&&<Badge variant="outline">{c.is_online?"Online":"Offline"}</Badge>}</div>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">

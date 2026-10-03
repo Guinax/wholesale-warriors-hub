@@ -76,9 +76,10 @@ export default function PartnersManager(){
       toast.error(error.message);
       return;
     }
+    setStores(current=>current.map(store=>store.id===s.id?{...store,status:nextStatus}:store));
     toast.success(
       nextStatus==="approved"
-        ?"Parceiro aprovado. A operação continua fechada até o aceite das condições."
+        ?"Parceiro aprovado com sucesso."
         :nextStatus==="rejected"
           ?"Cadastro marcado como reprovado."
           :"Cadastro do parceiro atualizado."
@@ -131,7 +132,18 @@ export default function PartnersManager(){
         const available=rows.reduce((n,i)=>n+Math.max(0,Number(i.on_hand)-Number(i.reserved)),0);
         const termsOk=s.accepted_terms_version===s.terms_version;
         const pending=s.status==="pending";
-        return <Card key={s.id} className={pending?"border-amber-400/50 shadow-[0_0_0_1px_rgba(251,191,36,0.08)]":""}>
+        const approved=s.status==="approved";
+        const rejected=s.status==="rejected";
+        const suspended=s.status==="suspended";
+        const statusLabel=pending?"Pendente":approved?"Aprovado":rejected?"Reprovado":suspended?"Suspenso":s.status;
+        const statusClass=approved
+          ?"border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+          :rejected
+            ?"border-red-500/40 bg-red-500/15 text-red-700 dark:text-red-300"
+            :suspended
+              ?"border-slate-500/40 bg-slate-500/15 text-slate-700 dark:text-slate-300"
+              :"border-amber-500/40 bg-amber-500/15 text-amber-700 dark:text-amber-300";
+        return <Card key={s.id} className={pending?"border-amber-400/50 shadow-[0_0_0_1px_rgba(251,191,36,0.08)]":approved?"border-emerald-500/30":""}>
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
@@ -139,8 +151,15 @@ export default function PartnersManager(){
                 {pending&&<p className="mt-1 text-xs font-semibold text-amber-600 dark:text-amber-300">Aguardando sua liberação</p>}
               </div>
               <div className="flex flex-wrap gap-2">
-                <Badge variant={pending?"secondary":"outline"}>{s.status==="pending"?"Em análise":s.status==="approved"?"Aprovado":s.status==="rejected"?"Reprovado":s.status}</Badge>
-                <Badge variant={termsOk?"secondary":"destructive"}>{termsOk?"Termos aceitos":"Aceite pendente"}</Badge>
+                <Badge variant="outline" className={statusClass}>{statusLabel}</Badge>
+                <Badge
+                  variant="outline"
+                  className={termsOk
+                    ?"border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                    :"border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"}
+                >
+                  {termsOk?"Termos aceitos":"Termos aguardando aceite"}
+                </Badge>
                 <Badge variant={available>0?"secondary":"outline"}>{available} un. disponíveis</Badge>
               </div>
             </div>

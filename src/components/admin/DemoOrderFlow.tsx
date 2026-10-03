@@ -8,13 +8,13 @@ import "@/components/partners/partner-delivery.css";
 
 type DemoStage = "idle" | "broadcast" | "accepted" | "preparing" | "picked_up" | "delivering" | "delivered";
 
-const stages: Array<{ id: DemoStage; label: string }> = [
-  { id: "broadcast", label: "Pedido enviado às lojas" },
-  { id: "accepted", label: "Loja aceitou" },
-  { id: "preparing", label: "Separando pedido" },
-  { id: "picked_up", label: "Motoqueiro retirou" },
-  { id: "delivering", label: "Saiu para entrega" },
-  { id: "delivered", label: "Entregue" },
+const stages: Array<{ id: DemoStage; label: string; dot: string; active: string }> = [
+  { id: "broadcast", label: "Pedido enviado às lojas", dot: "bg-blue-500", active: "border-blue-500/50 bg-blue-500/10" },
+  { id: "accepted", label: "Loja aceitou", dot: "bg-amber-500", active: "border-amber-500/50 bg-amber-500/10" },
+  { id: "preparing", label: "Separando pedido", dot: "bg-orange-500", active: "border-orange-500/50 bg-orange-500/10" },
+  { id: "picked_up", label: "Motoqueiro retirou", dot: "bg-violet-500", active: "border-violet-500/50 bg-violet-500/10" },
+  { id: "delivering", label: "Saiu para entrega", dot: "bg-cyan-500", active: "border-cyan-500/50 bg-cyan-500/10" },
+  { id: "delivered", label: "Entregue", dot: "bg-emerald-500", active: "border-emerald-500/50 bg-emerald-500/10" },
 ];
 
 const stores = [
@@ -150,9 +150,9 @@ export default function DemoOrderFlow() {
             <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
               {stages.map((item, index) => {
                 const reached = current >= index;
-                return <div key={item.id} className={`rounded-xl border p-3 text-xs ${reached ? "border-primary/40 bg-primary/5" : "opacity-50"}`}>
-                  <div className={`mb-2 h-2 w-2 rounded-full ${reached ? "bg-primary" : "bg-muted"}`} />
-                  <span>{item.label}</span>
+                return <div key={item.id} className={`rounded-xl border p-3 text-xs transition-all ${reached ? item.active : "opacity-40"}`}>
+                  <div className={`mb-2 h-2.5 w-2.5 rounded-full ${reached ? item.dot : "bg-muted"}`} />
+                  <span className={reached ? "font-semibold" : ""}>{item.label}</span>
                 </div>;
               })}
             </div>

@@ -5,6 +5,7 @@ import logo from "@/assets/logo.png";
 import { useCart } from "@/contexts/CartContext";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,

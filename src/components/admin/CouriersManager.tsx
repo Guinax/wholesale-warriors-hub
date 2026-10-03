@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Bike, CheckCircle2, RefreshCw, ShieldAlert } from "lucide-react";
+import { Bike, CheckCircle2, RefreshCw, ShieldAlert, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -7,20 +7,30 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 type Courier = { id:string; courier_code:string; full_name:string; phone:string; cpf:string|null; vehicle_type:string; vehicle_plate:string|null; cnh_number:string|null; cnh_category:string|null; cnh_expiry:string|null; status:"pending"|"approved"|"suspended"; is_online:boolean; created_at:string };
+type CourierLocation = { courier_id:string; lat:number; lng:number; accuracy_m:number|null; updated_at:string };
 
 export default function CouriersManager() {
   const [rows,setRows]=useState<Courier[]>([]);
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState<string|null>(null);
+  const [locations,setLocations]=useState<Record<string,CourierLocation>>({});
 
   const load=useCallback(async()=>{
     setLoading(true);
-    const {data,error}=await supabase.from("courier_profiles" as never)
-      .select("id,courier_code,full_name,phone,cpf,vehicle_type,vehicle_plate,cnh_number,cnh_category,cnh_expiry,status,is_online,created_at")
-      .order("created_at",{ascending:false});
+    const [profilesResult, locationsResult]=await Promise.all([
+      supabase.from("courier_profiles" as never)
+        .select("id,courier_code,full_name,phone,cpf,vehicle_type,vehicle_plate,cnh_number,cnh_category,cnh_expiry,status,is_online,created_at")
+        .order("created_at",{ascending:false}),
+      supabase.from("courier_locations" as never)
+        .select("courier_id,lat,lng,accuracy_m,updated_at"),
+    ]);
     setLoading(false);
-    if(error) return toast.error(error.message);
-    setRows((data??[]) as unknown as Courier[]);
+    if(profilesResult.error) return toast.error(profilesResult.error.message);
+    setRows((profilesResult.data??[]) as unknown as Courier[]);
+    if(!locationsResult.error){
+      const next=Object.fromEntries(((locationsResult.data??[]) as unknown as CourierLocation[]).map((location)=>[location.courier_id,location]));
+      setLocations(next);
+    }
   },[]);
 
   useEffect(()=>{
@@ -28,6 +38,7 @@ export default function CouriersManager() {
     const channel=supabase
       .channel("admin-courier-profiles")
       .on("postgres_changes",{event:"*",schema:"public",table:"courier_profiles"},()=>{void load();})
+      .on("postgres_changes",{event:"*",schema:"public",table:"courier_locations"},()=>{void load();})
       .subscribe();
     const interval=window.setInterval(()=>{void load();},15000);
     return ()=>{
@@ -63,7 +74,18 @@ export default function CouriersManager() {
             <p><span className="text-muted-foreground">Categoria:</span> <strong>{c.cnh_category || "—"}</strong></p>
             <p><span className="text-muted-foreground">Validade:</span> <strong>{c.cnh_expiry ? new Date(c.cnh_expiry+"T12:00:00").toLocaleDateString("pt-BR") : "—"}</strong></p>
           </>}
-        </div></div>
+        </div>
+        {locations[c.id] && <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+          <a
+            href={`https://www.google.com/maps?q=${locations[c.id].lat},${locations[c.id].lng}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 font-semibold text-primary underline"
+          >
+            <MapPin className="h-3.5 w-3.5" /> Ver localização operacional
+          </a>
+          <span className="text-muted-foreground">Atualizada {new Date(locations[c.id].updated_at).toLocaleString("pt-BR")}</span>
+        </div>}</div>
         <div className="flex items-center gap-2"><Badge variant={c.status==="approved"?"default":c.status==="suspended"?"destructive":"secondary"}>{c.status==="approved"?"Aprovado":c.status==="suspended"?"Suspenso":"Em análise"}</Badge>{c.status==="approved"&&<Badge variant="outline">{c.is_online?"Online":"Offline"}</Badge>}</div>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">

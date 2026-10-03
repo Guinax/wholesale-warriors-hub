@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { lookupCep, maskCepValue, onlyDigitsCep } from "@/lib/shipping";
-import { Bell, Boxes, CheckCircle2, Clock3, Home, MapPin, Package, Settings2, ShieldCheck, Sparkles, Store as StoreIcon, Truck, WalletCards } from "lucide-react";
+import { Bell, Boxes, CheckCircle2, Clock3, Home, MapPin, Package, Settings2, ShieldCheck, Sparkles, Store as StoreIcon, Truck, WalletCards, Grid2X2, List } from "lucide-react";
 import type { PartnerOffer, PartnerRequest } from "@/lib/partnerDelivery";
 
 const PartnerDeliveryBoard = lazy(() => import("@/components/partners/PartnerDeliveryBoard"));
@@ -45,6 +45,7 @@ export default function PainelRevendedor() {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [stockDraft, setStockDraft] = useState<Record<string,string>>({});
+  const [stockView, setStockView] = useState<"grid"|"list">("grid");
   const [stockReason, setStockReason] = useState<Record<string,string>>({});
   const [catalogProducts,setCatalogProducts]=useState<CatalogProduct[]>([]);
   const [requests, setRequests] = useState<Request[]>([]);
@@ -440,14 +441,14 @@ export default function PainelRevendedor() {
               </>}
 
               {activeTab==="estoque" && <div id="estoque" className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div><h2 className="text-lg font-black">Meu estoque</h2><p className="text-xs text-zinc-500">Disponível = físico menos reservado.</p></div>
-                  <Boxes className="h-5 w-5 text-[#e5c66c]"/>
+                  <div className="flex items-center gap-2"><div className="flex rounded-lg border border-white/10 bg-black/20 p-1"><Button type="button" size="sm" variant="ghost" onClick={()=>setStockView("grid")} className={stockView==="grid"?"bg-[#d4af37]/15 text-yellow-200":"text-zinc-400"}><Grid2X2 className="h-4 w-4"/>Grade</Button><Button type="button" size="sm" variant="ghost" onClick={()=>setStockView("list")} className={stockView==="list"?"bg-[#d4af37]/15 text-yellow-200":"text-zinc-400"}><List className="h-4 w-4"/>Lista</Button></div><Boxes className="h-5 w-5 text-[#e5c66c]"/></div>
                 </div>
-                {catalogProducts.length===0?<p className="mt-3 text-sm text-zinc-500">Nenhum produto ativo no catálogo.</p>:<div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {catalogProducts.map((p)=>{const i=inventory.find((x)=>x.store_id===store.id&&x.product_id===p.id)??{store_id:store.id,product_id:p.id,on_hand:0,reserved:0,name:p.name};const key=i.store_id+":"+i.product_id;return <div key={key} className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                {catalogProducts.length===0?<p className="mt-3 text-sm text-zinc-500">Nenhum produto ativo no catálogo.</p>:<div className={stockView==="grid"?"mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3":"mt-4 space-y-2"}>
+                  {catalogProducts.map((p)=>{const i=inventory.find((x)=>x.store_id===store.id&&x.product_id===p.id)??{store_id:store.id,product_id:p.id,on_hand:0,reserved:0,name:p.name};const key=i.store_id+":"+i.product_id;return <div key={key} className={`rounded-2xl border border-white/10 bg-black/20 p-3 ${stockView==="list"?"md:flex md:items-center md:justify-between md:gap-4":""}`}>
                     <div className="flex items-start gap-3">
-                      <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[#d4af37]/15 bg-white/[0.04]">
+                      <div className={`relative shrink-0 overflow-hidden rounded-xl border border-[#d4af37]/15 bg-white/[0.04] ${stockView==="grid"?"h-24 w-24":"h-16 w-16"}`}>
                         <Package className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-zinc-600"/>
                         {p.image_url&&<img src={p.image_url} alt={p.name} loading="lazy" className="relative h-full w-full object-cover" onError={(e)=>{e.currentTarget.style.display="none";}}/>}
                       </div>
@@ -457,7 +458,7 @@ export default function PainelRevendedor() {
                         <p className="mt-1 text-xs font-semibold text-[#e5c66c]">Disponível {i.on_hand-i.reserved}</p>
                       </div>
                     </div>
-                    <div className="mt-3 grid gap-2">
+                    <div className={`mt-3 grid gap-2 ${stockView==="list"?"md:mt-0 md:min-w-[360px] md:grid-cols-[100px_1fr_auto]":""}`}>
                       <input className="h-9 rounded-lg border border-white/10 bg-black/30 px-2" type="number" min="0" step="1" placeholder={String(i.on_hand)} value={stockDraft[key]??""} onChange={(e)=>setStockDraft((x)=>({...x,[key]:e.target.value}))}/>
                       <input className="h-9 rounded-lg border border-white/10 bg-black/30 px-2" placeholder="Motivo do ajuste" value={stockReason[key]??""} onChange={(e)=>setStockReason((x)=>({...x,[key]:e.target.value}))}/>
                       <Button size="sm" variant="outline" className="border-[#d4af37]/25 bg-[#d4af37]/5 text-yellow-200 hover:bg-[#d4af37]/10" disabled={saving==="stock-"+key} onClick={()=>void saveStock(i.store_id,i.product_id,i.on_hand)}>Atualizar estoque</Button>

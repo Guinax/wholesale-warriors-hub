@@ -37,6 +37,7 @@ import Partners from "./pages/Partners.tsx";
 import PedidoLocal from "./pages/PedidoLocal.tsx";
 import Motoqueiro from "./pages/Motoqueiro.tsx";
 import Entregadores from "./pages/Entregadores.tsx";
+import GlobalBackButton from "./components/GlobalBackButton";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
           <Sonner />
           <CartDrawer />
           <CommandCenterLauncher />
+          <GlobalBackButton />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/cadastro" element={<CadastroCNPJ />} />

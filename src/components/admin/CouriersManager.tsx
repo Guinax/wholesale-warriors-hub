@@ -8,21 +8,26 @@ import { toast } from "sonner";
 
 type Courier = { id:string; courier_code:string; full_name:string; phone:string; cpf:string|null; vehicle_type:string; vehicle_plate:string|null; cnh_number:string|null; cnh_category:string|null; cnh_expiry:string|null; status:"pending"|"approved"|"suspended"; is_online:boolean; created_at:string };
 type CourierLocation = { courier_id:string; lat:number; lng:number; accuracy_m:number|null; updated_at:string };
+type CourierPayout = { id:string; courier_id:string; amount:number; status:"pending"|"paid"|"cancelled"; created_at:string; paid_at:string|null };
 
 export default function CouriersManager() {
   const [rows,setRows]=useState<Courier[]>([]);
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState<string|null>(null);
   const [locations,setLocations]=useState<Record<string,CourierLocation>>({});
+  const [payouts,setPayouts]=useState<CourierPayout[]>([]);
 
   const load=useCallback(async()=>{
     setLoading(true);
-    const [profilesResult, locationsResult]=await Promise.all([
+    const [profilesResult, locationsResult, payoutsResult]=await Promise.all([
       supabase.from("courier_profiles" as never)
         .select("id,courier_code,full_name,phone,cpf,vehicle_type,vehicle_plate,cnh_number,cnh_category,cnh_expiry,status,is_online,created_at")
         .order("created_at",{ascending:false}),
       supabase.from("courier_locations" as never)
         .select("courier_id,lat,lng,accuracy_m,updated_at"),
+      supabase.from("courier_payouts" as never)
+        .select("id,courier_id,amount,status,created_at,paid_at")
+        .order("created_at",{ascending:false}),
     ]);
     setLoading(false);
     if(profilesResult.error) return toast.error(profilesResult.error.message);
@@ -31,6 +36,7 @@ export default function CouriersManager() {
       const next=Object.fromEntries(((locationsResult.data??[]) as unknown as CourierLocation[]).map((location)=>[location.courier_id,location]));
       setLocations(next);
     }
+    if(!payoutsResult.error) setPayouts((payoutsResult.data??[]) as unknown as CourierPayout[]);
   },[]);
 
   useEffect(()=>{
@@ -39,6 +45,7 @@ export default function CouriersManager() {
       .channel("admin-courier-profiles")
       .on("postgres_changes",{event:"*",schema:"public",table:"courier_profiles"},()=>{void load();})
       .on("postgres_changes",{event:"*",schema:"public",table:"courier_locations"},()=>{void load();})
+      .on("postgres_changes",{event:"*",schema:"public",table:"courier_payouts"},()=>{void load();})
       .subscribe();
     const interval=window.setInterval(()=>{void load();},15000);
     return ()=>{
@@ -46,6 +53,15 @@ export default function CouriersManager() {
       void supabase.removeChannel(channel);
     };
   },[load]);
+
+  const markPayoutsPaid=async(c:Courier)=>{
+    setSaving(c.id);
+    const {error}=await supabase.rpc("courier_command" as never,{p_action:"admin_mark_payout_paid",p_payload:{courier_id:c.id}} as never);
+    setSaving(null);
+    if(error) return toast.error(error.message);
+    toast.success("Repasses pendentes marcados como pagos.");
+    await load();
+  };
 
   const setStatus=async(c:Courier,status:Courier["status"])=>{
     setSaving(c.id);
@@ -88,6 +104,13 @@ export default function CouriersManager() {
         </div>}</div>
         <div className="flex items-center gap-2"><Badge variant={c.status==="approved"?"default":c.status==="suspended"?"destructive":"secondary"}>{c.status==="approved"?"Aprovado":c.status==="suspended"?"Suspenso":"Em análise"}</Badge>{c.status==="approved"&&<Badge variant="outline">{c.is_online?"Online":"Offline"}</Badge>}</div>
       </div>
+      {(() => {
+        const pendingAmount=payouts.filter((p)=>p.courier_id===c.id&&p.status==="pending").reduce((sum,p)=>sum+Number(p.amount||0),0);
+        return pendingAmount>0 ? <div className="mt-3 rounded-lg border border-amber-400/20 bg-amber-400/5 p-3 text-xs">
+          <p><span className="text-muted-foreground">Repasse pendente:</span> <strong>{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(pendingAmount)}</strong></p>
+          <Button className="mt-2" size="sm" disabled={saving===c.id} onClick={()=>void markPayoutsPaid(c)}>Marcar repasse como pago</Button>
+        </div> : null;
+      })()}
       <div className="mt-3 flex flex-wrap gap-2">
         {c.status!=="approved"&&<Button disabled={saving===c.id} onClick={()=>void setStatus(c,"approved")}><CheckCircle2 className="h-4 w-4"/> Aprovar</Button>}
         {c.status!=="suspended"&&<Button disabled={saving===c.id} variant="destructive" onClick={()=>void setStatus(c,"suspended")}><ShieldAlert className="h-4 w-4"/> Suspender</Button>}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Package, RefreshCw, Truck, CheckCircle2 } from "lucide-react";
+import { Package, RefreshCw, Truck, CheckCircle2, Bike, MapPin } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -24,6 +24,17 @@ type PartnerTracking = {
   delivery_code?: string | null;
 };
 
+type CourierTracking = {
+  courier_id: string;
+  courier_code: string;
+  first_name: string;
+  job_status: string;
+  lat?: number | null;
+  lng?: number | null;
+  accuracy_m?: number | null;
+  updated_at?: string | null;
+};
+
 const partnerSteps = [
   { key: "payment_pending", label: "Pagamento" },
   { key: "paid", label: "Preparando" },
@@ -44,6 +55,7 @@ export default function MeusPedidos() {
   const [error, setError] = useState("");
   const [limit, setLimit] = useState(20);
   const [partnerTracking, setPartnerTracking] = useState<PartnerTracking[]>([]);
+  const [courierTracking, setCourierTracking] = useState<Record<string, CourierTracking>>({});
 
   useEffect(() => {
     let active = true;
@@ -68,9 +80,21 @@ export default function MeusPedidos() {
     ]);
     if (ordersResult.error) {
       setError("Não foi possível carregar os pedidos. Tente atualizar.");
+      setCourierTracking({});
     } else {
-      setOrders(ordersResult.data ?? []);
+      const loadedOrders = ordersResult.data ?? [];
+      setOrders(loadedOrders);
       setError("");
+      const entries = await Promise.all(loadedOrders.map(async (order) => {
+        const { data, error: trackingError } = await supabase.rpc("courier_command" as never, {
+          p_action: "tracking",
+          p_payload: { order_id: order.id },
+        } as never);
+        if (trackingError || !data) return null;
+        const result = data as unknown as { tracking?: CourierTracking | null };
+        return result.tracking ? [order.id, result.tracking] as const : null;
+      }));
+      setCourierTracking(Object.fromEntries(entries.filter((entry): entry is readonly [string, CourierTracking] => Boolean(entry))));
     }
     if (!partnerResult.error && partnerResult.data) {
       const dashboard = partnerResult.data as unknown as { requests?: PartnerTracking[] };
@@ -87,6 +111,8 @@ export default function MeusPedidos() {
     const refresh = () => { if (document.visibilityState === "visible") void load(); };
     const channel = supabase.channel(`my-orders-${userId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `user_id=eq.${userId}` }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "courier_jobs" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "courier_locations" }, () => void load())
       .subscribe();
     document.addEventListener("visibilitychange", refresh);
     return () => {
@@ -115,6 +141,7 @@ export default function MeusPedidos() {
       {!loading && !error && orders.length === 0 && <Card className="p-8 text-center space-y-3"><Package className="mx-auto text-primary" /><p>Você ainda não fez pedidos.</p><Link to="/" className="text-primary underline">Ver catálogo</Link></Card>}
       {orders.map((order) => {
         const partner = trackingByOrder.get(order.order_code);
+        const courier = courierTracking[order.id];
         const step = partnerStepIndex(partner?.status);
         return <Card key={order.id} className="p-4 space-y-3">
           <div className="flex justify-between flex-wrap gap-2"><strong>{order.order_code}</strong><strong>{formatCurrency(order.total_amount)}</strong></div>
@@ -140,6 +167,43 @@ export default function MeusPedidos() {
                 </div>;
               })}
             </div>
+
+            {courier && ["assigned", "picked_up", "delivering"].includes(courier.job_status) && (
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-3">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Bike className="h-4 w-4 text-primary" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Entregador</p>
+                      <p className="text-sm font-semibold">{courier.first_name} · {courier.courier_code}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {courier.job_status === "assigned" ? "Indo buscar seu pedido" : courier.job_status === "picked_up" ? "Pedido retirado" : "A caminho de você"}
+                  </span>
+                </div>
+                {courier.lat != null && courier.lng != null && (
+                  <div className="overflow-hidden rounded-lg border border-border">
+                    <iframe
+                      title={`Localização do entregador ${courier.first_name}`}
+                      src={`https://www.google.com/maps?q=${courier.lat},${courier.lng}&z=16&output=embed`}
+                      className="h-52 w-full border-0"
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                    <a
+                      href={`https://www.google.com/maps?q=${courier.lat},${courier.lng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 border-t border-border px-3 py-2 text-xs font-semibold text-primary"
+                    >
+                      <MapPin className="h-4 w-4" /> Abrir localização no mapa
+                    </a>
+                  </div>
+                )}
+                {courier.updated_at && <p className="text-[10px] text-muted-foreground">Localização atualizada em {new Date(courier.updated_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p>}
+              </div>
+            )}
 
             {partner.status === "delivering" && partner.delivery_code && (
               <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">

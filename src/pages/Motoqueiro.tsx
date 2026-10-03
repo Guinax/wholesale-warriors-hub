@@ -36,10 +36,21 @@ type CourierJob = {
   items?: Array<{ name?: string; qty?: number }>;
 };
 
+type CourierPayout = {
+  id: string;
+  job_id: string;
+  amount: number;
+  status: "pending" | "paid" | "cancelled";
+  created_at: string;
+  paid_at?: string | null;
+};
+
 type Dashboard = {
   profile?: CourierProfile | null;
   links?: Array<{ store_id: string; store_name: string; status: string }>;
   jobs?: CourierJob[];
+  payouts?: CourierPayout[];
+  pending_payout_total?: number;
 };
 
 const money = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
@@ -141,6 +152,8 @@ export default function Motoqueiro() {
   const available = jobs.filter((job) => job.status === "searching");
   const active = jobs.filter((job) => ["assigned", "picked_up", "delivering"].includes(job.status));
   const completed = jobs.filter((job) => job.status === "delivered");
+  const payouts = dashboard.payouts ?? [];
+  const pendingPayoutTotal = Number(dashboard.pending_payout_total ?? 0);
   const sessionValue = useMemo(() => [...active, ...completed].reduce((sum, job) => sum + Number(job.payout || 0), 0), [active, completed]);
 
   const routeUrl = (job: CourierJob) => {
@@ -224,7 +237,7 @@ export default function Motoqueiro() {
           <Card className="border-white/10 bg-[#101214] p-4 text-white"><p className="text-xs text-zinc-500">Disponibilidade</p><p className="mt-1 text-xl font-black">{profile.is_online ? "Online" : "Offline"}</p></Card>
           <Card className="border-white/10 bg-[#101214] p-4 text-white"><p className="text-xs text-zinc-500">Entregas ativas</p><p className="mt-1 text-xl font-black">{active.length}/{profile.max_active_jobs}</p></Card>
           <Card className="border-white/10 bg-[#101214] p-4 text-white"><p className="text-xs text-zinc-500">Oportunidades</p><p className="mt-1 text-xl font-black">{available.length}</p></Card>
-          <Card className="border-white/10 bg-[#101214] p-4 text-white"><p className="text-xs text-zinc-500">Valor das corridas</p><p className="mt-1 text-xl font-black text-yellow-400">{money(sessionValue)}</p></Card>
+          <Card className="border-white/10 bg-[#101214] p-4 text-white"><p className="text-xs text-zinc-500">A receber</p><p className="mt-1 text-xl font-black text-yellow-400">{money(pendingPayoutTotal)}</p><p className="mt-1 text-[10px] text-zinc-600">Corridas concluídas aguardando repasse</p></Card>
         </section>
 
         <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
@@ -261,6 +274,20 @@ export default function Motoqueiro() {
                     </div>}
                   </article>;
                 })}
+              </div>
+            </Card>
+
+            <Card className="border-white/10 bg-[#101214] p-4 text-white">
+              <div className="flex items-center gap-2"><WalletCards className="h-4 w-4 text-yellow-300" /><strong className="text-sm">Repasses</strong></div>
+              <div className="mt-3 space-y-2">
+                {payouts.length === 0 && <p className="text-xs text-zinc-500">Nenhum repasse registrado ainda.</p>}
+                {payouts.slice(0, 8).map((payout) => <div key={payout.id} className="flex items-center justify-between gap-3 rounded-lg border border-white/10 px-3 py-2">
+                  <div>
+                    <p className="text-xs font-bold">{money(Number(payout.amount))}</p>
+                    <p className="text-[10px] text-zinc-500">{new Date(payout.created_at).toLocaleDateString("pt-BR")}</p>
+                  </div>
+                  <span className={`rounded-full px-2 py-1 text-[10px] font-black ${payout.status === "paid" ? "bg-emerald-500/15 text-emerald-300" : "bg-amber-400/10 text-amber-300"}`}>{payout.status === "paid" ? "Pago" : "Pendente"}</span>
+                </div>)}
               </div>
             </Card>
 

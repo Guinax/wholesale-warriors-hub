@@ -32,8 +32,11 @@ if (isPreviewHost || isInIframe) {
   }
 
   import("virtual:pwa-register").then(({ registerSW }) => {
-    registerSW({
+    const updateSW = registerSW({
       immediate: true,
+      onNeedRefresh: () => {
+        void updateSW(true);
+      },
       onRegisteredSW: (_swUrl, registration) => {
         if (!registration) return;
 

@@ -23,7 +23,18 @@ export default function CouriersManager() {
     setRows((data??[]) as unknown as Courier[]);
   },[]);
 
-  useEffect(()=>{void load();},[load]);
+  useEffect(()=>{
+    void load();
+    const channel=supabase
+      .channel("admin-courier-profiles")
+      .on("postgres_changes",{event:"*",schema:"public",table:"courier_profiles"},()=>{void load();})
+      .subscribe();
+    const interval=window.setInterval(()=>{void load();},15000);
+    return ()=>{
+      window.clearInterval(interval);
+      void supabase.removeChannel(channel);
+    };
+  },[load]);
 
   const setStatus=async(c:Courier,status:Courier["status"])=>{
     setSaving(c.id);

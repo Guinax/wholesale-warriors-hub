@@ -59,8 +59,19 @@ Deno.serve(async (req) => {
     if (store?.owner_id !== userId && !adminRole) return json({ error: "Sem permissão." }, 403);
   }
 
+  const setEmailState = async (status: "sent" | "failed", error: string | null = null) => {
+    await admin.from("partner_restock_orders").update({
+      email_status: status,
+      email_sent_at: status === "sent" ? new Date().toISOString() : null,
+      email_error: error,
+    }).eq("id", order.id);
+  };
+
   const apiKey = Deno.env.get("RESEND_API_KEY");
-  if (!apiKey) return json({ email_not_configured: true }, 503);
+  if (!apiKey) {
+    await setEmailState("failed", "RESEND_API_KEY não configurada.");
+    return json({ email_not_configured: true }, 503);
+  }
 
   const { data: roles, error: rolesError } = await admin.from("user_roles").select("user_id").eq("role", "admin");
   if (rolesError) return json({ error: "Falha ao localizar administradores." }, 500);
@@ -71,7 +82,10 @@ Deno.serve(async (req) => {
     const email = data.user?.email;
     if (email && !emails.includes(email)) emails.push(email);
   }
-  if (!emails.length) return json({ error: "Nenhum e-mail administrativo cadastrado." }, 409);
+  if (!emails.length) {
+    await setEmailState("failed", "Nenhum e-mail administrativo cadastrado.");
+    return json({ error: "Nenhum e-mail administrativo cadastrado." }, 409);
+  }
 
   const items = (order.partner_restock_order_items ?? []) as Array<{
     quantity: number;
@@ -110,6 +124,10 @@ Deno.serve(async (req) => {
   });
 
   const result = await response.json().catch(() => ({}));
-  if (!response.ok) return json({ error: "Falha ao enviar e-mail administrativo.", provider_status: response.status }, 502);
+  if (!response.ok) {
+    await setEmailState("failed", "Falha no provedor de e-mail: HTTP " + response.status);
+    return json({ error: "Falha ao enviar e-mail administrativo.", provider_status: response.status }, 502);
+  }
+  await setEmailState("sent");
   return json({ sent: true, recipients: emails.length, id: (result as { id?: string }).id ?? null });
 });

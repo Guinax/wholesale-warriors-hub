@@ -36,6 +36,7 @@ import PainelRevendedor from "./pages/PainelRevendedor.tsx";
 import Partners from "./pages/Partners.tsx";
 import PedidoLocal from "./pages/PedidoLocal.tsx";
 import Motoqueiro from "./pages/Motoqueiro.tsx";
+import Entregadores from "./pages/Entregadores.tsx";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,7 @@ const App = () => (
             <Route path="/parceiros" element={<Partners />} />
             <Route path="/pedido-local/:id" element={<ProtectedRoute><PedidoLocal /></ProtectedRoute>} />
             <Route path="/motoqueiro" element={<ProtectedRoute><Motoqueiro /></ProtectedRoute>} />
+            <Route path="/entregadores" element={<Entregadores />} />
             <Route path="/produto/:id" element={<Produto />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />

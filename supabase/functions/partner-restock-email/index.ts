@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
 
   const authorization = req.headers.get("Authorization") ?? "";
   const token = authorization.match(/^Bearer\s+(\S+)$/i)?.[1];
-  if (!token) return json({ error: "Autenticação necessária." }, 401);
+  const internalSecret = req.headers.get("x-restock-secret");
 
   let body: unknown;
   try { body = await req.json(); } catch { return json({ error: "JSON inválido." }, 400); }
@@ -27,14 +27,28 @@ Deno.serve(async (req) => {
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !publicKey || !serviceKey) return json({ error: "Serviço indisponível." }, 500);
 
-  const authClient = createClient(supabaseUrl, publicKey, {
-    global: { headers: { Authorization: authorization } },
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-  const { data: { user }, error: authError } = await authClient.auth.getUser(token);
-  if (authError || !user) return json({ error: "Sessão inválida." }, 401);
-
   const admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+
+  let userId: string | null = null;
+  if (token) {
+    const authClient = createClient(supabaseUrl, publicKey, {
+      global: { headers: { Authorization: authorization } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+    if (authError || !user) return json({ error: "Sessão inválida." }, 401);
+    userId = user.id;
+  } else {
+    const { data: config, error: configError } = await admin
+      .schema("private")
+      .from("partner_restock_webhook_config")
+      .select("secret")
+      .eq("singleton", true)
+      .maybeSingle();
+    if (configError || !config?.secret || !internalSecret || config.secret !== internalSecret) {
+      return json({ error: "Chamada não autorizada." }, 401);
+    }
+  }
   const { data: order, error: orderError } = await admin
     .from("partner_restock_orders")
     .select("id,created_by,total_amount,notes,partner_stores(name,owner_id),partner_restock_order_items(quantity,unit_price,products(name))")
@@ -45,8 +59,10 @@ Deno.serve(async (req) => {
   if (!order) return json({ error: "Pedido não encontrado." }, 404);
 
   const store = Array.isArray(order.partner_stores) ? order.partner_stores[0] : order.partner_stores;
-  const { data: adminRole } = await admin.from("user_roles").select("user_id").eq("user_id", user.id).eq("role", "admin").maybeSingle();
-  if (store?.owner_id !== user.id && !adminRole) return json({ error: "Sem permissão." }, 403);
+  if (userId) {
+    const { data: adminRole } = await admin.from("user_roles").select("user_id").eq("user_id", userId).eq("role", "admin").maybeSingle();
+    if (store?.owner_id !== userId && !adminRole) return json({ error: "Sem permissão." }, 403);
+  }
 
   const apiKey = Deno.env.get("RESEND_API_KEY");
   if (!apiKey) return json({ email_not_configured: true }, 503);

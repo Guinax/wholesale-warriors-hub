@@ -15,7 +15,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import {
-  Truck, PackageCheck, Boxes, RefreshCw, AlertTriangle, Minus, Plus, MapPin,
+  Truck, PackageCheck, Boxes, RefreshCw, AlertTriangle, Minus, Plus, MapPin, Package,
 } from "lucide-react";
 import { formatCurrency, trackingLabel, DELIVERY_STAGES } from "@/lib/orderUtils";
 import { logAudit } from "@/lib/audit";
@@ -57,6 +57,7 @@ type StockProduct = {
   category: string;
   stock: number;
   wholesale_price: number;
+  image_url: string | null;
 };
 
 type Movement = {
@@ -98,7 +99,7 @@ const ExpeditionManager = () => {
     setLoading(true);
     const [o, p, m] = await Promise.all([
       supabase.from("orders").select("*").order("created_at", { ascending: false }).limit(100),
-      supabase.from("products").select("id,name,category,stock,wholesale_price").order("category").order("name"),
+      supabase.from("products").select("id,name,category,stock,wholesale_price,image_url").order("category").order("name"),
       supabase.from("stock_movements").select("*").order("created_at", { ascending: false }).limit(30),
     ]);
     if (o.error || p.error) toast.error("Erro ao carregar expedição");
@@ -428,6 +429,10 @@ const ExpeditionManager = () => {
           </div>
           {visibleStock.map((p) => (
             <Card key={p.id} className="p-3 flex items-center gap-3">
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border bg-muted">
+                <Package className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />
+                {p.image_url && <img src={p.image_url} alt={p.name} loading="lazy" className="relative h-full w-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />}
+              </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm truncate">{p.name}</p>
                 <p className="text-xs text-muted-foreground">

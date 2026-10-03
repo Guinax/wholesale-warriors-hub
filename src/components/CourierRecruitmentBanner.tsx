@@ -37,13 +37,22 @@ export default function CourierRecruitmentBanner() {
                 <span className="inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-yellow-300" /> Cadastro e aprovação pela plataforma</span>
               </div>
 
-              <button
-                type="button"
-                onClick={() => navigate("/entregadores")}
-                className="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 px-6 font-black text-black transition hover:bg-yellow-300 sm:w-auto"
-              >
-                QUERO FAZER ENTREGAS <ArrowRight className="h-4 w-4" />
-              </button>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => navigate("/entregadores")}
+                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 px-6 font-black text-black transition hover:bg-yellow-300 sm:w-auto"
+                >
+                  QUERO FAZER ENTREGAS <ArrowRight className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/auth?next=%2Fmotoqueiro")}
+                  className="min-h-12 w-full rounded-xl border border-white/15 px-5 font-semibold text-zinc-200 transition hover:border-yellow-400/50 hover:text-white sm:w-auto"
+                >
+                  JÁ SOU ENTREGADOR · ENTRAR
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">

@@ -10,6 +10,15 @@ type Courier = { id:string; courier_code:string; full_name:string; phone:string;
 type CourierLocation = { courier_id:string; lat:number; lng:number; accuracy_m:number|null; updated_at:string };
 type CourierPayout = { id:string; courier_id:string; amount:number; status:"pending"|"paid"|"cancelled"; created_at:string; paid_at:string|null };
 
+const documentsReady=(c:Courier)=>{
+  if((c.cpf??"").replace(/\D/g,"").length!==11) return false;
+  if(c.vehicle_type==="bike") return true;
+  return (c.cnh_number??"").replace(/\D/g,"").length===11
+    && Boolean(c.cnh_category)
+    && Boolean(c.cnh_expiry)
+    && Boolean(c.vehicle_plate);
+};
+
 export default function CouriersManager() {
   const [rows,setRows]=useState<Courier[]>([]);
   const [loading,setLoading]=useState(true);
@@ -111,8 +120,9 @@ export default function CouriersManager() {
           <Button className="mt-2" size="sm" disabled={saving===c.id} onClick={()=>void markPayoutsPaid(c)}>Marcar repasse como pago</Button>
         </div> : null;
       })()}
+      {c.status!=="approved"&&!documentsReady(c)&&<p className="mt-3 text-xs font-semibold text-amber-600">Documentos incompletos: o entregador precisa completar CPF e, para veículo motorizado, CNH e placa antes da aprovação.</p>}
       <div className="mt-3 flex flex-wrap gap-2">
-        {c.status!=="approved"&&<Button disabled={saving===c.id} onClick={()=>void setStatus(c,"approved")}><CheckCircle2 className="h-4 w-4"/> Aprovar</Button>}
+        {c.status!=="approved"&&<Button disabled={saving===c.id||!documentsReady(c)} onClick={()=>void setStatus(c,"approved")}><CheckCircle2 className="h-4 w-4"/> Aprovar</Button>}
         {c.status!=="suspended"&&<Button disabled={saving===c.id} variant="destructive" onClick={()=>void setStatus(c,"suspended")}><ShieldAlert className="h-4 w-4"/> Suspender</Button>}
         {c.status==="suspended"&&<Button disabled={saving===c.id} variant="outline" onClick={()=>void setStatus(c,"pending")}>Voltar para análise</Button>}
       </div>

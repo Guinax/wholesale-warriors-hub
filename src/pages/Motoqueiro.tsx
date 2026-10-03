@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Bike, CheckCircle2, Clock3, MapPin, Navigation, Power, RefreshCw, Route, ShieldCheck, Store, WalletCards } from "lucide-react";
+import { Bike, CheckCircle2, Clock3, MapPin, MessageCircle, Navigation, Power, RefreshCw, Route, ShieldCheck, Store, WalletCards } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -21,6 +21,7 @@ type CourierProfile = {
   cnh_number?: string | null;
   cnh_category?: string | null;
   cnh_expiry?: string | null;
+  phone_verified_at?: string | null;
 };
 
 type CourierJob = {
@@ -61,6 +62,15 @@ type Dashboard = {
 
 const money = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
 
+const normalizeWhatsAppPhone = (value: string) => {
+  const raw = value.trim();
+  const digits = raw.replace(/\D/g, "");
+  if (raw.startsWith("+") && digits.length >= 10 && digits.length <= 15) return "+" + digits;
+  if (digits.startsWith("55") && digits.length === 13) return "+" + digits;
+  if (digits.length === 11) return "+55" + digits;
+  return null;
+};
+
 export default function Motoqueiro() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -69,6 +79,9 @@ export default function Motoqueiro() {
   const [registration, setRegistration] = useState({ full_name: "", phone: "", cpf: "", vehicle_type: "moto", vehicle_plate: "", cnh_number: "", cnh_category: "", cnh_expiry: "" });
   const [deliveryCode, setDeliveryCode] = useState<Record<string, string>>({});
   const [adult, setAdult] = useState<Record<string, boolean>>({});
+  const [whatsAppFactorId, setWhatsAppFactorId] = useState("");
+  const [whatsAppChallengeId, setWhatsAppChallengeId] = useState("");
+  const [whatsAppCode, setWhatsAppCode] = useState("");
   const watchRef = useRef<number | null>(null);
 
   const load = useCallback(async () => {
@@ -138,22 +151,102 @@ export default function Motoqueiro() {
     return stopTracking;
   }, [dashboard.profile?.is_online, startTracking, stopTracking]);
 
+  const startWhatsAppVerification = async (phoneInput = registration.phone) => {
+    const phone = normalizeWhatsAppPhone(phoneInput);
+    if (!phone) return toast.error("Informe um celular com DDD. Ex.: (19) 99999-9999.");
+
+    setSaving(true);
+    let factorId = "";
+    const factors = await supabase.auth.mfa.listFactors();
+
+    if (!factors.error) {
+      const existing = factors.data.phone.find((factor) => normalizeWhatsAppPhone(factor.phone ?? "") === phone);
+      if (existing) factorId = existing.id;
+    }
+
+    if (!factorId) {
+      const enrolled = await supabase.auth.mfa.enroll({
+        factorType: "phone",
+        phone,
+        friendlyName: "Entregador Mansão Maromba",
+      });
+      if (enrolled.error) {
+        setSaving(false);
+        return toast.error(enrolled.error.message);
+      }
+      factorId = enrolled.data.id;
+    }
+
+    const challenge = await supabase.auth.mfa.challenge({
+      factorId,
+      channel: "whatsapp",
+    });
+    setSaving(false);
+
+    if (challenge.error) {
+      return toast.error(
+        challenge.error.message.includes("provider")
+          ? "O envio por WhatsApp ainda precisa do provedor de mensagens configurado no Supabase."
+          : challenge.error.message
+      );
+    }
+
+    setWhatsAppFactorId(factorId);
+    setWhatsAppChallengeId(challenge.data.id);
+    setWhatsAppCode("");
+    toast.success("Código enviado para seu WhatsApp.");
+  };
+
+  const verifyWhatsApp = async () => {
+    if (!whatsAppFactorId || !whatsAppChallengeId || whatsAppCode.replace(/\D/g, "").length < 6) {
+      return toast.error("Digite o código de 6 dígitos recebido no WhatsApp.");
+    }
+
+    setSaving(true);
+    const verification = await supabase.auth.mfa.verify({
+      factorId: whatsAppFactorId,
+      challengeId: whatsAppChallengeId,
+      code: whatsAppCode.replace(/\D/g, ""),
+    });
+
+    if (verification.error) {
+      setSaving(false);
+      return toast.error("Código inválido ou expirado. Peça um novo código.");
+    }
+
+    const { error: approvalError } = await supabase.rpc("courier_confirm_whatsapp" as never);
+    setSaving(false);
+
+    if (approvalError) return toast.error(approvalError.message);
+
+    setWhatsAppFactorId("");
+    setWhatsAppChallengeId("");
+    setWhatsAppCode("");
+    toast.success("WhatsApp confirmado. Seu cadastro foi aprovado automaticamente.");
+    await load();
+  };
+
   const register = async () => {
     const cpfDigits = registration.cpf.replace(/\D/g, "");
     const cnhDigits = registration.cnh_number.replace(/\D/g, "");
     const motorized = registration.vehicle_type !== "bike";
-    if (registration.full_name.trim().length < 3 || registration.phone.replace(/\D/g, "").length < 8) return toast.error("Informe nome e telefone válidos.");
+    const whatsappPhone = normalizeWhatsAppPhone(registration.phone);
+    if (registration.full_name.trim().length < 3 || !whatsappPhone) return toast.error("Informe nome e celular com DDD válidos.");
     if (cpfDigits.length !== 11) return toast.error("Informe um CPF com 11 dígitos.");
     if (motorized && cnhDigits.length !== 11) return toast.error("Informe o número da CNH com 11 dígitos.");
     if (motorized && !registration.cnh_category) return toast.error("Informe a categoria da CNH.");
     if (motorized && !registration.cnh_expiry) return toast.error("Informe a validade da CNH.");
     if (motorized && !registration.vehicle_plate.trim()) return toast.error("Informe a placa do veículo.");
+
+    const payload = { ...registration, phone: whatsappPhone };
     setSaving(true);
-    const { error } = await supabase.rpc("courier_command" as never, { p_action: "register", p_payload: registration } as never);
+    const { error } = await supabase.rpc("courier_command" as never, { p_action: "register", p_payload: payload } as never);
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success("Cadastro recebido. Você será avisado quando for aprovado.");
-    navigate("/", { replace: true });
+
+    setRegistration((current) => ({ ...current, phone: whatsappPhone }));
+    await load();
+    await startWhatsAppVerification(whatsappPhone);
   };
 
   const saveDocuments = async () => {
@@ -212,7 +305,7 @@ export default function Motoqueiro() {
         </div>
         <Card className="border-white/10 bg-[#101214] p-5 text-white">
           <h2 className="text-xl font-black">Cadastrar como entregador</h2>
-          <p className="mt-1 text-sm text-zinc-400">Seu ID profissional é gerado automaticamente após o cadastro.</p>
+          <p className="mt-1 text-sm text-zinc-400">Preencha seus dados e confirme o código enviado pelo WhatsApp. A confirmação libera o cadastro automaticamente.</p>
           <div className="mt-5 grid gap-3">
             <Input className="border-white/10 bg-black/30" placeholder="Nome completo" value={registration.full_name} onChange={(e) => setRegistration({ ...registration, full_name: e.target.value })} />
             <Input className="border-white/10 bg-black/30" placeholder="Telefone" value={registration.phone} onChange={(e) => setRegistration({ ...registration, phone: e.target.value })} />
@@ -239,7 +332,16 @@ export default function Motoqueiro() {
                 <Input type="date" className="border-white/10 bg-black/30" value={registration.cnh_expiry} onChange={(e) => setRegistration({ ...registration, cnh_expiry: e.target.value })} aria-label="Validade da CNH" />
               </div>
             </div>}
-            <Button disabled={saving} onClick={() => void register()} className="bg-yellow-400 font-black text-black hover:bg-yellow-300">{saving ? "Enviando..." : "Quero trabalhar na rede"}</Button>
+            <Button disabled={saving} onClick={() => void register()} className="bg-yellow-400 font-black text-black hover:bg-yellow-300">{saving ? "Enviando..." : "Continuar e receber código no WhatsApp"}</Button>
+            {whatsAppChallengeId && <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.05] p-3">
+              <div className="flex items-center gap-2 text-emerald-300"><MessageCircle className="h-4 w-4" /><strong className="text-sm">Código enviado pelo WhatsApp</strong></div>
+              <p className="mt-1 text-xs text-zinc-400">Digite os 6 números recebidos para confirmar sua inscrição agora.</p>
+              <div className="mt-3 flex gap-2">
+                <Input inputMode="numeric" maxLength={6} className="border-white/10 bg-black/30 text-center tracking-[0.35em]" placeholder="000000" value={whatsAppCode} onChange={(e) => setWhatsAppCode(e.target.value.replace(/\D/g, "").slice(0, 6))} />
+                <Button disabled={saving || whatsAppCode.length !== 6} onClick={() => void verifyWhatsApp()} className="bg-emerald-500 font-black text-black hover:bg-emerald-400">Confirmar</Button>
+              </div>
+              <button type="button" disabled={saving} onClick={() => void startWhatsAppVerification()} className="mt-3 text-xs font-semibold text-yellow-300 underline">Reenviar código</button>
+            </div>}
           </div>
         </Card>
       </section>
@@ -263,7 +365,7 @@ export default function Motoqueiro() {
           </div>
         </header>
 
-        {profile.status !== "approved" && <Card className="border-amber-400/20 bg-amber-400/[0.06] p-4 text-amber-100"><Clock3 className="mb-2 h-5 w-5" /><strong>Cadastro em análise.</strong><p className="mt-1 text-sm text-amber-100/70">O botão Online é liberado depois da aprovação administrativa.</p></Card>}
+        {profile.status !== "approved" && <Card className="border-amber-400/20 bg-amber-400/[0.06] p-4 text-amber-100"><Clock3 className="mb-2 h-5 w-5" /><strong>Falta confirmar seu WhatsApp.</strong><p className="mt-1 text-sm text-amber-100/70">Depois do código correto, seu cadastro é aprovado automaticamente e o botão Online é liberado.</p></Card>}
 
         {profile.status === "pending" && <Card className="border-white/10 bg-[#101214] p-4 text-white">
           <h2 className="font-black">Documentos do cadastro</h2>
@@ -290,6 +392,21 @@ export default function Motoqueiro() {
               <Input type="date" className="border-white/10 bg-black/30" value={registration.cnh_expiry} onChange={(e) => setRegistration({ ...registration, cnh_expiry: e.target.value })} aria-label="Validade da CNH" />
             </div>}
             <Button disabled={saving} onClick={() => void saveDocuments()} className="bg-yellow-400 font-black text-black hover:bg-yellow-300">{saving ? "Salvando..." : "Salvar documentos"}</Button>
+            <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.04] p-3">
+              <div className="flex items-center gap-2 text-emerald-300"><MessageCircle className="h-4 w-4" /><strong className="text-sm">Confirmação pelo WhatsApp</strong></div>
+              {!whatsAppChallengeId ? (
+                <Button disabled={saving} onClick={() => void startWhatsAppVerification(profile.phone)} className="mt-3 w-full bg-emerald-500 font-black text-black hover:bg-emerald-400">Receber código no WhatsApp</Button>
+              ) : (
+                <>
+                  <p className="mt-2 text-xs text-zinc-400">Digite o código de 6 dígitos para aprovar automaticamente o cadastro.</p>
+                  <div className="mt-3 flex gap-2">
+                    <Input inputMode="numeric" maxLength={6} className="border-white/10 bg-black/30 text-center tracking-[0.35em]" placeholder="000000" value={whatsAppCode} onChange={(e) => setWhatsAppCode(e.target.value.replace(/\D/g, "").slice(0, 6))} />
+                    <Button disabled={saving || whatsAppCode.length !== 6} onClick={() => void verifyWhatsApp()} className="bg-emerald-500 font-black text-black hover:bg-emerald-400">Confirmar</Button>
+                  </div>
+                  <button type="button" disabled={saving} onClick={() => void startWhatsAppVerification(profile.phone)} className="mt-3 text-xs font-semibold text-yellow-300 underline">Reenviar código</button>
+                </>
+              )}
+            </div>
           </div>
         </Card>}
 

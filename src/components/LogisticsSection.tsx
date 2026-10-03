@@ -7,6 +7,8 @@ const stats = [
 ];
 
 const LogisticsSection = () => {
+  const whatsappUrl = "https://wa.me/5519971151107";
+
   return (
     <section className="py-8">
       <div className="container space-y-6">
@@ -43,9 +45,15 @@ const LogisticsSection = () => {
               Tire suas dúvidas agora pelo WhatsApp corporativo.
             </p>
           </div>
-          <button className="bg-primary text-primary-foreground font-heading font-bold text-[10px] tracking-wider px-4 py-2.5 rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap glow-neon">
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Contatar gerente exclusivo pelo WhatsApp"
+            className="bg-primary text-primary-foreground font-heading font-bold text-[10px] tracking-wider px-4 py-2.5 rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap glow-neon"
+          >
             CONTATAR
-          </button>
+          </a>
         </div>
       </div>
     </section>

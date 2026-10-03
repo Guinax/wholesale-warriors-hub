@@ -18,6 +18,11 @@ type Job = {
   courier_id?: string | null;
   source: "network" | "store";
   status: string;
+  courier_name?: string | null;
+  courier_code?: string | null;
+  courier_lat?: number | null;
+  courier_lng?: number | null;
+  courier_location_updated_at?: string | null;
 };
 
 export default function PartnerCourierControls({ requestId, storeId }: { requestId: string; storeId: string }) {
@@ -38,6 +43,7 @@ export default function PartnerCourierControls({ requestId, storeId }: { request
     void load();
     const channel = supabase.channel("partner-courier-controls")
       .on("postgres_changes", { event: "*", schema: "public", table: "courier_jobs" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "courier_locations" }, () => void load())
       .subscribe();
     return () => { void supabase.removeChannel(channel); };
   }, [load]);
@@ -71,12 +77,24 @@ export default function PartnerCourierControls({ requestId, storeId }: { request
       <p className="delivery-hint">
         {current.source === "network" && !current.courier_id
           ? "Procurando entregador online próximo da loja."
-          : courier
-            ? courier.full_name + " · " + courier.courier_code
-            : current.courier_id
-              ? "Entregador da rede atribuído."
-              : "Aguardando aceite da rede."}
+          : current.courier_name && current.courier_code
+            ? current.courier_name + " · " + current.courier_code
+            : courier
+              ? courier.full_name + " · " + courier.courier_code
+              : current.courier_id
+                ? "Entregador da rede atribuído."
+                : "Aguardando aceite da rede."}
       </p>
+      {current.courier_lat != null && current.courier_lng != null && (
+        <a
+          className="delivery-button delivery-button-outline"
+          href={`https://www.google.com/maps?q=${current.courier_lat},${current.courier_lng}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Ver localização atual do entregador
+        </a>
+      )}
     </div>;
   }
 

@@ -318,12 +318,9 @@ Deno.serve(async (req) => {
     }
 
     if (!response.ok) {
+      console.error("InfinitePay link request failed", { status: response.status });
       await releaseCentralReservation();
-      return json({
-        error: "Não foi possível gerar a cobrança.",
-        provider_status: response.status,
-        provider: providerResponse,
-      }, 502);
+      return json({ error: "Não foi possível gerar a cobrança." }, 502);
     }
   } catch {
     await releaseCentralReservation();
@@ -338,8 +335,30 @@ Deno.serve(async (req) => {
       : null;
 
   if (!url) {
+    console.error("InfinitePay link response did not include a checkout URL");
     await releaseCentralReservation();
-    return json({ error: "Resposta sem link de pagamento.", provider: providerResponse }, 502);
+    return json({ error: "Resposta sem link de pagamento." }, 502);
+  }
+
+  let checkoutUrl: URL;
+  try {
+    checkoutUrl = new URL(url);
+  } catch {
+    console.error("InfinitePay returned an invalid checkout URL");
+    await releaseCentralReservation();
+    return json({ error: "Resposta de pagamento inválida." }, 502);
+  }
+
+  const checkoutHost = checkoutUrl.hostname.toLowerCase();
+  const trustedCheckoutHost =
+    checkoutHost === "infinitepay.io" ||
+    checkoutHost.endsWith(".infinitepay.io") ||
+    checkoutHost === "infinitepay.com.br" ||
+    checkoutHost.endsWith(".infinitepay.com.br");
+  if (checkoutUrl.protocol !== "https:" || !trustedCheckoutHost) {
+    console.error("InfinitePay returned an untrusted checkout URL", { host: checkoutHost });
+    await releaseCentralReservation();
+    return json({ error: "Resposta de pagamento inválida." }, 502);
   }
 
   const { error: paymentUpdateError } = await supabase

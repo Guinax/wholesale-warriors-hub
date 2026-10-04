@@ -81,9 +81,11 @@ Deno.serve(async (req) => {
 
     if (!metaToken || !phoneNumberId) {
       return json({
-        error: "WhatsApp automático ainda não está conectado ao provedor.",
+        ok: false,
+        pending: true,
         code: "WHATSAPP_PROVIDER_NOT_CONFIGURED",
-      }, 503, origin);
+        message: "Cadastro salvo e em análise. A confirmação automática por WhatsApp será habilitada assim que o serviço estiver disponível.",
+      }, 200, origin);
     }
 
     const { data: existing } = await supabase

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as L from "leaflet";
 import { LocateFixed, MapPin } from "lucide-react";
 import "leaflet/dist/leaflet.css";
@@ -34,14 +34,14 @@ export default function PartnerNetworkMap({ stores, selectedId, onSelect }: Prop
   const selected = useRef(onSelect);
   const [tileError, setTileError] = useState(false);
 
-  const mappedStores = stores.filter((store) =>
+  const mappedStores = useMemo(() => stores.filter((store) =>
     Number.isFinite(Number(store.lat)) &&
     Number.isFinite(Number(store.lng)) &&
     Number(store.lat) >= -90 &&
     Number(store.lat) <= 90 &&
     Number(store.lng) >= -180 &&
     Number(store.lng) <= 180
-  );
+  ), [stores]);
 
   useEffect(() => {
     selected.current = onSelect;
@@ -133,7 +133,7 @@ export default function PartnerNetworkMap({ stores, selectedId, onSelect }: Prop
       L.latLngBounds(mappedStores.map((store) => [Number(store.lat), Number(store.lng)] as L.LatLngTuple)),
       { padding: [50, 50], maxZoom: 14 }
     );
-  }, [stores, selectedId]);
+  }, [mappedStores, selectedId]);
 
   const fitAll = () => {
     if (!map.current || !mappedStores.length) return;

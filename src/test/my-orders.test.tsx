@@ -8,10 +8,10 @@ vi.mock("@/contexts/CartContext", () => ({ useCart: () => ({ totalItems: 0, open
 const api = vi.hoisted(() => {
   const query = { select: vi.fn(), eq: vi.fn(), order: vi.fn(), limit: vi.fn() };
   const channel = { on: vi.fn(), subscribe: vi.fn() };
-  return { query, channel, getUser: vi.fn(), from: vi.fn(), removeChannel: vi.fn() };
+  return { query, channel, getUser: vi.fn(), from: vi.fn(), rpc: vi.fn(), removeChannel: vi.fn() };
 });
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {
-  auth: { getUser: api.getUser }, from: api.from,
+  auth: { getUser: api.getUser }, from: api.from, rpc: api.rpc,
   channel: () => api.channel, removeChannel: api.removeChannel,
 } }));
 
@@ -23,6 +23,11 @@ beforeEach(() => {
   api.query.eq.mockReturnValue(api.query);
   api.query.order.mockReturnValue(api.query);
   api.query.limit.mockResolvedValue({ data: [], error: null });
+  api.rpc.mockImplementation(async (name: string) => {
+    if (name === "partner_command") return { data: { requests: [] }, error: null };
+    if (name === "courier_command") return { data: { tracking: null }, error: null };
+    return { data: null, error: null };
+  });
   api.channel.on.mockReturnValue(api.channel);
   api.channel.subscribe.mockReturnValue(api.channel);
 });

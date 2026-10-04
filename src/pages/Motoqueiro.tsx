@@ -156,70 +156,38 @@ export default function Motoqueiro() {
     if (!phone) return toast.error("Informe um celular com DDD. Ex.: (19) 99999-9999.");
 
     setSaving(true);
-    let factorId = "";
-    const factors = await supabase.auth.mfa.listFactors();
-
-    if (!factors.error) {
-      const existing = factors.data.phone.find((factor) => {
-        const factorPhone = (factor as unknown as { phone?: string }).phone;
-        return normalizeWhatsAppPhone(factorPhone ?? "") === phone;
-      });
-      if (existing) factorId = existing.id;
-    }
-
-    if (!factorId) {
-      const enrolled = await supabase.auth.mfa.enroll({
-        factorType: "phone",
-        phone,
-        friendlyName: "Entregador Mansão Maromba",
-      });
-      if (enrolled.error) {
-        setSaving(false);
-        toast.warning("Cadastro salvo. A confirmação automática por WhatsApp não está disponível agora; seu cadastro seguirá para análise.");
-        return false;
-      }
-      factorId = enrolled.data.id;
-    }
-
-    const challenge = await supabase.auth.mfa.challenge({
-      factorId,
-      channel: "whatsapp",
+    const { data, error } = await supabase.functions.invoke("courier-whatsapp-otp", {
+      body: { action: "send" },
     });
     setSaving(false);
 
-    if (challenge.error) {
-      toast.warning("Cadastro salvo. O código por WhatsApp não pôde ser enviado agora; seu cadastro seguirá para análise.");
+    if (error || (data as { error?: string } | null)?.error) {
+      const message = (data as { error?: string } | null)?.error || error?.message || "Não foi possível enviar o código.";
+      toast.warning(message + " Seu cadastro permanece salvo e em análise.");
       return false;
     }
 
-    setWhatsAppFactorId(factorId);
-    setWhatsAppChallengeId(challenge.data.id);
+    setWhatsAppFactorId("whatsapp-otp");
+    setWhatsAppChallengeId("sent");
     setWhatsAppCode("");
     toast.success("Código enviado para seu WhatsApp.");
     return true;
   };
 
   const verifyWhatsApp = async () => {
-    if (!whatsAppFactorId || !whatsAppChallengeId || whatsAppCode.replace(/\D/g, "").length < 6) {
+    if (!whatsAppChallengeId || whatsAppCode.replace(/\D/g, "").length < 6) {
       return toast.error("Digite o código de 6 dígitos recebido no WhatsApp.");
     }
 
     setSaving(true);
-    const verification = await supabase.auth.mfa.verify({
-      factorId: whatsAppFactorId,
-      challengeId: whatsAppChallengeId,
-      code: whatsAppCode.replace(/\D/g, ""),
+    const { data, error } = await supabase.functions.invoke("courier-whatsapp-otp", {
+      body: { action: "verify", code: whatsAppCode.replace(/\D/g, "") },
     });
-
-    if (verification.error) {
-      setSaving(false);
-      return toast.error("Código inválido ou expirado. Peça um novo código.");
-    }
-
-    const { error: approvalError } = await supabase.rpc("courier_confirm_whatsapp" as never);
     setSaving(false);
 
-    if (approvalError) return toast.error(approvalError.message);
+    if (error || (data as { error?: string } | null)?.error) {
+      return toast.error((data as { error?: string } | null)?.error || error?.message || "Código inválido ou expirado. Peça um novo código.");
+    }
 
     setWhatsAppFactorId("");
     setWhatsAppChallengeId("");

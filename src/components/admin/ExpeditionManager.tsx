@@ -209,12 +209,6 @@ const ExpeditionManager = () => {
     );
     if (error) { toast.error("Erro ao ajustar estoque central"); return; }
 
-    await supabase.from("stock_movements").insert({
-      product_id: p.id,
-      product_name: p.name,
-      qty: appliedDelta,
-      reason: "ajuste manual estoque central",
-    });
     await load();
   };
 

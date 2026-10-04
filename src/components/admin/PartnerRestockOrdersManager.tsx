@@ -64,7 +64,7 @@ export default function PartnerRestockOrdersManager({onPendingChange}:{onPending
             description:"Um parceiro solicitou produtos à sede.",
             duration:12000,
           });
-          try{new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=").play().catch(()=>{});}catch{}
+          try{new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=").play().catch(()=>{});}catch{/* Optional notification sound; ignore playback errors. */}
         }
         void load();
       })

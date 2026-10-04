@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronRight, Pill, Shirt, Dumbbell, Wrench, Wine, Apple } from "lucide-react";
+import { ArrowLeft, ChevronRight, Pill, Shirt, Dumbbell, Wrench, Wine, Apple, Package } from "lucide-react";
 import ProductsManager from "@/components/admin/ProductsManager";
 import type { ProductCategory } from "@/hooks/useProducts";
 
@@ -9,6 +9,7 @@ const PAGES: { category: ProductCategory; label: string; path: string; icon: typ
   { category: "suplementos", label: "Suplementos", path: "/suplementos", icon: Pill },
   { category: "roupas", label: "Roupas", path: "/roupas", icon: Shirt },
   { category: "acessorios", label: "Acessórios", path: "/acessorios", icon: Dumbbell },
+  { category: "diversos", label: "Diversos", path: "/diversos", icon: Package },
   { category: "equipamento", label: "Equipamento", path: "/equipamento", icon: Wrench },
   { category: "bebidas", label: "Bebidas", path: "/bebidas", icon: Wine },
   { category: "alimentos", label: "Alimentar", path: "/alimentar", icon: Apple },

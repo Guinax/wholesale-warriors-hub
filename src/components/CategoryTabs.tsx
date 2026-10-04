@@ -1,13 +1,14 @@
-import { Pill, Shirt, Dumbbell, Wrench, Wine, Apple } from "lucide-react";
+import { Pill, Shirt, Dumbbell, Wrench, Wine, Apple, Package } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const categories = [
   { id: "01", label: "SUPLEMENTOS", icon: Pill, path: "/suplementos" },
   { id: "02", label: "ROUPAS", icon: Shirt, path: "/roupas" },
   { id: "03", label: "ACESSÓRIOS", icon: Dumbbell, path: "/acessorios" },
-  { id: "04", label: "EQUIPAMENTO", icon: Wrench, path: "/equipamento" },
-  { id: "05", label: "BEBIDAS", icon: Wine, path: "/bebidas" },
-  { id: "06", label: "ALIMENTAR", icon: Apple, path: "/alimentar" },
+  { id: "04", label: "DIVERSOS", icon: Package, path: "/diversos" },
+  { id: "05", label: "EQUIPAMENTO", icon: Wrench, path: "/equipamento" },
+  { id: "06", label: "BEBIDAS", icon: Wine, path: "/bebidas" },
+  { id: "07", label: "ALIMENTAR", icon: Apple, path: "/alimentar" },
 ];
 
 const CategoryTabs = () => {

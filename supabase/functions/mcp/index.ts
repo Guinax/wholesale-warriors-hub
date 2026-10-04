@@ -108,7 +108,7 @@ var list_my_orders_default = defineTool3({
 });
 
 // src/lib/mcp/index.ts
-var projectRef = "knoypszawytcyjcuheor";
+var projectRef = "svkatjljeyyuobayjqjv";
 var mcp_default = defineMcp({
   name: "familia-maromba-mcp",
   title: "Loja Oficial Fam\xEDlia Maromba",

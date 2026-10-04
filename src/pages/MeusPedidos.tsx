@@ -72,12 +72,13 @@ export default function MeusPedidos() {
   const load = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
-    const [ordersResult, partnerResult] = await Promise.all([
-      supabase.from("orders")
-        .select("id,order_code,payment_status,delivery_status,total_amount,tracking_code,created_at")
-        .eq("user_id", userId).order("created_at", { ascending: false }).limit(limit),
-      supabase.rpc("partner_command" as never, { p_action: "dashboard", p_payload: {} } as never),
-    ]);
+    const ordersResult = await supabase.from("orders")
+      .select("id,order_code,payment_status,delivery_status,total_amount,tracking_code,created_at")
+      .eq("user_id", userId).order("created_at", { ascending: false }).limit(limit);
+    const partnerResult = await supabase.rpc(
+      "partner_command" as never,
+      { p_action: "dashboard", p_payload: {} } as never
+    ) as unknown as { data: unknown; error: { message: string } | null };
     if (ordersResult.error) {
       setError("Não foi possível carregar os pedidos. Tente atualizar.");
       setCourierTracking({});

@@ -381,12 +381,7 @@ const Pagamento = () => {
             full_name: customer.name,
             phone: customer.phone,
             ...(docType === "cnpj" ? { cnpj: customer.cnpj || null } : { cpf: customer.cpf || null }),
-            address_street: customer.street,
-            address_number: customer.number,
-            address_complement: customer.complement || null,
-            address_city: customer.city,
-            address_state: customer.state,
-            address_zip: customer.zip,
+
           })
           .eq("user_id", user.id);
       } catch {
@@ -430,7 +425,7 @@ const Pagamento = () => {
               <h2 className="font-heading font-black text-sm tracking-wider text-foreground">DADOS DE ENTREGA</h2>
               {!loadingProfile && (
                 <button onClick={() => setEditing((e) => !e)} className="text-[11px] font-heading font-bold tracking-wider text-primary hover:underline">
-                  {editing ? "USAR DADOS SALVOS" : "EDITAR DADOS"}
+                  {editing ? "USAR ENDEREÇO CADASTRADO" : "ENTREGAR EM OUTRO ENDEREÇO"}
                 </button>
               )}
             </div>
@@ -466,19 +461,44 @@ const Pagamento = () => {
                 )}
                 <Field label="E-mail" type="email" value={customer.email} onChange={(v) => setCustomer({ ...customer, email: v })} />
                 <Field label="WhatsApp" value={customer.phone} inputMode="tel" placeholder="(00) 00000-0000" onChange={(v) => setCustomer({ ...customer, phone: maskPhone(v) })} />
-                <Field label="Rua" value={customer.street} onChange={(v) => setCustomer({ ...customer, street: v })} />
-                <Field label="Número" value={customer.number} inputMode="numeric" onChange={(v) => setCustomer({ ...customer, number: v })} />
-                <Field label="Complemento" value={customer.complement} onChange={(v) => setCustomer({ ...customer, complement: v })} />
-                <Field label="CEP" value={customer.zip} inputMode="numeric" placeholder="00000-000" onChange={(v) => {
-                  const zip = maskCep(v);
-                  setValidCep(false);
-                  setValidatedState("");
-                  setShippingCost(0);
-                  setShippingEta("");
-                  setCustomer((current) => onlyDigits(current.zip) === onlyDigits(zip) ? { ...current, zip } : { ...current, zip, street: "", city: "", state: "" });
-                }} />
-                <Field label="Cidade" value={customer.city} onChange={(v) => setCustomer({ ...customer, city: v })} />
-                <Field label="UF" value={customer.state} onChange={(v) => setCustomer({ ...customer, state: v.toUpperCase().slice(0, 2) })} />
+                <div className="sm:col-span-2">
+                  <Field label="CEP DE ENTREGA" value={customer.zip} inputMode="numeric" placeholder="00000-000" onChange={(v) => {
+                    const zip = maskCep(v);
+                    setValidCep(false);
+                    setValidatedState("");
+                    setShippingCost(0);
+                    setShippingEta("");
+                    setCustomer((current) => onlyDigits(current.zip) === onlyDigits(zip)
+                      ? { ...current, zip }
+                      : { ...current, zip, street: "", city: "", state: "", number: "", complement: "" });
+                  }} />
+                  {checkingCep && <p className="mt-2 text-[11px] text-muted-foreground">Buscando endereço do CEP...</p>}
+                </div>
+
+                {validCep && customer.street && customer.city && customer.state && (
+                  <div className="sm:col-span-2 rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
+                    <div>
+                      <p className="text-[10px] font-heading font-bold tracking-wider text-primary">ENDEREÇO ENCONTRADO</p>
+                      <p className="mt-1 text-sm font-semibold text-foreground">{customer.street}</p>
+                      <p className="text-xs text-muted-foreground">{customer.city}/{customer.state} · CEP {customer.zip}</p>
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <Field label="Número *" value={customer.number} inputMode="numeric" placeholder="Ex.: 123" onChange={(v) => setCustomer({ ...customer, number: v })} />
+                      <Field label="Complemento" value={customer.complement} placeholder="Apto, bloco, referência..." onChange={(v) => setCustomer({ ...customer, complement: v })} />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">Confira o endereço e informe o número para continuar.</p>
+                  </div>
+                )}
+
+                {validCep && !customer.street && (
+                  <>
+                    <Field label="Rua" value={customer.street} placeholder="Informe a rua" onChange={(v) => setCustomer({ ...customer, street: v })} />
+                    <Field label="Número *" value={customer.number} inputMode="numeric" placeholder="Ex.: 123" onChange={(v) => setCustomer({ ...customer, number: v })} />
+                    <Field label="Complemento" value={customer.complement} placeholder="Apto, bloco, referência..." onChange={(v) => setCustomer({ ...customer, complement: v })} />
+                    <Field label="Cidade" value={customer.city} onChange={(v) => setCustomer({ ...customer, city: v })} />
+                    <Field label="UF" value={customer.state} onChange={(v) => setCustomer({ ...customer, state: v.toUpperCase().slice(0, 2) })} />
+                  </>
+                )}
               </div>
             )}
           </div>

@@ -99,7 +99,6 @@ Deno.serve(async (req) => {
         paid: false,
         payment_status: order.payment_status,
         provider_status: response.status,
-        provider: providerResponse,
         pending_provider: true,
       });
     }
@@ -127,7 +126,7 @@ Deno.serve(async (req) => {
     payment_provider: "infinitepay",
     payment_checked_at: new Date().toISOString(),
     payment_details: closedOrder
-      ? { reconciliation_required: paid, provider: providerResponse }
+      ? { reconciliation_required: paid }
       : providerResponse,
   };
   if (nsu) update.payment_nsu = nsu;
@@ -140,7 +139,6 @@ Deno.serve(async (req) => {
       provider_paid: paid,
       payment_status: order.payment_status,
       reconciliation_required: paid,
-      provider: providerResponse,
       error: paid ? "Pagamento confirmado após o encerramento do pedido. A equipe precisa reconciliar antes de liberar mercadoria." : "Pedido encerrado e pagamento não confirmado.",
     }, 409);
   }
@@ -160,6 +158,5 @@ Deno.serve(async (req) => {
   return json({
     paid,
     payment_status: paid ? "paid" : order.payment_status,
-    provider: providerResponse,
   });
 });

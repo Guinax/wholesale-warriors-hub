@@ -5,6 +5,7 @@ export type ProductCategory =
   | "suplementos"
   | "roupas"
   | "acessorios"
+  | "diversos"
   | "equipamento"
   | "bebidas"
   | "alimentos"

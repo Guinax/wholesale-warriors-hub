@@ -113,7 +113,7 @@ export default function Motoqueiro() {
       cnh_category: p.cnh_category ?? current.cnh_category,
       cnh_expiry: p.cnh_expiry ?? current.cnh_expiry,
     }));
-  }, [dashboard.profile?.id]);
+  }, [dashboard.profile]);
 
   useEffect(() => {
     const channel = supabase.channel("courier-live-dashboard")
@@ -160,7 +160,10 @@ export default function Motoqueiro() {
     const factors = await supabase.auth.mfa.listFactors();
 
     if (!factors.error) {
-      const existing = factors.data.phone.find((factor) => normalizeWhatsAppPhone(factor.phone ?? "") === phone);
+      const existing = factors.data.phone.find((factor) => {
+        const factorPhone = (factor as unknown as { phone?: string }).phone;
+        return normalizeWhatsAppPhone(factorPhone ?? "") === phone;
+      });
       if (existing) factorId = existing.id;
     }
 

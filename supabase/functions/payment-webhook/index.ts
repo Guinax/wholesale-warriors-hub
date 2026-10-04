@@ -106,6 +106,6 @@ Deno.serve(async (req) => {
     if (syncError) throw syncError;
     return reply({ success: true, message: null });
   } catch (error) {
-    return reply({ success: false, message: error instanceof Error ? error.message : "Erro interno" }, 400);
+    console.error("payment-webhook failed", error);\n    return reply({ success: false, message: "Erro ao processar confirmação de pagamento." }, 500);
   }
 });

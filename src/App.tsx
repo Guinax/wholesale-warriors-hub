@@ -24,6 +24,7 @@ import Produto from "./pages/Produto.tsx";
 import Suplementos from "./pages/Suplementos.tsx";
 import Roupas from "./pages/Roupas.tsx";
 import Acessorios from "./pages/Acessorios.tsx";
+import Diversos from "./pages/Diversos.tsx";
 import Equipamento from "./pages/Equipamento.tsx";
 import Bebidas from "./pages/Bebidas.tsx";
 import Alimentos from "./pages/Alimentos.tsx";
@@ -80,6 +81,7 @@ const App = () => (
             <Route path="/suplementos" element={<Suplementos />} />
             <Route path="/roupas" element={<Roupas />} />
             <Route path="/acessorios" element={<Acessorios />} />
+            <Route path="/diversos" element={<Diversos />} />
             <Route path="/equipamento" element={<Equipamento />} />
             <Route path="/bebidas" element={<Bebidas />} />
             <Route path="/alimentar" element={<Alimentos />} />

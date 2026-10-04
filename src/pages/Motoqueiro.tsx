@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Bike, CheckCircle2, Clock3, MapPin, MessageCircle, Navigation, Power, RefreshCw, Route, ShieldCheck, Store, WalletCards } from "lucide-react";
+import { Bike, CheckCircle2, Clock3, MapPin, Navigation, Power, RefreshCw, Route, ShieldCheck, Store, WalletCards } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -228,7 +228,7 @@ export default function Motoqueiro() {
         </div>
         <Card className="border-white/10 bg-[#101214] p-5 text-white">
           <h2 className="text-xl font-black">Cadastrar como entregador</h2>
-          <p className="mt-1 text-sm text-zinc-400">Preencha seus dados para entrar na rede. O cadastro é salvo imediatamente e segue para validação; quando disponível, a confirmação por WhatsApp acelera a liberação.</p>
+          <p className="mt-1 text-sm text-zinc-400">Preencha seus dados para entrar na rede. Ao concluir, você entra direto na sua conta enquanto o cadastro segue para análise administrativa.</p>
           <div className="mt-5 grid gap-3">
             <Input className="border-white/10 bg-black/30" placeholder="Nome completo" value={registration.full_name} onChange={(e) => setRegistration({ ...registration, full_name: e.target.value })} />
             <Input className="border-white/10 bg-black/30" placeholder="Telefone" value={registration.phone} onChange={(e) => setRegistration({ ...registration, phone: e.target.value })} />

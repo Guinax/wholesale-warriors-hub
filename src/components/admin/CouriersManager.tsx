@@ -91,6 +91,9 @@ export default function CouriersManager() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div><div className="flex items-center gap-2"><Bike className="h-4 w-4 text-primary"/><strong>{c.full_name}</strong><Badge variant="outline">{c.courier_code}</Badge></div>
         <p className="mt-1 text-xs text-muted-foreground">{c.phone} · {c.vehicle_type}{c.vehicle_plate?" · "+c.vehicle_plate:""}</p>
+        <p className="mt-1 text-xs font-medium text-muted-foreground">
+          Solicitado em: {new Date(c.created_at).toLocaleDateString("pt-BR")} às {new Date(c.created_at).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}
+        </p>
         <div className="mt-3 grid gap-2 rounded-lg border border-border/70 bg-muted/30 p-3 text-xs sm:grid-cols-2">
           <p><span className="text-muted-foreground">CPF:</span> <strong>{c.cpf || "Não informado"}</strong></p>
           <p><span className="text-muted-foreground">Veículo:</span> <strong>{c.vehicle_type}{c.vehicle_plate ? " · " + c.vehicle_plate : ""}</strong></p>

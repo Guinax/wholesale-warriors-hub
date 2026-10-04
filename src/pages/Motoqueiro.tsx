@@ -175,7 +175,8 @@ export default function Motoqueiro() {
       });
       if (enrolled.error) {
         setSaving(false);
-        return toast.error(enrolled.error.message);
+        toast.warning("Cadastro salvo. A confirmação automática por WhatsApp não está disponível agora; seu cadastro seguirá para análise.");
+        return false;
       }
       factorId = enrolled.data.id;
     }
@@ -187,17 +188,15 @@ export default function Motoqueiro() {
     setSaving(false);
 
     if (challenge.error) {
-      return toast.error(
-        challenge.error.message.includes("provider")
-          ? "O envio por WhatsApp ainda precisa do provedor de mensagens configurado no Supabase."
-          : challenge.error.message
-      );
+      toast.warning("Cadastro salvo. O código por WhatsApp não pôde ser enviado agora; seu cadastro seguirá para análise.");
+      return false;
     }
 
     setWhatsAppFactorId(factorId);
     setWhatsAppChallengeId(challenge.data.id);
     setWhatsAppCode("");
     toast.success("Código enviado para seu WhatsApp.");
+    return true;
   };
 
   const verifyWhatsApp = async () => {
@@ -249,6 +248,7 @@ export default function Motoqueiro() {
 
     setRegistration((current) => ({ ...current, phone: whatsappPhone }));
     await load();
+    toast.success("Cadastro de entregador recebido com sucesso.");
     await startWhatsAppVerification(whatsappPhone);
   };
 
@@ -308,7 +308,7 @@ export default function Motoqueiro() {
         </div>
         <Card className="border-white/10 bg-[#101214] p-5 text-white">
           <h2 className="text-xl font-black">Cadastrar como entregador</h2>
-          <p className="mt-1 text-sm text-zinc-400">Preencha seus dados e confirme o código enviado pelo WhatsApp. A confirmação libera o cadastro automaticamente.</p>
+          <p className="mt-1 text-sm text-zinc-400">Preencha seus dados para entrar na rede. O cadastro é salvo imediatamente e segue para validação; quando disponível, a confirmação por WhatsApp acelera a liberação.</p>
           <div className="mt-5 grid gap-3">
             <Input className="border-white/10 bg-black/30" placeholder="Nome completo" value={registration.full_name} onChange={(e) => setRegistration({ ...registration, full_name: e.target.value })} />
             <Input className="border-white/10 bg-black/30" placeholder="Telefone" value={registration.phone} onChange={(e) => setRegistration({ ...registration, phone: e.target.value })} />
@@ -335,7 +335,7 @@ export default function Motoqueiro() {
                 <Input type="date" className="border-white/10 bg-black/30" value={registration.cnh_expiry} onChange={(e) => setRegistration({ ...registration, cnh_expiry: e.target.value })} aria-label="Validade da CNH" />
               </div>
             </div>}
-            <Button disabled={saving} onClick={() => void register()} className="bg-yellow-400 font-black text-black hover:bg-yellow-300">{saving ? "Enviando..." : "Continuar e receber código no WhatsApp"}</Button>
+            <Button disabled={saving} onClick={() => void register()} className="bg-yellow-400 font-black text-black hover:bg-yellow-300">{saving ? "Cadastrando..." : "Cadastrar como entregador"}</Button>
             {whatsAppChallengeId && <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.05] p-3">
               <div className="flex items-center gap-2 text-emerald-300"><MessageCircle className="h-4 w-4" /><strong className="text-sm">Código enviado pelo WhatsApp</strong></div>
               <p className="mt-1 text-xs text-zinc-400">Digite os 6 números recebidos para confirmar sua inscrição agora.</p>
@@ -368,7 +368,7 @@ export default function Motoqueiro() {
           </div>
         </header>
 
-        {profile.status !== "approved" && <Card className="border-amber-400/20 bg-amber-400/[0.06] p-4 text-amber-100"><Clock3 className="mb-2 h-5 w-5" /><strong>Falta confirmar seu WhatsApp.</strong><p className="mt-1 text-sm text-amber-100/70">Depois do código correto, seu cadastro é aprovado automaticamente e o botão Online é liberado.</p></Card>}
+        {profile.status !== "approved" && <Card className="border-amber-400/20 bg-amber-400/[0.06] p-4 text-amber-100"><Clock3 className="mb-2 h-5 w-5" /><strong>Cadastro recebido e em análise.</strong><p className="mt-1 text-sm text-amber-100/70">Se a confirmação por WhatsApp estiver disponível, você pode validar o número abaixo. Caso contrário, o cadastro permanece salvo para aprovação administrativa.</p></Card>}
 
         {profile.status === "pending" && <Card className="border-white/10 bg-[#101214] p-4 text-white">
           <h2 className="font-black">Documentos do cadastro</h2>

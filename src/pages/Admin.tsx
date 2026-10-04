@@ -34,7 +34,6 @@ import PayoutsManager from "@/components/admin/PayoutsManager";
 import PartnersManager from "@/components/admin/PartnersManager";
 import ShippingIntegrationManager from "@/components/admin/ShippingIntegrationManager";
 import OperationReadiness from "@/components/admin/OperationReadiness";
-import DemoOrderFlow from "@/components/admin/DemoOrderFlow";
 import CouriersManager from "@/components/admin/CouriersManager";
 import PartnerRestockOrdersManager from "@/components/admin/PartnerRestockOrdersManager";
 import { trackingLabel, formatCurrency, DELIVERY_STAGES } from "@/lib/orderUtils";
@@ -323,7 +322,6 @@ const Admin = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="operation">Conferência</TabsTrigger>
-            <TabsTrigger value="demo">Fluxo de demonstração</TabsTrigger>
             <TabsTrigger value="orders">Pedidos</TabsTrigger>
             <TabsTrigger value="restock" className="relative">Reposição parceiros{restockPending>0&&<span className="ml-1 rounded-full bg-destructive px-1.5 text-[10px] text-destructive-foreground">{restockPending}</span>}</TabsTrigger>
             <TabsTrigger value="pages">Páginas</TabsTrigger>
@@ -340,7 +338,6 @@ const Admin = () => {
             <TabsTrigger value="videos">Vídeos</TabsTrigger>
           </TabsList>
           <TabsContent value="operation" className="mt-4"><OperationReadiness onNavigate={setActiveTab} /></TabsContent>
-          <TabsContent value="demo" className="mt-4"><DemoOrderFlow /></TabsContent>
           <TabsContent value="restock" className="mt-4"><PartnerRestockOrdersManager onPendingChange={setRestockPending}/></TabsContent>
           <TabsContent value="orders" className="space-y-4 mt-4">
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">

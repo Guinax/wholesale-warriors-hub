@@ -7,6 +7,10 @@ vi.mock("@/components/partners/PartnerMap", () => ({
   default: ({ points }: { points: Array<{ id: string; label: string }> }) =>
     <div data-testid="map">{points.map(p => <span key={p.id}>{p.label}</span>)}</div>,
 }));
+vi.mock("@/components/partners/PartnerCourierControls", () => ({
+  default: ({ requestId, storeId }: { requestId: string; storeId: string }) =>
+    <div data-testid="partner-courier-controls">{requestId}:{storeId}</div>,
+}));
 afterEach(cleanup);
 const store = { id: "store-1", name: "Loja parceira", status: "approved", is_open: true, lat: -22.58, lng: -47.51 };
 const request: PartnerRequest = {
@@ -47,12 +51,10 @@ describe("Partner delivery map", () => {
     selectOrder();
     expect(screen.queryByRole("button", { name: /Saiu para entrega/ })).not.toBeInTheDocument();
   });
-  it("dispatches a paid assigned order through the existing command", () => {
-    const command = vi.fn(async () => {});
-    render(<PartnerDeliveryBoard {...base} onCommand={command} />);
+  it("routes a paid assigned order through the courier network controls", () => {
+    render(<PartnerDeliveryBoard {...base} />);
     selectOrder();
-    fireEvent.click(screen.getByRole("button", { name: /Saiu para entrega/ }));
-    expect(command).toHaveBeenCalledWith("dispatch", { request_id: request.id }, "Pedido saiu para entrega.");
+    expect(screen.getByTestId("partner-courier-controls")).toHaveTextContent("request-1:store-1");
     const link = screen.getByRole("link", { name: "Consultar trajeto" });
     expect(link.getAttribute("href")).toContain("origin=-22.58%2C-47.51");
   });

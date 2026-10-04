@@ -181,6 +181,16 @@ const Recibo = () => {
     y += 4;
     doc.line(15, y, 195, y);
     y += 8;
+    const pdfItemsSubtotal = order.items.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
+    const pdfShippingAmount = Math.max(0, Number(order.total_amount || 0) - pdfItemsSubtotal);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text("Produtos", 15, y);
+    doc.text(formatCurrency(pdfItemsSubtotal), 195, y, { align: "right" });
+    y += lh;
+    doc.text("Frete", 15, y);
+    doc.text(formatCurrency(pdfShippingAmount), 195, y, { align: "right" });
+    y += lh + 1;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(13);
     doc.text("TOTAL", 15, y);
@@ -224,6 +234,8 @@ const Recibo = () => {
   const pending = !paid && !expired && order.payment_status === "pending";
   const countdown = order.due_at ? formatCountdown(computeExpiresAt(order.due_at)) : "";
   const stageIndex = DELIVERY_STAGES.findIndex((s) => s.key === order.delivery_status);
+  const itemsSubtotal = order.items.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
+  const shippingAmount = Math.max(0, Number(order.total_amount || 0) - itemsSubtotal);
 
   return (
     <div className="min-h-screen bg-background">
@@ -353,11 +365,21 @@ const Recibo = () => {
               </div>
             ))}
           </div>
-          <div className="border-t border-border pt-3 flex justify-between items-center">
-            <span className="font-heading font-bold text-xs tracking-wider text-muted-foreground">{order.payment_status === "paid" ? "TOTAL PAGO" : "TOTAL DO PEDIDO"}</span>
-            <span className="font-heading font-black text-xl text-foreground">
-              {formatCurrency(order.total_amount)}
-            </span>
+          <div className="border-t border-border pt-3 space-y-2">
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Produtos</span>
+              <span className="text-foreground font-semibold">{formatCurrency(itemsSubtotal)}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Frete</span>
+              <span className="text-foreground font-semibold">{formatCurrency(shippingAmount)}</span>
+            </div>
+            <div className="border-t border-border pt-3 flex justify-between items-center">
+              <span className="font-heading font-bold text-xs tracking-wider text-muted-foreground">{order.payment_status === "paid" ? "TOTAL PAGO" : "TOTAL DO PEDIDO"}</span>
+              <span className="font-heading font-black text-xl text-foreground">
+                {formatCurrency(order.total_amount)}
+              </span>
+            </div>
           </div>
           <p className="text-[11px] text-muted-foreground">
             Forma de pagamento: <strong className="text-foreground">{PAYMENT_LABEL[order.payment_method] ?? order.payment_method}</strong>

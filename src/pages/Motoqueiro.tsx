@@ -161,8 +161,17 @@ export default function Motoqueiro() {
     });
     setSaving(false);
 
-    if (error || (data as { error?: string } | null)?.error) {
-      const message = (data as { error?: string } | null)?.error || error?.message || "Não foi possível enviar o código.";
+    const result = data as { error?: string; pending?: boolean; message?: string } | null;
+    if (result?.pending) {
+      setWhatsAppFactorId("");
+      setWhatsAppChallengeId("");
+      setWhatsAppCode("");
+      toast.info(result.message || "Cadastro salvo e em análise. A confirmação por WhatsApp será habilitada assim que o serviço estiver disponível.");
+      return false;
+    }
+
+    if (error || result?.error) {
+      const message = result?.error || error?.message || "Não foi possível enviar o código.";
       toast.warning(message + " Seu cadastro permanece salvo e em análise.");
       return false;
     }

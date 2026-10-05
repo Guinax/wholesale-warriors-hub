@@ -1,4 +1,4 @@
-import { Minus, Plus, ShoppingCart } from "lucide-react";
+import { Minus, Plus, ShoppingCart, X, ZoomIn } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/contexts/CartContext";
 
@@ -17,10 +17,10 @@ interface ProductCardProps {
 
 const ProductCard = ({ productId, badge, badgeColor = "bg-primary", name, unitPrice, wholesalePrice, stock, image, viewMode = "grid" }: ProductCardProps) => {
   const [qty, setQty] = useState(1);
-  const [failedImage, setFailedImage] = useState<string | null>(null);
+  const [failedImage, setFailedImage] = useState<string | null>(null);\n  const [isImageOpen, setIsImageOpen] = useState(false);
   const { addItem } = useCart();
 
-  const handleAdd = () => {
+  const imageAvailable = Boolean(image && image !== failedImage);\n\n  const imageLightbox = isImageOpen && imageAvailable ? (\n    <div\n      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 sm:p-8"\n      role="dialog"\n      aria-modal="true"\n      aria-label={`Imagem ampliada de ${name}`}\n      onClick={() => setIsImageOpen(false)}\n    >\n      <button\n        type="button"\n        aria-label="Fechar imagem ampliada"\n        onClick={() => setIsImageOpen(false)}\n        className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/70 text-white backdrop-blur transition hover:bg-black"\n      >\n        <X className="h-6 w-6" />\n      </button>\n      <img\n        src={image}\n        alt={name}\n        onClick={(event) => event.stopPropagation()}\n        className="max-h-[90vh] max-w-[95vw] select-none object-contain drop-shadow-2xl"\n      />\n    </div>\n  ) : null;\n\n  const handleAdd = () => {
     if (stock !== undefined && stock < qty) return;
     addItem({ productId, name, unitPrice, wholesalePrice, qty, minQty: 1 });
     setQty(1);
@@ -28,7 +28,7 @@ const ProductCard = ({ productId, badge, badgeColor = "bg-primary", name, unitPr
 
   if (viewMode === "list") {
     return (
-      <div className="bg-card rounded-xl border border-border overflow-hidden flex hover:border-primary/40 transition-all duration-300">
+      <>\n        <div className="bg-card rounded-xl border border-border overflow-hidden flex hover:border-primary/40 transition-all duration-300">
         <div className="relative w-24 h-24 flex-shrink-0 bg-gradient-to-br from-secondary to-surface-elevated flex items-center justify-center overflow-hidden">
           {image && image !== failedImage ? (
             <img src={image} alt={name} onError={() => setFailedImage(image)} className="w-full h-full object-cover" loading="lazy" />

@@ -96,17 +96,15 @@ const ProductCard = ({
               </span>
             )}
 
-            {badge && (
-              <span
-                className={`absolute top-1 left-1 ${badgeColor} text-primary-foreground text-[8px] font-heading font-bold tracking-wider px-1.5 py-0.5 rounded-md`}
-              >
-                {badge}
-              </span>
-            )}
           </button>
 
           <div className="flex-1 p-3 flex items-center justify-between gap-2">
             <div className="min-w-0">
+              {badge && (
+                <span className={`inline-flex mb-1 ${badgeColor} text-primary-foreground text-[8px] font-heading font-bold tracking-wider px-1.5 py-0.5 rounded-md`}>
+                  {badge}
+                </span>
+              )}
               <h3 className="font-heading font-bold text-xs tracking-wide text-foreground truncate">
                 {name}
               </h3>
@@ -189,13 +187,6 @@ const ProductCard = ({
 
           <div className="absolute inset-0 bg-gradient-to-t from-card/50 to-transparent pointer-events-none" />
 
-          {badge && (
-            <span
-              className={`absolute top-3 left-3 ${badgeColor} text-primary-foreground text-[10px] font-heading font-bold tracking-wider px-2.5 py-1 rounded-md shadow-md pointer-events-none`}
-            >
-              {badge}
-            </span>
-          )}
 
           {stock !== undefined && stock < 1 && (
             <span className="absolute top-3 right-3 bg-background/90 text-foreground border border-border text-[10px] font-heading font-bold tracking-wider px-2.5 py-1 rounded-md shadow-md pointer-events-none">
@@ -205,6 +196,11 @@ const ProductCard = ({
         </button>
 
         <div className="p-4 space-y-3">
+          {badge && (
+            <span className={`inline-flex ${badgeColor} text-primary-foreground text-[10px] font-heading font-bold tracking-wider px-2.5 py-1 rounded-md shadow-sm`}>
+              {badge}
+            </span>
+          )}
           <h3 className="font-heading font-bold text-sm tracking-wide text-foreground">{name}</h3>
 
           <p className="text-xs text-muted-foreground">

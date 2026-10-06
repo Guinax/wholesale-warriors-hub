@@ -13,6 +13,15 @@ describe("Courier professional dashboard contracts", () => {
     expect(page).toContain('navigate("/motoqueiro", { replace: true })');
   });
 
+  it("sends courier entry buttons through the protected dashboard route", () => {
+    const banner = read("src/components/CourierRecruitmentBanner.tsx");
+    const landing = read("src/pages/Entregadores.tsx");
+    const guard = read("src/components/ProtectedRoute.tsx");
+    expect(banner).toContain('navigate("/motoqueiro")');
+    expect(landing).toContain('navigate("/motoqueiro")');
+    expect(guard).toContain('return <Navigate to={`/auth?next=${encodeURIComponent(next)}`} replace />;');
+  });
+
   it("renders a map-first operational dashboard connected to real courier jobs", () => {
     const page = read("src/pages/Motoqueiro.tsx");
     const map = read("src/components/courier/CourierMap.tsx");

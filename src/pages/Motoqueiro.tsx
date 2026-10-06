@@ -83,6 +83,7 @@ export default function Motoqueiro() {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [currentPosition, setCurrentPosition] = useState<{ lat: number; lng: number } | null>(null);
   const watchRef = useRef<number | null>(null);
+  const lastLocationRefreshRef = useRef(0);
 
   const load = useCallback(async () => {
     const { data: auth } = await supabase.auth.getUser();
@@ -135,7 +136,11 @@ export default function Motoqueiro() {
       p_payload: { lat: latitude, lng: longitude, accuracy_m: accuracy, heading: heading ?? 0, speed_mps: speed ?? 0 },
     } as never);
     if (error && !/online/i.test(error.message)) console.warn(error.message);
-  }, []);
+    if (!error && Date.now() - lastLocationRefreshRef.current > 15000) {
+      lastLocationRefreshRef.current = Date.now();
+      void load();
+    }
+  }, [load]);
 
   const startTracking = useCallback(() => {
     if (!("geolocation" in navigator)) return toast.error("Este aparelho não disponibilizou GPS para o navegador.");

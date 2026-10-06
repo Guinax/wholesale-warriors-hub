@@ -262,7 +262,11 @@ export default function Motoqueiro() {
     : null;
 
   const routeUrl = (job: CourierJob) => {
-    if (job.dropoff_lat == null || job.dropoff_lng == null) return null;
+    if (job.status === "assigned") {
+      const params = new URLSearchParams({ api: "1", destination: job.store_lat + "," + job.store_lng, travelmode: "driving" });
+      return "https://www.google.com/maps/dir/?" + params.toString();
+    }
+    if (job.status !== "delivering" || job.dropoff_lat == null || job.dropoff_lng == null) return null;
     const params = new URLSearchParams({ api: "1", origin: job.store_lat + "," + job.store_lng, destination: job.dropoff_lat + "," + job.dropoff_lng, travelmode: "driving" });
     return "https://www.google.com/maps/dir/?" + params.toString();
   };
@@ -421,10 +425,11 @@ export default function Motoqueiro() {
                   const url = routeUrl(job);
                   return <article key={job.id} className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.05] p-3">
                     <div className="flex items-center gap-2"><Route className="h-4 w-4 text-emerald-300" /><strong className="text-sm">{job.store_name} → {job.customer_city}</strong></div>
-                    <p className="mt-1 text-xs text-zinc-500">Status: {job.status === "assigned" ? "Ir buscar" : job.status === "picked_up" ? "Produto retirado" : "Em entrega"}</p>
+                    <p className="mt-1 text-xs text-zinc-500">Status: {job.status === "assigned" ? "Ir buscar" : job.status === "picked_up" ? "Produto retirado · aguardando início do percurso" : "Em entrega"}</p>
                     {job.status === "assigned" && <Button disabled={saving} className="mt-3 w-full bg-yellow-400 font-black text-black hover:bg-yellow-300" onClick={() => void command("pickup_job", { job_id: job.id }, "Retirada confirmada. Pedido saiu para entrega.")}>Confirmar retirada</Button>}
-                    {job.status !== "assigned" && url && <a href={url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md border border-white/10 text-sm font-bold"><Navigation className="h-4 w-4" /> Abrir rota no GPS</a>}
-                    {job.status !== "assigned" && <div className="mt-3 grid gap-2">
+                    {url && <a href={url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md border border-white/10 text-sm font-bold"><Navigation className="h-4 w-4" /> {job.status === "assigned" ? "Abrir rota para coleta" : "Abrir rota para entrega"}</a>}
+                    {job.status === "picked_up" && <Button disabled={saving} className="mt-3 w-full bg-emerald-500 font-black text-black hover:bg-emerald-400" onClick={() => void command("start_delivery", { job_id: job.id }, "Percurso iniciado. Endereço de entrega liberado.")}><Navigation className="h-4 w-4" /> Iniciar percurso</Button>}
+                    {job.status === "delivering" && <div className="mt-3 grid gap-2">
                       <Input className="border-white/10 bg-black/30 uppercase" maxLength={8} placeholder="Código do cliente" value={deliveryCode[job.id] ?? ""} onChange={(e) => setDeliveryCode({ ...deliveryCode, [job.id]: e.target.value.toUpperCase() })} />
                       <label className="flex items-center gap-2 text-xs text-zinc-300"><input type="checkbox" checked={adult[job.id] ?? false} onChange={(e) => setAdult({ ...adult, [job.id]: e.target.checked })} /> Maioridade do recebedor conferida</label>
                       <Button disabled={saving || (deliveryCode[job.id] ?? "").length !== 8 || !adult[job.id]} onClick={() => void command("deliver_job", { job_id: job.id, code: deliveryCode[job.id], adult_verified: adult[job.id] }, "Entrega concluída.")} className="bg-emerald-500 font-black text-black hover:bg-emerald-400"><CheckCircle2 className="h-4 w-4" /> Concluir entrega</Button>

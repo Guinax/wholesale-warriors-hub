@@ -8,6 +8,7 @@ export interface CartItem {
   priceNum: number;
   qty: number;
   minQty: number;
+  stock?: number;
 }
 
 export interface Shipping {
@@ -34,6 +35,7 @@ export interface CartContextType {
   addItem: (item: Omit<CartItem, "priceNum">) => void;
   removeItem: (name: string) => void;
   updateQty: (name: string, qty: number) => void;
+  updateStock: (name: string, stock: number) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;

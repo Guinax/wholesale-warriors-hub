@@ -79,6 +79,46 @@ export default function CourierMap({ points, selectedId, onSelect }: Props) {
 
     group.clearLayers();
     for (const point of validPoints) {
+      if (point.kind === "opportunity") {
+        const selected = point.id === selectedId;
+        const size = selected ? 42 : 34;
+        const icon = L.divIcon({
+          className: "",
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2],
+          tooltipAnchor: [0, -(size / 2)],
+          html: `
+            <div
+              aria-label="Loja aberta"
+              style="
+                width:${size}px;
+                height:${size}px;
+                display:grid;
+                place-items:center;
+                overflow:hidden;
+                border-radius:9999px;
+                border:${selected ? 3 : 2}px solid rgba(250,204,21,${selected ? 1 : 0.82});
+                background:#050505;
+                box-shadow:0 0 ${selected ? 22 : 12}px rgba(250,204,21,${selected ? 0.5 : 0.28});
+                transition:transform .15s ease;
+              "
+            >
+              <img
+                src="/favicon-maromba-v2.png"
+                alt=""
+                style="width:82%;height:82%;object-fit:contain;border-radius:9999px;"
+              />
+            </div>
+          `,
+        });
+
+        L.marker([point.lat, point.lng], { icon, riseOnHover: true })
+          .bindTooltip(point.label, { direction: "top" })
+          .on("click", () => selectRef.current(point.id))
+          .addTo(group);
+        continue;
+      }
+
       const marker = L.circleMarker([point.lat, point.lng], markerStyle(point.kind))
         .bindTooltip(point.label, { direction: "top" })
         .on("click", () => selectRef.current(point.id))
@@ -141,7 +181,10 @@ export default function CourierMap({ points, selectedId, onSelect }: Props) {
         <span>● Você</span>
         <span>● Retirada</span>
         <span>● Entrega</span>
-        <span>● Oportunidade</span>
+        <span className="inline-flex items-center gap-1">
+          <img src="/favicon-maromba-v2.png" alt="" className="h-3.5 w-3.5 rounded-full object-contain" />
+          Loja aberta
+        </span>
       </div>
 
       {tileError && (

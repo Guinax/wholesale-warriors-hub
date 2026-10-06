@@ -13,7 +13,7 @@ export default function Entregadores(){
   <p className="mt-5 max-w-xl text-base leading-7 text-zinc-300 sm:text-lg">Receba oportunidades perto de você, escolha corridas compatíveis com sua rota e aumente seus ganhos sem ficar preso a uma única loja.</p>
   <div className="mt-8 flex flex-col gap-3 sm:flex-row">
    <button onClick={()=>navigate("/motoqueiro")} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-yellow-400 px-6 font-black text-black">Quero trabalhar como entregador <ArrowRight className="h-4 w-4"/></button>
-   <button onClick={()=>navigate("/auth?next=%2Fmotoqueiro")} className="min-h-12 rounded-xl border border-white/15 px-5 font-semibold text-zinc-200">Já sou entregador · entrar</button>
+   <button onClick={()=>navigate("/motoqueiro")} className="min-h-12 rounded-xl border border-white/15 px-5 font-semibold text-zinc-200">Já sou entregador · entrar</button>
   </div>
   <div className="mt-6 flex flex-wrap gap-4 text-xs text-zinc-400"><span className="inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-yellow-300"/> Cadastro aprovado pela plataforma</span><span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4 text-yellow-300"/> Oportunidades próximas</span></div>
  </div>

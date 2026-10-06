@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import CourierMap, { type CourierMapPoint } from "@/components/courier/CourierMap";
 
 type CourierProfile = {
   id: string;
@@ -79,7 +80,10 @@ export default function Motoqueiro() {
   const [registration, setRegistration] = useState({ full_name: "", phone: "", cpf: "", vehicle_type: "moto", vehicle_plate: "", cnh_number: "", cnh_category: "", cnh_expiry: "" });
   const [deliveryCode, setDeliveryCode] = useState<Record<string, string>>({});
   const [adult, setAdult] = useState<Record<string, boolean>>({});
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [currentPosition, setCurrentPosition] = useState<{ lat: number; lng: number } | null>(null);
   const watchRef = useRef<number | null>(null);
+  const lastLocationRefreshRef = useRef(0);
 
   const load = useCallback(async () => {
     const { data: auth } = await supabase.auth.getUser();
@@ -126,12 +130,17 @@ export default function Motoqueiro() {
 
   const sendPosition = useCallback(async (position: GeolocationPosition) => {
     const { latitude, longitude, accuracy, heading, speed } = position.coords;
+    setCurrentPosition({ lat: latitude, lng: longitude });
     const { error } = await supabase.rpc("courier_command" as never, {
       p_action: "location",
       p_payload: { lat: latitude, lng: longitude, accuracy_m: accuracy, heading: heading ?? 0, speed_mps: speed ?? 0 },
     } as never);
     if (error && !/online/i.test(error.message)) console.warn(error.message);
-  }, []);
+    if (!error && Date.now() - lastLocationRefreshRef.current > 15000) {
+      lastLocationRefreshRef.current = Date.now();
+      void load();
+    }
+  }, [load]);
 
   const startTracking = useCallback(() => {
     if (!("geolocation" in navigator)) return toast.error("Este aparelho não disponibilizou GPS para o navegador.");
@@ -203,6 +212,54 @@ export default function Motoqueiro() {
   const payouts = dashboard.payouts ?? [];
   const pendingPayoutTotal = Number(dashboard.pending_payout_total ?? 0);
   const sessionValue = useMemo(() => [...active, ...completed].reduce((sum, job) => sum + Number(job.payout || 0), 0), [active, completed]);
+
+  const mapPoints = useMemo<CourierMapPoint[]>(() => {
+    const points: CourierMapPoint[] = [];
+    if (currentPosition) {
+      points.push({ id: "courier", lat: currentPosition.lat, lng: currentPosition.lng, label: "Sua posição", kind: "courier" });
+    }
+
+    for (const job of available) {
+      if (Number.isFinite(Number(job.store_lat)) && Number.isFinite(Number(job.store_lng))) {
+        points.push({
+          id: job.id,
+          lat: Number(job.store_lat),
+          lng: Number(job.store_lng),
+          label: `${job.store_name} · ${job.customer_city} · ${money(Number(job.payout))}`,
+          kind: "opportunity",
+        });
+      }
+    }
+
+    for (const job of active) {
+      if (Number.isFinite(Number(job.store_lat)) && Number.isFinite(Number(job.store_lng))) {
+        points.push({
+          id: `${job.id}:pickup`,
+          lat: Number(job.store_lat),
+          lng: Number(job.store_lng),
+          label: `Retirada · ${job.store_name}`,
+          kind: "pickup",
+        });
+      }
+      if (job.dropoff_lat != null && job.dropoff_lng != null) {
+        points.push({
+          id: `${job.id}:dropoff`,
+          lat: Number(job.dropoff_lat),
+          lng: Number(job.dropoff_lng),
+          label: `Entrega · ${job.customer_street ?? job.customer_city}${job.customer_number ? ", " + job.customer_number : ""}`,
+          kind: "dropoff",
+        });
+      }
+    }
+
+    return points;
+  }, [active, available, currentPosition]);
+
+  const selectedMapId = selectedJobId
+    ? mapPoints.find((point) => point.id === selectedJobId)?.id
+      ?? mapPoints.find((point) => point.id.startsWith(selectedJobId + ":"))?.id
+      ?? null
+    : null;
 
   const routeUrl = (job: CourierJob) => {
     if (job.dropoff_lat == null || job.dropoff_lng == null) return null;
@@ -281,6 +338,30 @@ export default function Motoqueiro() {
 
         {profile.status !== "approved" && <Card className="border-amber-400/20 bg-amber-400/[0.06] p-4 text-amber-100"><Clock3 className="mb-2 h-5 w-5" /><strong>Cadastro recebido e em análise.</strong><p className="mt-1 text-sm text-amber-100/70">Seu cadastro foi salvo com sucesso. Você já pode acessar sua conta enquanto aguarda a aprovação administrativa.</p></Card>}
 
+        <Card className="overflow-hidden border-white/10 bg-[#101214] p-0 text-white">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 p-4">
+            <div>
+              <div className="flex items-center gap-2"><MapPin className="h-5 w-5 text-yellow-300" /><h2 className="font-black">Mapa de oportunidades</h2></div>
+              <p className="mt-1 text-xs text-zinc-500">
+                {profile.status === "approved"
+                  ? profile.is_online
+                    ? "Pedidos pagos próximos, retiradas e entregas aparecem em tempo real."
+                    : "Fique online para compartilhar sua posição e receber oportunidades próximas."
+                  : "Seu painel já está ativo. As corridas serão liberadas assim que o cadastro for aprovado."}
+              </p>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-right">
+              <p className="text-[10px] uppercase tracking-wider text-zinc-500">Ganhos no painel</p>
+              <p className="font-black text-yellow-400">{money(sessionValue)}</p>
+            </div>
+          </div>
+          <CourierMap
+            points={mapPoints}
+            selectedId={selectedMapId}
+            onSelect={(id) => setSelectedJobId(id.split(":")[0] === "courier" ? null : id.split(":")[0])}
+          />
+        </Card>
+
         {profile.status === "pending" && <Card className="border-white/10 bg-[#101214] p-4 text-white">
           <h2 className="font-black">Documentos do cadastro</h2>
           <p className="mt-1 text-xs text-zinc-500">Complete ou corrija seus dados enquanto o cadastro estiver em análise.</p>
@@ -321,7 +402,7 @@ export default function Motoqueiro() {
             <div className="flex items-center justify-between"><div><h2 className="font-black">Corridas disponíveis</h2><p className="text-xs text-zinc-500">Apenas pedidos pagos e próximos da sua localização recente.</p></div><MapPin className="h-5 w-5 text-yellow-300" /></div>
             <div className="mt-4 space-y-3">
               {available.length === 0 && <p className="rounded-xl border border-white/10 p-4 text-sm text-zinc-500">{profile.is_online ? "Nenhuma oportunidade próxima neste momento." : "Fique online para receber oportunidades próximas."}</p>}
-              {available.map((job) => <article key={job.id} className="rounded-xl border border-white/10 bg-black/20 p-4">
+              {available.map((job) => <article key={job.id} onClick={() => setSelectedJobId(job.id)} className={`cursor-pointer rounded-xl border bg-black/20 p-4 transition ${selectedJobId === job.id ? "border-yellow-400/50 ring-1 ring-yellow-400/20" : "border-white/10"}`}>
                 <div className="flex flex-wrap justify-between gap-3">
                   <div><p className="text-xs text-zinc-500">{job.store_name}</p><p className="font-black">{job.customer_city}</p><p className="mt-1 text-xs text-zinc-400">{job.route_km ? Number(job.route_km).toFixed(1) + " km" : "Distância do pedido"}{job.eta_minutes ? " · ~" + job.eta_minutes + " min" : ""}</p></div>
                   <strong className="text-xl text-yellow-400">{money(Number(job.payout))}</strong>

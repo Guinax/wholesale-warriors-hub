@@ -70,18 +70,18 @@ const FeaturedProducts = () => {
             <div className="flex items-end justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">
-                  Lote c/ 7 sabores · R$ 8,90/un
+                  Lote c/ 7 sabores · atacado R$ 17,90/un
                 </p>
                 <p className="font-heading font-black text-2xl text-foreground">
-                  R$ 62,30<span className="text-sm font-semibold text-muted-foreground">/lote</span>
+                  R$ 125,30<span className="text-sm font-semibold text-muted-foreground">/lote</span>
                 </p>
               </div>
               <button
                 onClick={() =>
                   addItem({
                     name: "LOTE COMBO DRINKS (7 SABORES)",
-                    unitPrice: "R$ 62,30",
-                    wholesalePrice: "R$ 62,30",
+                    unitPrice: "R$ 125,30",
+                    wholesalePrice: "R$ 125,30",
                     qty: 1,
                     minQty: 1,
                   })

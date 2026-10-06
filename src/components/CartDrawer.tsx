@@ -13,6 +13,7 @@ import {
   shippingEtaFor,
 } from "@/lib/shipping";
 import { getLiveShippingQuote } from "@/lib/liveShipping";
+import { supabase } from "@/integrations/supabase/client";
 
 const CartDrawer = () => {
   const {
@@ -21,6 +22,7 @@ const CartDrawer = () => {
     closeCart,
     removeItem,
     updateQty,
+    updateStock,
     totalItems,
     totalPrice,
     shipping,
@@ -32,6 +34,7 @@ const CartDrawer = () => {
   const { toast } = useToast();
   const [cep, setCep] = useState(shipping?.cep ?? "");
   const [calculating, setCalculating] = useState(false);
+  const [checkingStock, setCheckingStock] = useState(false);
 
   const handleCalcFrete = async () => {
     if (onlyDigitsCep(cep).length !== 8) {
@@ -81,7 +84,7 @@ const CartDrawer = () => {
     });
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (!shipping) {
       toast({
         title: "Informe o CEP de entrega",
@@ -90,6 +93,53 @@ const CartDrawer = () => {
       });
       return;
     }
+
+    const trackedItems = items.filter((item) => item.productId);
+    if (trackedItems.length > 0) {
+      setCheckingStock(true);
+      const productIds = [...new Set(trackedItems.map((item) => item.productId!))];
+      const { data, error } = await supabase
+        .from("products")
+        .select("id,stock,active")
+        .in("id", productIds);
+      setCheckingStock(false);
+
+      if (error) {
+        toast({
+          title: "Não foi possível confirmar o estoque",
+          description: "Tente novamente antes de seguir para o pagamento.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const currentById = new Map(
+        (data ?? []).map((product) => [
+          product.id,
+          { stock: Number(product.stock ?? 0), active: Boolean(product.active) },
+        ])
+      );
+
+      const divergences = trackedItems.filter((item) => {
+        const current = currentById.get(item.productId!);
+        return !current || !current.active || current.stock < item.qty;
+      });
+
+      for (const item of trackedItems) {
+        const current = currentById.get(item.productId!);
+        updateStock(item.productId!, current?.active ? current.stock : 0);
+      }
+
+      if (divergences.length > 0) {
+        toast({
+          title: "Estoque atualizado",
+          description: "A quantidade do seu lote foi ajustada ao estoque disponível. Revise antes de continuar.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     closeCart();
     navigate("/pagamento");
   };
@@ -139,6 +189,11 @@ const CartDrawer = () => {
                       <p className="text-xs text-muted-foreground">
                         {item.qty >= 6 ? "Atacado aplicado" : `Faltam ${6 - item.qty} unidade(s) deste produto para atacado`}
                       </p>
+                      {item.stock !== undefined && (
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          Disponível em estoque: {item.stock}
+                        </p>
+                      )}
                     </div>
                     <button
                       aria-label={`Remover ${item.name}`}
@@ -165,7 +220,8 @@ const CartDrawer = () => {
                       <button
                         aria-label={`Aumentar quantidade de ${item.name}`}
                         onClick={() => updateQty(item.productId ?? item.name, item.qty + 1)}
-                        className="w-8 h-8 rounded-md bg-secondary flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors"
+                        disabled={item.stock !== undefined && item.qty >= item.stock}
+                        className="w-8 h-8 rounded-md bg-secondary flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         <Plus className="w-3.5 h-3.5" />
                       </button>
@@ -220,9 +276,10 @@ const CartDrawer = () => {
               </button>
               <button
                 onClick={handleCheckout}
-                className="w-full bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon"
+                disabled={checkingStock}
+                className="w-full bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                IR PARA PAGAMENTO
+                {checkingStock ? "CONFERINDO ESTOQUE..." : "IR PARA PAGAMENTO"}
               </button>
             </div>
           </>

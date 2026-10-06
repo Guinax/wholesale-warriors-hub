@@ -103,6 +103,7 @@ const MaisVendidos = () => {
       wholesalePrice: `R$ ${b.wholesale_price.toFixed(2).replace(".", ",")}`,
       qty: 1,
       minQty: 1,
+      stock: b.stock,
     });
   };
 

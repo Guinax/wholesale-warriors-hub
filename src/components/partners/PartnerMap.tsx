@@ -44,7 +44,7 @@ export default function PartnerMap({ points, selectedId, onSelect }: Props) {
       // Only fixed symbols enter HTML. Store names and order codes use textContent below.
       const icon = L.divIcon({
         className: "partner-map-marker",
-        html: '<span class="partner-pin partner-pin--' + point.kind + (point.id === selectedId ? " partner-pin--selected" : "") + '">' + (point.kind === "store" ? "L" : "●") + "</span>",
+        html: '<span class="partner-pin partner-pin--' + point.kind + (point.id === selectedId ? " partner-pin--selected" : "") + '">' + (point.kind === "store" ? '<img class="partner-pin-logo" src="/icon-192.png" alt="" aria-hidden="true" />' : "●") + "</span>",
         iconSize: [36, 42], iconAnchor: [18, 38],
       });
       const label = document.createElement("span");

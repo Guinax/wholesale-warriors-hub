@@ -35,6 +35,18 @@ describe("Courier professional dashboard contracts", () => {
     expect(map).toContain("tile.openstreetmap.org");
   });
 
+
+  it("lets admins repair incomplete legacy courier documents before approval", () => {
+    const admin = read("src/components/admin/CouriersManager.tsx");
+    const migration = read("supabase/migrations/20261006115500_admin_complete_courier_documents.sql");
+    expect(admin).toContain('p_action:"admin_update_documents"');
+    expect(admin).toContain("Completar documentos");
+    expect(admin).toContain("Salvar documentos");
+    expect(admin).toContain("missingDocuments(c).join");
+    expect(migration).toContain("p_action='admin_update_documents'");
+    expect(migration).toContain("Complete CNH e dados do veículo antes da aprovação.");
+  });
+
   it("keeps customer dropoff coordinates private until a courier owns the job", () => {
     const migration = read("supabase/migrations/20261003200500_courier_document_completion.sql");
     expect(migration).toContain("'dropoff_lat',case when j2.courier_id=c.id then r2.lat else null end");

@@ -25,9 +25,9 @@ export const DELIVERY_STAGES = [
   { key: "entregue", label: "Entregue", description: "Encomenda entregue com sucesso" },
 ] as const;
 
-// Prazo de pagamento: vencimento padrão + tolerância de 2h antes da expiração
-export const PAYMENT_DUE_HOURS = 24;
-export const PAYMENT_GRACE_HOURS = 2;
+// Prazo máximo para pagamento e reserva de estoque: 1 hora, sem tolerância extra.
+export const PAYMENT_DUE_HOURS = 1;
+export const PAYMENT_GRACE_HOURS = 0;
 
 export function computeDueAt(from: Date = new Date()): Date {
   return new Date(from.getTime() + PAYMENT_DUE_HOURS * 3600_000);

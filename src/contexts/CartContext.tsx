@@ -33,11 +33,14 @@ function normalize(raw: unknown): CartItem[] {
       const wholesalePrice = String(i.wholesalePrice ?? "R$ 0,00");
       const unitPrice = String(i.unitPrice ?? i.wholesalePrice ?? "R$ 0,00");
       const minQty = 1;
-      const qty = Number.isFinite(Number(i.qty)) ? Math.max(1, Math.floor(Number(i.qty))) : 1;
+      const rawStock = Number(i.stock);
+      const stock = Number.isSafeInteger(rawStock) && rawStock >= 0 ? rawStock : undefined;
+      const requestedQty = Number.isFinite(Number(i.qty)) ? Math.max(1, Math.floor(Number(i.qty))) : 1;
+      const qty = stock === undefined ? requestedQty : Math.min(requestedQty, Math.max(1, stock));
       const selectedPrice = qty >= 6 ? parsePrice(wholesalePrice) : parsePrice(unitPrice);
-      return { productId, name, unitPrice, wholesalePrice, priceNum: Number.isFinite(selectedPrice) ? selectedPrice : 0, qty, minQty };
+      return { productId, name, unitPrice, wholesalePrice, priceNum: Number.isFinite(selectedPrice) ? selectedPrice : 0, qty, minQty, stock };
     })
-    .filter((i) => i.name.length > 0);
+    .filter((i) => i.name.length > 0 && (i.stock === undefined || i.stock > 0));
 }
 
 function readStorage(): CartItem[] {
@@ -103,19 +106,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback((item: Omit<CartItem, "priceNum">) => {
     if (!Number.isSafeInteger(item.qty) || item.qty < 1) return;
+    if (item.stock !== undefined && item.stock < 1) return;
     setItems((prev) => {
       const existing = prev.find((i) => item.productId ? i.productId === item.productId : i.name === item.name);
       if (existing) {
         return prev.map((i) => {
           if (item.productId ? i.productId !== item.productId : i.name !== item.name) return i;
-          const qty = i.qty + item.qty;
+          const stock = item.stock ?? i.stock;
+          const requestedQty = i.qty + item.qty;
+          const qty = stock === undefined ? requestedQty : Math.min(requestedQty, stock);
           const unitPrice = item.unitPrice ?? i.unitPrice;
           const wholesalePrice = item.wholesalePrice;
-          return { ...i, unitPrice, wholesalePrice, qty, minQty: 1, priceNum: parsePrice(qty >= 6 ? wholesalePrice : unitPrice) };
+          return { ...i, unitPrice, wholesalePrice, stock, qty, minQty: 1, priceNum: parsePrice(qty >= 6 ? wholesalePrice : unitPrice) };
         });
       }
-      const qty = Math.max(1, item.qty);
-      return [...prev, { ...item, qty, minQty: 1, priceNum: parsePrice(qty >= 6 ? item.wholesalePrice : item.unitPrice) }];
+      const stock = item.stock;
+      const qty = stock === undefined ? Math.max(1, item.qty) : Math.min(Math.max(1, item.qty), stock);
+      return [...prev, { ...item, stock, qty, minQty: 1, priceNum: parsePrice(qty >= 6 ? item.wholesalePrice : item.unitPrice) }];
     });
     setIsOpen(true);
   }, []);
@@ -130,8 +137,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
       prev.flatMap((i) => {
         if ((i.productId ?? i.name) !== key) return [i];
         if (qty <= 0) return [];
-        const nextQty = Math.max(1, qty);
+        const nextQty = i.stock === undefined ? Math.max(1, qty) : Math.min(Math.max(1, qty), i.stock);
         return [{ ...i, qty: nextQty, minQty: 1, priceNum: parsePrice(nextQty >= 6 ? i.wholesalePrice : i.unitPrice) }];
+      })
+    );
+  }, []);
+
+  const updateStock = useCallback((key: string, stock: number) => {
+    if (!Number.isSafeInteger(stock) || stock < 0) return;
+    setItems((prev) =>
+      prev.flatMap((i) => {
+        if ((i.productId ?? i.name) !== key) return [i];
+        if (stock === 0) return [];
+        const nextQty = Math.min(i.qty, stock);
+        return [{ ...i, stock, qty: nextQty, minQty: 1, priceNum: parsePrice(nextQty >= 6 ? i.wholesalePrice : i.unitPrice) }];
       })
     );
   }, []);
@@ -164,6 +183,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         addItem,
         removeItem,
         updateQty,
+        updateStock,
         clearCart,
         totalItems,
         totalPrice,

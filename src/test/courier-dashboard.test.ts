@@ -35,6 +35,17 @@ describe("Courier professional dashboard contracts", () => {
     expect(map).toContain("tile.openstreetmap.org");
   });
 
+
+  it("requires explicit route start before exposing the customer destination", () => {
+    const page = read("src/pages/Motoqueiro.tsx");
+    const migration = read("supabase/migrations/20261006123000_courier_start_route_privacy.sql");
+    expect(page).toContain("Abrir rota para coleta");
+    expect(page).toContain("Iniciar percurso");
+    expect(page).toContain("Abrir rota para entrega");
+    expect(page).toContain('command("start_delivery"');
+    expect(migration).toContain("j2.courier_id=c.id and j2.status='delivering'");
+    expect(migration).toContain("Inicie o percurso antes de concluir a entrega.");
+  });
   it("keeps customer dropoff coordinates private until a courier owns the job", () => {
     const migration = read("supabase/migrations/20261003200500_courier_document_completion.sql");
     expect(migration).toContain("'dropoff_lat',case when j2.courier_id=c.id then r2.lat else null end");

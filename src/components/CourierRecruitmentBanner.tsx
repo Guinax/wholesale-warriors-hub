@@ -47,7 +47,7 @@ export default function CourierRecruitmentBanner() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => navigate("/auth?next=%2Fmotoqueiro")}
+                  onClick={() => navigate("/motoqueiro")}
                   className="min-h-12 w-full rounded-xl border border-white/15 px-5 font-semibold text-zinc-200 transition hover:border-yellow-400/50 hover:text-white sm:w-auto"
                 >
                   JÁ SOU ENTREGADOR · ENTRAR

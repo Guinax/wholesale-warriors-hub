@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
       }
     } catch { /* invalid saved provider URL: create a new charge */ }
   }
-  if (order.payment_status !== "pending" || (order.due_at && Date.now() > Date.parse(order.due_at) + 2 * 3600_000)) {
+  if (order.payment_status !== "pending" || (order.due_at && Date.now() > Date.parse(order.due_at))) {
     return json({ error: "Pedido encerrado. Faça um novo pedido pelo carrinho." }, 409);
   }
   const redirect = new URL(parsed.data.redirect_url);

@@ -35,7 +35,7 @@ const ProductCard = ({
 
   const handleAdd = () => {
     if (stock !== undefined && stock < qty) return;
-    addItem({ productId, name, unitPrice, wholesalePrice, qty, minQty: 1 });
+    addItem({ productId, name, unitPrice, wholesalePrice, qty, minQty: 1, stock });
     setQty(1);
   };
 

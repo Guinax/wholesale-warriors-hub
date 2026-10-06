@@ -58,6 +58,7 @@ const Produto = () => {
       wholesalePrice: formatCurrency(product.wholesale_price),
       qty: safeQty,
       minQty: 1,
+      stock: product.stock,
     });
   };
 

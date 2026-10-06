@@ -3,11 +3,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 const excluded = [
   "/",
-  "/admin",
-  "/admin/comando",
-  "/admin/comando/midia",
-  "/revendedor",
-  "/motoqueiro",
   "/.lovable/oauth/consent",
 ];
 

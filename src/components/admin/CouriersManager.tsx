@@ -3,6 +3,7 @@ import { Bike, CheckCircle2, RefreshCw, ShieldAlert, MapPin } from "lucide-react
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
@@ -25,6 +26,8 @@ export default function CouriersManager() {
   const [saving,setSaving]=useState<string|null>(null);
   const [locations,setLocations]=useState<Record<string,CourierLocation>>({});
   const [payouts,setPayouts]=useState<CourierPayout[]>([]);
+  const [editing,setEditing]=useState<string|null>(null);
+  const [drafts,setDrafts]=useState<Record<string,{cpf:string;vehicle_plate:string;cnh_number:string;cnh_category:string;cnh_expiry:string}>>({});
 
   const load=useCallback(async()=>{
     setLoading(true);
@@ -62,6 +65,41 @@ export default function CouriersManager() {
       void supabase.removeChannel(channel);
     };
   },[load]);
+
+  const startEditing=(c:Courier)=>{
+    setDrafts((current)=>({...current,[c.id]:{
+      cpf:c.cpf??"",
+      vehicle_plate:c.vehicle_plate??"",
+      cnh_number:c.cnh_number??"",
+      cnh_category:c.cnh_category??"",
+      cnh_expiry:c.cnh_expiry??"",
+    }}));
+    setEditing(c.id);
+  };
+
+  const saveDocuments=async(c:Courier)=>{
+    const draft=drafts[c.id];
+    if(!draft) return;
+    setSaving(c.id);
+    const {error}=await supabase.rpc("courier_command" as never,{p_action:"admin_update_documents",p_payload:{courier_id:c.id,...draft}} as never);
+    setSaving(null);
+    if(error) return toast.error(error.message);
+    toast.success("Documentos do entregador atualizados.");
+    setEditing(null);
+    await load();
+  };
+
+  const missingDocuments=(c:Courier)=>{
+    const missing:string[]=[];
+    if((c.cpf??"").replace(/\D/g,"").length!==11) missing.push("CPF");
+    if(c.vehicle_type!=="bike"){
+      if((c.cnh_number??"").replace(/\D/g,"").length!==11) missing.push("CNH");
+      if(!c.cnh_category) missing.push("categoria");
+      if(!c.cnh_expiry) missing.push("validade");
+      if(!c.vehicle_plate) missing.push("placa");
+    }
+    return missing;
+  };
 
   const markPayoutsPaid=async(c:Courier)=>{
     setSaving(c.id);
@@ -123,7 +161,22 @@ export default function CouriersManager() {
           <Button className="mt-2" size="sm" disabled={saving===c.id} onClick={()=>void markPayoutsPaid(c)}>Marcar repasse como pago</Button>
         </div> : null;
       })()}
-      {c.status!=="approved"&&!documentsReady(c)&&<p className="mt-3 text-xs font-semibold text-amber-600">Documentos incompletos: o entregador precisa completar CPF e, para veículo motorizado, CNH e placa antes da aprovação.</p>}
+      {c.status!=="approved"&&!documentsReady(c)&&<>
+        <p className="mt-3 text-xs font-semibold text-amber-600">Documentos incompletos: faltam {missingDocuments(c).join(", ")}.</p>
+        {editing===c.id ? <div className="mt-3 grid gap-2 rounded-lg border border-amber-400/20 bg-amber-400/5 p-3 sm:grid-cols-2">
+          <Input placeholder="CPF — 11 dígitos" value={drafts[c.id]?.cpf??""} onChange={(e)=>setDrafts((d)=>({...d,[c.id]:{...(d[c.id]??{cpf:"",vehicle_plate:"",cnh_number:"",cnh_category:"",cnh_expiry:""}),cpf:e.target.value}}))}/>
+          {c.vehicle_type!=="bike"&&<>
+            <Input placeholder="Placa" value={drafts[c.id]?.vehicle_plate??""} onChange={(e)=>setDrafts((d)=>({...d,[c.id]:{...(d[c.id]??{cpf:"",vehicle_plate:"",cnh_number:"",cnh_category:"",cnh_expiry:""}),vehicle_plate:e.target.value}}))}/>
+            <Input placeholder="CNH — 11 dígitos" value={drafts[c.id]?.cnh_number??""} onChange={(e)=>setDrafts((d)=>({...d,[c.id]:{...(d[c.id]??{cpf:"",vehicle_plate:"",cnh_number:"",cnh_category:"",cnh_expiry:""}),cnh_number:e.target.value}}))}/>
+            <Input placeholder="Categoria da CNH" value={drafts[c.id]?.cnh_category??""} onChange={(e)=>setDrafts((d)=>({...d,[c.id]:{...(d[c.id]??{cpf:"",vehicle_plate:"",cnh_number:"",cnh_category:"",cnh_expiry:""}),cnh_category:e.target.value}}))}/>
+            <Input type="date" value={drafts[c.id]?.cnh_expiry??""} onChange={(e)=>setDrafts((d)=>({...d,[c.id]:{...(d[c.id]??{cpf:"",vehicle_plate:"",cnh_number:"",cnh_category:"",cnh_expiry:""}),cnh_expiry:e.target.value}}))}/>
+          </>}
+          <div className="flex gap-2 sm:col-span-2">
+            <Button size="sm" disabled={saving===c.id} onClick={()=>void saveDocuments(c)}>Salvar documentos</Button>
+            <Button size="sm" variant="outline" onClick={()=>setEditing(null)}>Cancelar</Button>
+          </div>
+        </div> : <Button className="mt-2" size="sm" variant="outline" onClick={()=>startEditing(c)}>Completar documentos</Button>}
+      </>}
       <div className="mt-3 flex flex-wrap gap-2">
         {c.status!=="approved"&&<Button disabled={saving===c.id||!documentsReady(c)} onClick={()=>void setStatus(c,"approved")}><CheckCircle2 className="h-4 w-4"/> Aprovar</Button>}
         {c.status!=="suspended"&&<Button disabled={saving===c.id} variant="destructive" onClick={()=>void setStatus(c,"suspended")}><ShieldAlert className="h-4 w-4"/> Suspender</Button>}

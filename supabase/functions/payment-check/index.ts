@@ -47,8 +47,8 @@ Deno.serve(async (req) => {
   const { data: { user }, error: authError } = await authClient.auth.getUser(token);
   if (authError || !user) return json({ error: "Sessão inválida." }, 401);
 
-  const handle = (Deno.env.get("INFINITEPAY_HANDLE") ?? "").replace(/^\$/, "");
-  if (!handle) return json({ paid: false, payment_status: "pending", not_configured: true });
+  // Conta CNPJ ativa para conferência dos pagamentos na InfinitePay.
+  const handle = "wgsolucoesfinaceira";
 
   const supabase = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false },

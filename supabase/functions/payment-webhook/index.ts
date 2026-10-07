@@ -13,8 +13,9 @@ Deno.serve(async (req) => {
   try {
     const url = Deno.env.get("SUPABASE_URL");
     const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const handle = (Deno.env.get("INFINITEPAY_HANDLE") ?? "").replace(/^\$/, "");
-    if (!url || !service || !handle) {
+    // Conta CNPJ ativa para confirmação dos pagamentos na InfinitePay.
+    const handle = "wgsolucoesfinaceira";
+    if (!url || !service) {
       return reply({ success: false, message: "Server not configured" }, 503);
     }
 

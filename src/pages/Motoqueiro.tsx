@@ -49,9 +49,27 @@ type CourierPayout = {
   id: string;
   job_id: string;
   amount: number;
-  status: "pending" | "paid" | "cancelled";
+  paid_amount: number;
+  status: "pending" | "partial" | "paid" | "cancelled";
   created_at: string;
   paid_at?: string | null;
+};
+
+type CourierPayoutAccount = {
+  courier_id: string;
+  pix_key_type: "cpf" | "cnpj" | "email" | "phone" | "random";
+  pix_key: string;
+  holder_name: string;
+  holder_document: string;
+};
+
+type CourierWalletPayment = {
+  id: string;
+  courier_id: string;
+  amount: number;
+  receipt_url: string;
+  receipt_reference?: string | null;
+  paid_at: string;
 };
 
 type Dashboard = {
@@ -79,6 +97,9 @@ export default function Motoqueiro() {
   const [dashboard, setDashboard] = useState<Dashboard>({});
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [payoutAccount, setPayoutAccount] = useState<CourierPayoutAccount | null>(null);
+  const [walletPayments, setWalletPayments] = useState<CourierWalletPayment[]>([]);
+  const [pixDraft, setPixDraft] = useState({ pix_key_type: "cpf", pix_key: "", holder_name: "", holder_document: "" });
   const [registration, setRegistration] = useState({ full_name: "", phone: "", cpf: "", vehicle_type: "moto", vehicle_plate: "", cnh_number: "", cnh_category: "", cnh_expiry: "" });
   const [deliveryCode, setDeliveryCode] = useState<Record<string, string>>({});
   const [adult, setAdult] = useState<Record<string, boolean>>({});
@@ -96,9 +117,51 @@ export default function Motoqueiro() {
     }
     const { data, error } = await supabase.rpc("courier_command" as never, { p_action: "dashboard", p_payload: {} } as never);
     if (error) {
-      if (/Cadastre-se como entregador/i.test(error.message)) setDashboard({});
-      else toast.error(error.message);
-    } else setDashboard((data ?? {}) as Dashboard);
+      if (/Cadastre-se como entregador/i.test(error.message)) {
+        setDashboard({});
+        setPayoutAccount(null);
+        setWalletPayments([]);
+      } else toast.error(error.message);
+    } else {
+      const next = (data ?? {}) as Dashboard;
+      const profileId = next.profile?.id;
+      if (profileId) {
+        const [payoutResult, accountResult, paymentResult] = await Promise.all([
+          supabase.from("courier_payouts" as never)
+            .select("id,job_id,amount,paid_amount,status,created_at,paid_at")
+            .eq("courier_id", profileId)
+            .order("created_at", { ascending: false }),
+          supabase.from("courier_payout_accounts" as never)
+            .select("courier_id,pix_key_type,pix_key,holder_name,holder_document")
+            .eq("courier_id", profileId)
+            .maybeSingle(),
+          supabase.from("courier_wallet_payments" as never)
+            .select("id,courier_id,amount,receipt_url,receipt_reference,paid_at")
+            .eq("courier_id", profileId)
+            .order("paid_at", { ascending: false }),
+        ]);
+
+        const payoutRows = (payoutResult.data ?? []) as unknown as CourierPayout[];
+        const balance = payoutRows
+          .filter((p) => p.status !== "cancelled")
+          .reduce((sum, p) => sum + Math.max(0, Number(p.amount || 0) - Number(p.paid_amount || 0)), 0);
+        setDashboard({ ...next, payouts: payoutRows, pending_payout_total: balance });
+
+        const account = accountResult.data as unknown as CourierPayoutAccount | null;
+        setPayoutAccount(account);
+        setPixDraft(account ? {
+          pix_key_type: account.pix_key_type,
+          pix_key: account.pix_key,
+          holder_name: account.holder_name,
+          holder_document: account.holder_document,
+        } : { pix_key_type: "cpf", pix_key: "", holder_name: "", holder_document: "" });
+        setWalletPayments((paymentResult.data ?? []) as unknown as CourierWalletPayment[]);
+      } else {
+        setDashboard(next);
+        setPayoutAccount(null);
+        setWalletPayments([]);
+      }
+    }
     setLoading(false);
   }, []);
 
@@ -121,6 +184,9 @@ export default function Motoqueiro() {
   useEffect(() => {
     const channel = supabase.channel("courier-live-dashboard")
       .on("postgres_changes", { event: "*", schema: "public", table: "courier_jobs" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "courier_payouts" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "courier_wallet_payments" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "courier_payout_accounts" }, () => void load())
       .subscribe();
     return () => { void supabase.removeChannel(channel); };
   }, [load]);
@@ -240,13 +306,42 @@ export default function Motoqueiro() {
     }
   };
 
+  const savePayoutAccount = async () => {
+    const profileId = dashboard.profile?.id;
+    if (!profileId) return toast.error("Perfil de entregador não encontrado.");
+    const document = pixDraft.holder_document.replace(/\D/g, "");
+    if (!pixDraft.pix_key.trim() || pixDraft.holder_name.trim().length < 3 || ![11,14].includes(document.length)) {
+      return toast.error("Confira a chave PIX, titular e CPF/CNPJ.");
+    }
+
+    setSaving(true);
+    const { error } = await supabase.from("courier_payout_accounts" as never).upsert({
+      courier_id: profileId,
+      pix_key_type: pixDraft.pix_key_type,
+      pix_key: pixDraft.pix_key.trim(),
+      holder_name: pixDraft.holder_name.trim(),
+      holder_document: document,
+      updated_at: new Date().toISOString(),
+    } as never, { onConflict: "courier_id" });
+    setSaving(false);
+
+    if (error) return toast.error(error.message);
+    toast.success("Conta PIX salva na carteira.");
+    await load();
+  };
+
   const profile = dashboard.profile;
   const jobs = dashboard.jobs ?? [];
   const available = jobs.filter((job) => job.status === "searching");
   const active = jobs.filter((job) => ["assigned", "picked_up", "delivering"].includes(job.status));
   const completed = jobs.filter((job) => job.status === "delivered");
   const payouts = dashboard.payouts ?? [];
-  const pendingPayoutTotal = Number(dashboard.pending_payout_total ?? 0);
+  const pendingPayoutTotal = payouts
+    .filter((payout) => payout.status !== "cancelled")
+    .reduce((sum, payout) => sum + Math.max(0, Number(payout.amount || 0) - Number(payout.paid_amount || 0)), 0);
+  const paidPayoutTotal = payouts
+    .filter((payout) => payout.status !== "cancelled")
+    .reduce((sum, payout) => sum + Number(payout.paid_amount || 0), 0);
   const sessionValue = useMemo(() => [...active, ...completed].reduce((sum, job) => sum + Number(job.payout || 0), 0), [active, completed]);
 
   const mapPoints = useMemo<CourierMapPoint[]>(() => {
@@ -452,10 +547,27 @@ export default function Motoqueiro() {
               <p className="mt-2 text-sm leading-6 text-zinc-400">{primaryActive ? "Siga a sequência operacional abaixo. O destino final permanece protegido até o início do percurso." : profile.is_online ? "Você está online. Assim que uma corrida compatível aparecer, ela será destacada no mapa." : "Ative o modo online para começar a receber oportunidades próximas."}</p>
               {!primaryActive && <div className="mt-5 grid place-items-center rounded-2xl border border-dashed border-yellow-400/20 bg-yellow-400/[0.03] p-8 text-center"><Bike className="h-10 w-10 text-yellow-300/70" /><p className="mt-3 text-sm font-bold text-zinc-300">Nenhuma entrega ativa</p></div>}
             </Card>
-            <Card className="rounded-[28px] border-white/10 bg-[#0b0b0b] p-5 text-white">
-              <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">Carteira</p><h3 className="mt-1 font-black">Repasses</h3></div><WalletCards className="h-6 w-6 text-yellow-300" /></div>
-              <p className="mt-4 text-3xl font-black text-yellow-300">{money(pendingPayoutTotal)}</p><p className="text-xs text-zinc-500">Aguardando repasse</p>
-              <div className="mt-4 space-y-2">{payouts.length === 0 && <p className="text-xs text-zinc-500">Nenhum repasse registrado.</p>}{payouts.slice(0,3).map((payout) => <div key={payout.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2"><div><p className="text-sm font-black">{money(Number(payout.amount))}</p><p className="text-[10px] text-zinc-500">{new Date(payout.created_at).toLocaleDateString("pt-BR")}</p></div><span className={`rounded-full px-2 py-1 text-[10px] font-black ${payout.status === "paid" ? "bg-emerald-500/15 text-emerald-300" : "bg-yellow-400/10 text-yellow-300"}`}>{payout.status === "paid" ? "PAGO" : "PENDENTE"}</span></div>)}</div>
+            <Card id="carteira" className="rounded-[28px] border-white/10 bg-[#0b0b0b] p-5 text-white">
+              <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">Carteira</p><h3 className="mt-1 font-black">Meus repasses</h3></div><WalletCards className="h-6 w-6 text-yellow-300" /></div>
+              <div className="mt-4 grid grid-cols-2 gap-2"><div className="rounded-xl border border-yellow-400/20 bg-yellow-400/[0.05] p-3"><p className="text-[10px] text-zinc-500">Saldo disponível</p><p className="mt-1 text-2xl font-black text-yellow-300">{money(pendingPayoutTotal)}</p></div><div className="rounded-xl border border-white/10 bg-white/[0.02] p-3"><p className="text-[10px] text-zinc-500">Total recebido</p><p className="mt-1 text-2xl font-black text-emerald-300">{money(paidPayoutTotal)}</p></div></div>
+
+              <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.02] p-3">
+                <p className="text-xs font-black uppercase tracking-wider text-yellow-300">Conta PIX para receber</p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <select className="h-10 rounded-md border border-white/10 bg-black/30 px-3 text-sm" value={pixDraft.pix_key_type} onChange={(e)=>setPixDraft({...pixDraft,pix_key_type:e.target.value as CourierPayoutAccount["pix_key_type"]})}>
+                    <option value="cpf">CPF</option><option value="cnpj">CNPJ</option><option value="email">E-mail</option><option value="phone">Telefone</option><option value="random">Aleatória</option>
+                  </select>
+                  <Input className="border-white/10 bg-black/30" placeholder="Chave PIX" value={pixDraft.pix_key} onChange={(e)=>setPixDraft({...pixDraft,pix_key:e.target.value})}/>
+                  <Input className="border-white/10 bg-black/30" placeholder="Nome do titular" value={pixDraft.holder_name} onChange={(e)=>setPixDraft({...pixDraft,holder_name:e.target.value})}/>
+                  <Input className="border-white/10 bg-black/30" placeholder="CPF/CNPJ do titular" value={pixDraft.holder_document} onChange={(e)=>setPixDraft({...pixDraft,holder_document:e.target.value})}/>
+                </div>
+                <Button disabled={saving} onClick={()=>void savePayoutAccount()} variant="outline" className="mt-3 border-yellow-400/30 bg-yellow-400/[0.04] text-yellow-200">{saving?"Salvando...":payoutAccount?"Atualizar conta PIX":"Salvar conta PIX"}</Button>
+              </div>
+
+              <div className="mt-4 space-y-2">
+                {walletPayments.length===0&&<p className="text-xs text-zinc-500">Nenhum PIX recebido ainda. Seus ganhos continuarão acumulando.</p>}
+                {walletPayments.slice(0,4).map((payment)=><div key={payment.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2"><div><p className="text-sm font-black text-emerald-300">{money(Number(payment.amount))}</p><p className="text-[10px] text-zinc-500">{new Date(payment.paid_at).toLocaleString("pt-BR")}{payment.receipt_reference?` · ${payment.receipt_reference}`:""}</p></div><a href={payment.receipt_url} target="_blank" rel="noreferrer" className="text-[10px] font-black text-yellow-300 underline">COMPROVANTE</a></div>)}
+              </div>
             </Card>
           </div>
         </section>
@@ -491,7 +603,7 @@ export default function Motoqueiro() {
 
         <section className="mt-4 grid gap-4 lg:grid-cols-2">
           <Card className="rounded-[28px] border-white/10 bg-black/70 p-5 text-white"><div className="flex items-center justify-between"><div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-yellow-400/70">Oportunidades</p><h2 className="mt-1 text-xl font-black">Corridas disponíveis</h2></div><MapPin className="h-6 w-6 text-yellow-300" /></div><div className="mt-4 space-y-3">{available.length === 0 && <p className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 text-sm text-zinc-500">{profile.is_online ? "Nenhuma oportunidade próxima neste momento." : "Fique online para receber oportunidades próximas."}</p>}{available.map((job) => <button key={job.id} type="button" onClick={() => setSelectedJobId(job.id)} className={`w-full rounded-2xl border p-4 text-left transition ${selectedJobId === job.id ? "border-yellow-400/40 bg-yellow-400/[0.06]" : "border-white/10 bg-white/[0.02] hover:border-white/20"}`}><div className="flex items-start justify-between gap-3"><div><p className="text-xs text-zinc-500">{job.store_name}</p><p className="mt-1 font-black">{job.customer_city}</p><p className="mt-1 text-xs text-zinc-500">{job.route_km ? Number(job.route_km).toFixed(1) + " km" : "Distância calculada"}{job.eta_minutes ? " • ~" + job.eta_minutes + " min" : ""}</p></div><strong className="text-xl text-yellow-300">{money(Number(job.payout))}</strong></div></button>)}</div></Card>
-          <Card id="carteira" className="rounded-[28px] border-white/10 bg-black/70 p-5 text-white"><div className="flex items-center justify-between"><div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-yellow-400/70">Rede Mansão Maromba</p><h2 className="mt-1 text-xl font-black">Lojas vinculadas</h2></div><Store className="h-6 w-6 text-yellow-300" /></div><div className="mt-4 grid gap-2">{(dashboard.links ?? []).length ? (dashboard.links ?? []).map((link) => <div key={link.store_id} className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm font-bold">{link.store_name}</div>) : <p className="rounded-xl border border-white/10 bg-white/[0.02] p-4 text-sm text-zinc-500">Você pode trabalhar para toda a rede mesmo sem vínculo fixo.</p>}</div></Card>
+          <Card className="rounded-[28px] border-white/10 bg-black/70 p-5 text-white"><div className="flex items-center justify-between"><div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-yellow-400/70">Rede Mansão Maromba</p><h2 className="mt-1 text-xl font-black">Lojas vinculadas</h2></div><Store className="h-6 w-6 text-yellow-300" /></div><div className="mt-4 grid gap-2">{(dashboard.links ?? []).length ? (dashboard.links ?? []).map((link) => <div key={link.store_id} className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm font-bold">{link.store_name}</div>) : <p className="rounded-xl border border-white/10 bg-white/[0.02] p-4 text-sm text-zinc-500">Você pode trabalhar para toda a rede mesmo sem vínculo fixo.</p>}</div></Card>
         </section>
 
         {profile.status === "pending" && <Card id="perfil" className="mt-4 rounded-[28px] border-white/10 bg-black/70 p-5 text-white"><h2 className="text-xl font-black">Documentos do cadastro</h2><p className="mt-1 text-xs text-zinc-500">Complete ou corrija seus dados enquanto o cadastro estiver em análise.</p><div className="mt-4 grid gap-3"><Input inputMode="numeric" maxLength={14} className="border-white/10 bg-black/30" placeholder="CPF — 11 dígitos" value={registration.cpf} onChange={(e) => setRegistration({ ...registration, cpf: e.target.value })} /><div className="grid gap-3 sm:grid-cols-2"><select className="h-10 rounded-md border border-white/10 bg-black/30 px-3 text-sm" value={registration.vehicle_type} onChange={(e) => setRegistration({ ...registration, vehicle_type: e.target.value })}><option value="moto">Moto</option><option value="bike">Bicicleta</option><option value="carro">Carro</option><option value="utilitario">Utilitário / Fiorino</option><option value="caminhao">Caminhão leve</option><option value="outro">Outro</option></select>{registration.vehicle_type !== "bike" && <Input className="border-white/10 bg-black/30 uppercase" placeholder="Placa do veículo" value={registration.vehicle_plate} onChange={(e) => setRegistration({ ...registration, vehicle_plate: e.target.value.toUpperCase() })} />}</div>{registration.vehicle_type !== "bike" && <div className="grid gap-3 sm:grid-cols-3"><Input inputMode="numeric" maxLength={14} className="border-white/10 bg-black/30" placeholder="Número da CNH" value={registration.cnh_number} onChange={(e) => setRegistration({ ...registration, cnh_number: e.target.value })} /><select className="h-10 rounded-md border border-white/10 bg-black/30 px-3 text-sm" value={registration.cnh_category} onChange={(e) => setRegistration({ ...registration, cnh_category: e.target.value })}><option value="">Categoria CNH</option><option value="A">A</option><option value="B">B</option><option value="AB">AB</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="AC">AC</option><option value="AD">AD</option><option value="AE">AE</option></select><Input type="date" className="border-white/10 bg-black/30" value={registration.cnh_expiry} onChange={(e) => setRegistration({ ...registration, cnh_expiry: e.target.value })} aria-label="Validade da CNH" /></div>}<Button disabled={saving} onClick={() => void saveDocuments()} className="bg-yellow-400 font-black text-black hover:bg-yellow-300">{saving ? "Salvando..." : "Salvar documentos"}</Button></div></Card>}

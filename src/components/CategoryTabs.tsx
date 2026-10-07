@@ -8,7 +8,8 @@ const categories = [
   { id: "04", label: "DIVERSOS", icon: Package, path: "/diversos" },
   { id: "05", label: "EQUIPAMENTO", icon: Wrench, path: "/equipamento" },
   { id: "06", label: "BEBIDAS", icon: Wine, path: "/bebidas" },
-  { id: "07", label: "ALIMENTAR", icon: Apple, path: "/alimentar" },
+  { id: "07", label: "BEBIDAS NATURAIS", icon: Apple, path: "/bebidas-naturais" },
+  { id: "08", label: "ALIMENTAR", icon: Apple, path: "/alimentar" },
 ];
 
 const CategoryTabs = () => {

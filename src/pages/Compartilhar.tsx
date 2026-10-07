@@ -38,7 +38,7 @@ const Compartilhar = () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Representante Oficial Família Maromba",
+          title: "Mansão Maromba",
           text: "Cadastre-se e acesse preços de atacado exclusivos!",
           url: shareUrl,
         });
@@ -55,7 +55,7 @@ const Compartilhar = () => {
 
   const shareWhatsApp = () => {
     const msg = encodeURIComponent(
-      `🔥 Representante Oficial Família Maromba\n\nCadastre-se e garanta preços de atacado exclusivos:\n${shareUrl}`
+      `🔥 Mansão Maromba\n\nCadastre-se e garanta preços de atacado exclusivos:\n${shareUrl}`
     );
     window.open(`https://wa.me/?text=${msg}`, "_blank");
   };

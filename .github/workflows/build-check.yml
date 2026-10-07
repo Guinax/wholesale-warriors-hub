@@ -32,6 +32,9 @@ jobs:
       - name: Audit dependencies
         run: npm audit --audit-level=high || true
 
+      - name: Audit production dependencies (blocking)
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Run lint
         run: npm run lint
 

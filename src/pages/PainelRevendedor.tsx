@@ -127,6 +127,7 @@ export default function PainelRevendedor() {
       .on("postgres_changes", { event: "*", schema: "public", table: "partner_requests" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "partner_offers" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "partner_payouts" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "partner_wallet_payments" }, () => void load())
       .subscribe();
     const fallback = window.setInterval(() => void load(), 30000);
     return () => {
@@ -260,8 +261,9 @@ export default function PainelRevendedor() {
   const approvedStores = stores.filter((s) => s.status === "approved");
   const pendingStores = stores.filter((s) => s.status !== "approved");
   const hasApprovedStore = approvedStores.length > 0;
-  const waitingPayout = payouts.reduce((sum,p)=>sum+Math.max(0,Number(p.amount||0)-Number(p.paid_amount||0)),0);
-  const paidPayout = payouts.reduce((sum,p)=>sum+Number(p.paid_amount||0),0);
+  const walletPayouts = payouts.filter((p) => p.status !== "cancelled" && p.status !== "pending");
+  const waitingPayout = walletPayouts.reduce((sum,p)=>sum+Math.max(0,Number(p.amount||0)-Number(p.paid_amount||0)),0);
+  const paidPayout = walletPayouts.reduce((sum,p)=>sum+Number(p.paid_amount||0),0);
   const openStore = approvedStores.find((s) => s.is_open) ?? approvedStores[0] ?? null;
   const totalAvailable = inventory.filter(i => approvedStores.some(s => s.id === i.store_id)).reduce((sum, item) => sum + Math.max(0, Number(item.on_hand) - Number(item.reserved)), 0);
 

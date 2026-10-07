@@ -21,11 +21,15 @@ BEGIN
     RAISE EXCEPTION 'private.partner_command não encontrada; nenhuma tarifa foi alterada';
   END IF;
 
-  IF strpos(definition, previous_expression) = 0 THEN
+  -- Idempotente: a tarifa já pode ter sido aplicada diretamente no Supabase.
+  -- Evita falha ao sincronizar a migração com um ambiente atualizado.
+  IF strpos(definition, standard_expression) > 0 THEN
+    RAISE NOTICE 'Tarifa local padrão já aplicada; nenhuma alteração necessária';
+  ELSIF strpos(definition, previous_expression) = 0 THEN
     RAISE EXCEPTION 'Expressão de cotação esperada não encontrada; revisão manual necessária';
+  ELSE
+    definition := replace(definition, previous_expression, standard_expression);
+    EXECUTE definition;
   END IF;
-
-  definition := replace(definition, previous_expression, standard_expression);
-  EXECUTE definition;
 END
 $migration$;

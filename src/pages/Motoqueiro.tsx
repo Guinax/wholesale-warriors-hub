@@ -479,6 +479,13 @@ export default function Motoqueiro() {
         <Card className="border-white/10 bg-[#101214] p-5 text-white">
           <h2 className="text-xl font-black">Cadastrar como entregador</h2>
           <p className="mt-1 text-sm text-zinc-400">Preencha seus dados para entrar na rede. Ao concluir, você entra direto na sua conta enquanto o cadastro segue para análise administrativa.</p>
+          <div className="mt-5 rounded-2xl border border-yellow-400/30 bg-yellow-400/[0.06] p-4" aria-label="Tabela de ganhos de entregas locais">
+            <p className="text-xs font-black uppercase tracking-wider text-yellow-300">Quanto você ganha por entrega local</p>
+            <p className="mt-2 text-lg font-black text-white">R$ 7,50 por corrida de até 3 km</p>
+            <p className="mt-1 text-sm text-zinc-200">Acima de 3 km: + R$ 1,50 por quilômetro adicional.</p>
+            <p className="mt-2 text-xs text-zinc-400">Exemplos: 3 km = R$ 7,50 · 4 km = R$ 9,00 · 5 km = R$ 10,50.</p>
+            <p className="mt-2 text-xs leading-5 text-zinc-400">Tarifa piloto igual para moto e carro. Corridas locais de lojas parceiras, em pedidos de até 6 unidades. O valor de cada corrida aparece antes da aceitação e o crédito é liberado após a entrega confirmada.</p>
+          </div>
           <div className="mt-5 grid gap-3">
             <Input className="border-white/10 bg-black/30" placeholder="Nome completo" value={registration.full_name} onChange={(e) => setRegistration({ ...registration, full_name: e.target.value })} />
             <Input className="border-white/10 bg-black/30" placeholder="Telefone" value={registration.phone} onChange={(e) => setRegistration({ ...registration, phone: e.target.value })} />

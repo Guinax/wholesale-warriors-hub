@@ -27,6 +27,7 @@ import Acessorios from "./pages/Acessorios.tsx";
 import Diversos from "./pages/Diversos.tsx";
 import Equipamento from "./pages/Equipamento.tsx";
 import Bebidas from "./pages/Bebidas.tsx";
+import BebidasNaturais from "./pages/BebidasNaturais.tsx";
 import Alimentos from "./pages/Alimentos.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Compartilhar from "./pages/Compartilhar.tsx";
@@ -84,6 +85,7 @@ const App = () => (
             <Route path="/diversos" element={<Diversos />} />
             <Route path="/equipamento" element={<Equipamento />} />
             <Route path="/bebidas" element={<Bebidas />} />
+            <Route path="/bebidas-naturais" element={<BebidasNaturais />} />
             <Route path="/alimentar" element={<Alimentos />} />
             <Route path="/compartilhar" element={<Compartilhar />} />
             <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />

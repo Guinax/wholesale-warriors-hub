@@ -12,6 +12,7 @@ const PAGES: { category: ProductCategory; label: string; path: string; icon: typ
   { category: "diversos", label: "Diversos", path: "/diversos", icon: Package },
   { category: "equipamento", label: "Equipamento", path: "/equipamento", icon: Wrench },
   { category: "bebidas", label: "Bebidas", path: "/bebidas", icon: Wine },
+  { category: "bebidas_naturais", label: "Bebidas Naturais", path: "/bebidas-naturais", icon: Apple },
   { category: "alimentos", label: "Alimentar", path: "/alimentar", icon: Apple },
 ];
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Bike, CheckCircle2, Clock3, MapPin, Navigation, Power, RefreshCw, Route, ShieldCheck, Store, WalletCards } from "lucide-react";
+import { Bike, Camera, CheckCircle2, Clock3, MapPin, Navigation, Power, RefreshCw, Route, ShieldCheck, Store, WalletCards } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,6 +23,7 @@ type CourierProfile = {
   cnh_category?: string | null;
   cnh_expiry?: string | null;
   phone_verified_at?: string | null;
+  photo_url?: string | null;
 };
 
 type CourierJob = {
@@ -77,6 +78,7 @@ export default function Motoqueiro() {
   const [loading, setLoading] = useState(true);
   const [dashboard, setDashboard] = useState<Dashboard>({});
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [registration, setRegistration] = useState({ full_name: "", phone: "", cpf: "", vehicle_type: "moto", vehicle_plate: "", cnh_number: "", cnh_category: "", cnh_expiry: "" });
   const [deliveryCode, setDeliveryCode] = useState<Record<string, string>>({});
   const [adult, setAdult] = useState<Record<string, boolean>>({});
@@ -202,6 +204,40 @@ export default function Motoqueiro() {
     if (result?.error) return toast.error(result.error);
     toast.success(success);
     await load();
+  };
+
+  const updateProfilePhoto = async (file: File | null) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return toast.error("Escolha uma imagem válida.");
+    if (file.size > 5 * 1024 * 1024) return toast.error("A foto deve ter no máximo 5 MB.");
+
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+    setUploadingPhoto(true);
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) throw new Error("Faça login para alterar sua foto.");
+
+      const objectPath = `couriers/${auth.user.id}/profile-${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("media")
+        .upload(objectPath, file, { cacheControl: "3600", upsert: false, contentType: file.type });
+      if (uploadError) throw uploadError;
+
+      const { data: publicData } = supabase.storage.from("media").getPublicUrl(objectPath);
+      const photoUrl = publicData.publicUrl;
+      const { error: saveError } = await supabase.rpc("courier_update_photo" as never, { p_photo_url: photoUrl } as never);
+      if (saveError) {
+        await supabase.storage.from("media").remove([objectPath]);
+        throw saveError;
+      }
+
+      await load();
+      toast.success("Foto de perfil atualizada.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível atualizar a foto.");
+    } finally {
+      setUploadingPhoto(false);
+    }
   };
 
   const profile = dashboard.profile;
@@ -341,9 +377,27 @@ export default function Motoqueiro() {
           <div className="h-1 bg-gradient-to-r from-transparent via-yellow-400 to-transparent" />
           <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[1fr_auto] lg:items-center">
             <div className="flex min-w-0 items-center gap-4">
-              <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl border border-yellow-400/40 bg-gradient-to-br from-yellow-300/20 via-yellow-500/5 to-transparent shadow-[0_0_28px_rgba(250,204,21,0.18)]">
-                <Bike className="h-8 w-8 text-yellow-300" />
-              </div>
+              <label className="group relative h-16 w-16 shrink-0 cursor-pointer overflow-hidden rounded-2xl border border-yellow-400/40 bg-gradient-to-br from-yellow-300/20 via-yellow-500/5 to-transparent shadow-[0_0_28px_rgba(250,204,21,0.18)]" title="Alterar foto do perfil">
+                {profile.photo_url ? (
+                  <img src={profile.photo_url} alt={`Foto de ${profile.full_name}`} className="h-full w-full object-cover" />
+                ) : (
+                  <span className="grid h-full w-full place-items-center"><Bike className="h-8 w-8 text-yellow-300" /></span>
+                )}
+                <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-black/70 py-1 text-[9px] font-black uppercase text-yellow-300 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
+                  <Camera className="h-3 w-3" /> {uploadingPhoto ? "Enviando" : "Foto"}
+                </span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                  disabled={uploadingPhoto}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] ?? null;
+                    e.currentTarget.value = "";
+                    void updateProfilePhoto(file);
+                  }}
+                />
+              </label>
               <div className="min-w-0">
                 <p className="text-[10px] font-black uppercase tracking-[0.26em] text-yellow-400/70">Mansão Maromba • Entregador</p>
                 <h1 className="truncate text-2xl font-black sm:text-3xl">{profile.full_name}</h1>

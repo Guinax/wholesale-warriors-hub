@@ -32,6 +32,7 @@ const CATEGORIES: { value: ProductCategory; label: string }[] = [
   { value: "acessorios", label: "Acessórios" },
   { value: "equipamento", label: "Equipamento" },
   { value: "bebidas", label: "Bebidas" },
+  { value: "bebidas_naturais", label: "Bebidas Naturais" },
   { value: "alimentos", label: "Alimentar" },
   { value: "Alcoólicos", label: "Alcoólicos" },
   { value: "Alcoólicos + Combo", label: "Alcoólicos + Combo" },

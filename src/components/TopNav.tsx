@@ -80,7 +80,7 @@ const TopNav = () => {
       <div className="container flex items-center justify-between h-14">
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => navigate("/")} aria-label="Ir para a página inicial" className="shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><img src={logo} alt="Família Maromba" className="w-8 h-8 object-contain" width={32} height={32} /></button>
-          <button type="button" onClick={() => navigate("/")} className="text-left font-heading font-bold text-xs tracking-wider text-foreground hover:text-primary transition-colors">REPRESENTANTE OFICIAL DA FAMÍLIA MAROMBA</button>
+          <button type="button" onClick={() => navigate("/")} className="text-left font-heading font-bold text-xs tracking-wider text-foreground hover:text-primary transition-colors">MANSÃO MAROMBA</button>
         </div>
 
         <div className="hidden md:flex items-center gap-6 text-xs font-heading font-semibold tracking-widest text-muted-foreground">

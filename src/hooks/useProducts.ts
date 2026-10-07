@@ -8,6 +8,7 @@ export type ProductCategory =
   | "diversos"
   | "equipamento"
   | "bebidas"
+  | "bebidas_naturais"
   | "alimentos"
   | "Alcoólicos"
   | "Alcoólicos + Combo"

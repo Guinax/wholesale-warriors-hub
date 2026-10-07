@@ -72,6 +72,17 @@ type CourierWalletPayment = {
   paid_at: string;
 };
 
+type CourierWithdrawalRequest = {
+  id: string;
+  courier_id: string;
+  amount: number;
+  status: "requested" | "paid" | "cancelled" | "rejected";
+  requested_at: string;
+  processed_at?: string | null;
+  receipt_url?: string | null;
+  receipt_reference?: string | null;
+};
+
 type Dashboard = {
   profile?: CourierProfile | null;
   links?: Array<{ store_id: string; store_name: string; status: string }>;
@@ -99,6 +110,8 @@ export default function Motoqueiro() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [payoutAccount, setPayoutAccount] = useState<CourierPayoutAccount | null>(null);
   const [walletPayments, setWalletPayments] = useState<CourierWalletPayment[]>([]);
+  const [withdrawalRequests, setWithdrawalRequests] = useState<CourierWithdrawalRequest[]>([]);
+  const [withdrawAmount, setWithdrawAmount] = useState("");
   const [pixDraft, setPixDraft] = useState({ pix_key_type: "cpf", pix_key: "", holder_name: "", holder_document: "" });
   const [registration, setRegistration] = useState({ full_name: "", phone: "", cpf: "", vehicle_type: "moto", vehicle_plate: "", cnh_number: "", cnh_category: "", cnh_expiry: "" });
   const [deliveryCode, setDeliveryCode] = useState<Record<string, string>>({});
@@ -122,12 +135,13 @@ export default function Motoqueiro() {
         setDashboard({});
         setPayoutAccount(null);
         setWalletPayments([]);
+        setWithdrawalRequests([]);
       } else toast.error(error.message);
     } else {
       const next = (data ?? {}) as Dashboard;
       const profileId = next.profile?.id;
       if (profileId) {
-        const [payoutResult, accountResult, paymentResult] = await Promise.all([
+        const [payoutResult, accountResult, paymentResult, withdrawalResult] = await Promise.all([
           supabase.from("courier_payouts" as never)
             .select("id,job_id,amount,paid_amount,status,created_at,paid_at")
             .eq("courier_id", profileId)
@@ -140,6 +154,10 @@ export default function Motoqueiro() {
             .select("id,courier_id,amount,receipt_url,receipt_reference,paid_at")
             .eq("courier_id", profileId)
             .order("paid_at", { ascending: false }),
+          supabase.from("courier_withdrawal_requests" as never)
+            .select("id,courier_id,amount,status,requested_at,processed_at,receipt_url,receipt_reference")
+            .eq("courier_id", profileId)
+            .order("requested_at", { ascending: false }),
         ]);
 
         const payoutRows = (payoutResult.data ?? []) as unknown as CourierPayout[];
@@ -157,6 +175,7 @@ export default function Motoqueiro() {
           holder_document: account.holder_document,
         } : { pix_key_type: "cpf", pix_key: "", holder_name: "", holder_document: "" });
         setWalletPayments((paymentResult.data ?? []) as unknown as CourierWalletPayment[]);
+        setWithdrawalRequests((withdrawalResult.data ?? []) as unknown as CourierWithdrawalRequest[]);
       } else {
         setDashboard(next);
         setPayoutAccount(null);
@@ -188,6 +207,7 @@ export default function Motoqueiro() {
       .on("postgres_changes", { event: "*", schema: "public", table: "courier_payouts" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "courier_wallet_payments" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "courier_payout_accounts" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "courier_withdrawal_requests" }, () => void load())
       .subscribe();
     return () => { void supabase.removeChannel(channel); };
   }, [load]);
@@ -331,6 +351,39 @@ export default function Motoqueiro() {
     await load();
   };
 
+  const requestWithdrawal = async () => {
+    if (!payoutAccount) return toast.error("Cadastre sua chave PIX antes de solicitar o saque.");
+    const amount = Number(withdrawAmount.replace(",", "."));
+    const reserved = withdrawalRequests
+      .filter((request) => request.status === "requested")
+      .reduce((sum, request) => sum + Number(request.amount || 0), 0);
+    const gross = (dashboard.payouts ?? [])
+      .filter((payout) => payout.status !== "cancelled")
+      .reduce((sum, payout) => sum + Math.max(0, Number(payout.amount || 0) - Number(payout.paid_amount || 0)), 0);
+    const availableForWithdrawal = Math.max(0, gross - reserved);
+
+    if (!Number.isFinite(amount) || amount <= 0) return toast.error("Informe um valor de saque válido.");
+    if (amount > availableForWithdrawal + 0.001) return toast.error("O valor solicitado é maior que o saldo disponível.");
+
+    setSaving(true);
+    const { error } = await supabase.rpc("courier_request_withdrawal" as never, { p_amount: Math.round(amount * 100) / 100 } as never);
+    setSaving(false);
+    if (error) return toast.error(error.message);
+
+    setWithdrawAmount("");
+    toast.success("Solicitação de saque enviada.");
+    await load();
+  };
+
+  const cancelWithdrawal = async (requestId: string) => {
+    setSaving(true);
+    const { error } = await supabase.rpc("courier_cancel_withdrawal" as never, { p_request_id: requestId } as never);
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success("Solicitação de saque cancelada.");
+    await load();
+  };
+
   const profile = dashboard.profile;
   const jobs = dashboard.jobs ?? [];
   const available = jobs.filter((job) => job.status === "searching");
@@ -343,6 +396,10 @@ export default function Motoqueiro() {
   const paidPayoutTotal = payouts
     .filter((payout) => payout.status !== "cancelled")
     .reduce((sum, payout) => sum + Number(payout.paid_amount || 0), 0);
+  const requestedWithdrawalTotal = withdrawalRequests
+    .filter((request) => request.status === "requested")
+    .reduce((sum, request) => sum + Number(request.amount || 0), 0);
+  const availableForWithdrawal = Math.max(0, pendingPayoutTotal - requestedWithdrawalTotal);
   const sessionValue = useMemo(() => [...active, ...completed].reduce((sum, job) => sum + Number(job.payout || 0), 0), [active, completed]);
 
   const mapPoints = useMemo<CourierMapPoint[]>(() => {
@@ -563,6 +620,18 @@ export default function Motoqueiro() {
                   <Input className="border-white/10 bg-black/30" placeholder="CPF/CNPJ do titular" value={pixDraft.holder_document} onChange={(e)=>setPixDraft({...pixDraft,holder_document:e.target.value})}/>
                 </div>
                 <Button disabled={saving} onClick={()=>void savePayoutAccount()} variant="outline" className="mt-3 border-yellow-400/30 bg-yellow-400/[0.04] text-yellow-200">{saving?"Salvando...":payoutAccount?"Atualizar conta PIX":"Salvar conta PIX"}</Button>
+              </div>
+
+              <div className="mt-4 rounded-xl border border-yellow-400/20 bg-yellow-400/[0.04] p-3">
+                <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-wider text-yellow-300">Solicitar saque</p><p className="mt-1 text-[11px] text-zinc-500">Disponível para solicitar: {money(availableForWithdrawal)}</p></div></div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]">
+                  <Input inputMode="decimal" placeholder="Digite o valor do saque" value={withdrawAmount} onChange={(e)=>setWithdrawAmount(e.target.value)} className="border-yellow-400/20 bg-black/30"/>
+                  <Button disabled={saving || !payoutAccount || availableForWithdrawal<=0} onClick={()=>void requestWithdrawal()} className="bg-yellow-400 font-black text-black hover:bg-yellow-300">SOLICITAR SAQUE</Button>
+                </div>
+                {!payoutAccount&&<p className="mt-2 text-[11px] font-semibold text-amber-300">Cadastre sua chave PIX acima para liberar o saque.</p>}
+                {withdrawalRequests.some((request)=>request.status==="requested")&&<div className="mt-3 space-y-2">
+                  {withdrawalRequests.filter((request)=>request.status==="requested").map((request)=><div key={request.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/10 bg-black/30 p-2 text-xs"><div><strong>{money(Number(request.amount))}</strong><p className="text-zinc-500">Solicitado em {new Date(request.requested_at).toLocaleString("pt-BR")}</p></div><Button size="sm" variant="ghost" disabled={saving} onClick={()=>void cancelWithdrawal(request.id)} className="text-zinc-300">Cancelar</Button></div>)}
+                </div>}
               </div>
 
               <div className="mt-4 space-y-2">

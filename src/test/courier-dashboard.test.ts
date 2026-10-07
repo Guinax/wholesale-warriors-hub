@@ -25,7 +25,7 @@ describe("Courier professional dashboard contracts", () => {
   it("renders a map-first operational dashboard connected to real courier jobs", () => {
     const page = read("src/pages/Motoqueiro.tsx");
     const map = read("src/components/courier/CourierMap.tsx");
-    expect(page).toContain("Mapa de oportunidades");
+    expect(page).toContain("Mapa operacional");
     expect(page).toContain("<CourierMap");
     expect(page).toContain('job.status === "searching"');
     expect(page).toContain('command("accept_job"');
@@ -39,9 +39,9 @@ describe("Courier professional dashboard contracts", () => {
   it("requires explicit route start before exposing the customer destination", () => {
     const page = read("src/pages/Motoqueiro.tsx");
     const migration = read("supabase/migrations/20261006123000_courier_start_route_privacy.sql");
-    expect(page).toContain("Abrir rota para coleta");
+    expect(page).toContain("ABRIR ROTA PARA COLETA");
     expect(page).toContain("Iniciar percurso");
-    expect(page).toContain("Abrir rota para entrega");
+    expect(page).toContain("ABRIR GOOGLE MAPS");
     expect(page).toContain('command("start_delivery"');
     expect(migration).toContain("j2.courier_id=c.id and j2.status='delivering'");
     expect(migration).toContain("Inicie o percurso antes de concluir a entrega.");

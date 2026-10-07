@@ -61,10 +61,14 @@ describe("Partner delivery and payout lifecycle contracts", () => {
     expect(sql).toContain("Pagamento tardio exige reconciliacao manual");
   });
 
-  it("keeps admin payout actions explicit in the UI", () => {
+  it("requires explicit admin PIX confirmation with proof and balance checks", () => {
     const source = read("src/components/admin/PayoutsManager.tsx");
-    expect(source).toContain('"approve_payout"');
-    expect(source).toContain('"record_payout"');
-    expect(source).toContain("receipt_reference");
+    const backend = read("supabase/migrations/20261007112000_partner_wallet_accumulated_pix_payments.sql");
+    expect(source).toContain('admin_partner_wallet_pay');
+    expect(source).toContain("if (amount > available + 0.001)");
+    expect(source).toContain("if (!draft.receipt)");
+    expect(source).toContain("p_receipt_url");
+    expect(source).toContain("p_receipt_reference");
+    expect(backend).toContain("admin_partner_wallet_pay");
   });
 });

@@ -303,7 +303,7 @@ const Pagamento = () => {
 
     // Prefer a local partner when CEP geocoding is available. Any routing failure
     // intentionally falls through to the existing central checkout.
-    if (deliveryCoords && !freeShippingTestActive && !forceCentral) {
+    if (deliveryCoords && !freeShippingTestActive && !forceCentral && items.reduce((sum, item) => sum + item.qty, 0) <= 6) {
       const partnerItems = items.map((i) => ({ product_id: i.productId, name: i.name, qty: i.qty })).filter((i) => i.product_id);
       if (partnerItems.length === items.length) {
         const { data: routed } = await supabase.rpc("partner_command" as never, {

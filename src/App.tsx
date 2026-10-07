@@ -19,7 +19,6 @@ import ResetPassword from "./pages/ResetPassword.tsx";
 import OAuthConsent from "./pages/OAuthConsent.tsx";
 import Admin from "./pages/Admin.tsx";
 import CommandCenter from "./pages/CommandCenter.tsx";
-import CampaignMediaStudio from "./pages/CampaignMediaStudio.tsx";
 import Produto from "./pages/Produto.tsx";
 import Suplementos from "./pages/Suplementos.tsx";
 import Roupas from "./pages/Roupas.tsx";
@@ -78,7 +77,6 @@ const App = () => (
             <Route path="/convite" element={<Auth />} />
             <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
             <Route path="/admin/comando" element={<ProtectedRoute requireAdmin><CommandCenter /></ProtectedRoute>} />
-            <Route path="/admin/comando/midia" element={<ProtectedRoute requireAdmin><CampaignMediaStudio /></ProtectedRoute>} />
             <Route path="/suplementos" element={<Suplementos />} />
             <Route path="/roupas" element={<Roupas />} />
             <Route path="/acessorios" element={<Acessorios />} />

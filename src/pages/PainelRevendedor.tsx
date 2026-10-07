@@ -16,7 +16,8 @@ const PartnerRestockRequest = lazy(() => import("@/components/partners/PartnerRe
 type Offer = PartnerOffer;
 type Request = PartnerRequest;
 
-type Payout = { id:string; store_id:string; amount:number; status:string; approved_at:string|null; paid_at:string|null; receipt_reference:string|null };
+type Payout = { id:string; store_id:string; amount:number; paid_amount:number; status:string; approved_at:string|null; paid_at:string|null; receipt_reference:string|null };
+type WalletPayment = { id:string; store_id:string; amount:number; receipt_url:string; receipt_reference:string|null; paid_at:string };
 
 type Store = {
   id: string;
@@ -55,6 +56,7 @@ export default function PainelRevendedor() {
   const [locatingStore, setLocatingStore] = useState(false);
   const [pix, setPix] = useState<Record<string,{pix_key_type:string;pix_key:string;holder_name:string;holder_document:string}>>({});
   const [payouts, setPayouts] = useState<Payout[]>([]);
+  const [walletPayments, setWalletPayments] = useState<WalletPayment[]>([]);
   const [activeTab, setActiveTab] = useState<"inicio"|"pedidos"|"estoque"|"repasses"|"loja">("inicio");
   const switchTab = (tab: "inicio"|"pedidos"|"estoque"|"repasses"|"loja") => {
     setActiveTab(tab);
@@ -102,11 +104,13 @@ export default function PainelRevendedor() {
         const mapped: typeof pix = {};
         ((accounts ?? []) as unknown as Array<{store_id:string;pix_key_type:string;pix_key:string;holder_name:string;holder_document:string}>).forEach(a=>{ mapped[a.store_id]={pix_key_type:a.pix_key_type,pix_key:a.pix_key,holder_name:a.holder_name,holder_document:a.holder_document}; });
         setPix(mapped);
-        const { data: payoutRows } = await supabase.from("partner_payouts" as never).select("id,store_id,amount,status,approved_at,paid_at,receipt_reference").order("paid_at",{ascending:false,nullsFirst:true});
+        const [{ data: payoutRows }, { data: walletRows }] = await Promise.all([supabase.from("partner_payouts" as never).select("id,store_id,amount,paid_amount,status,approved_at,paid_at,receipt_reference").order("created_at",{ascending:false}),supabase.from("partner_wallet_payments" as never).select("id,store_id,amount,receipt_url,receipt_reference,paid_at").order("paid_at",{ascending:false})]);
         setPayouts((payoutRows ?? []) as unknown as Payout[]);
+        setWalletPayments((walletRows ?? []) as unknown as WalletPayment[]);
       } else {
         setPix({});
         setPayouts([]);
+        setWalletPayments([]);
       }
     } catch {
       setLoadFailed(true);
@@ -256,8 +260,8 @@ export default function PainelRevendedor() {
   const approvedStores = stores.filter((s) => s.status === "approved");
   const pendingStores = stores.filter((s) => s.status !== "approved");
   const hasApprovedStore = approvedStores.length > 0;
-  const waitingPayout = payouts.filter((p) => ["eligible","approved"].includes(p.status)).reduce((sum,p)=>sum+Number(p.amount||0),0);
-  const paidPayout = payouts.filter((p) => p.status === "paid").reduce((sum,p)=>sum+Number(p.amount||0),0);
+  const waitingPayout = payouts.reduce((sum,p)=>sum+Math.max(0,Number(p.amount||0)-Number(p.paid_amount||0)),0);
+  const paidPayout = payouts.reduce((sum,p)=>sum+Number(p.paid_amount||0),0);
   const openStore = approvedStores.find((s) => s.is_open) ?? approvedStores[0] ?? null;
   const totalAvailable = inventory.filter(i => approvedStores.some(s => s.id === i.store_id)).reduce((sum, item) => sum + Math.max(0, Number(item.on_hand) - Number(item.reserved)), 0);
 
@@ -470,8 +474,8 @@ export default function PainelRevendedor() {
               </div>}
 
               {activeTab==="repasses" && <div id="repasses" className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
-                <div className="flex items-center justify-between"><div><h2 className="text-lg font-black">Repasses</h2><p className="text-xs text-zinc-500">Cliente paga à plataforma; sua loja recebe depois da entrega.</p></div><WalletCards className="h-5 w-5 text-[#e5c66c]"/></div>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2"><div className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs text-zinc-500">Aguardando liberação</p><p className="mt-1 text-xl font-black text-[#e5c66c]">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p></div><div className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs text-zinc-500">Já repassado</p><p className="mt-1 text-xl font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(paidPayout)}</p></div></div>
+                <div className="flex items-center justify-between"><div><h2 className="text-lg font-black">Minha carteira</h2><p className="text-xs text-zinc-500">Cada entrega concluída acumula crédito. Os pagamentos via PIX baixam apenas o valor efetivamente pago.</p></div><WalletCards className="h-5 w-5 text-[#e5c66c]"/></div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2"><div className="rounded-xl border border-[#d4af37]/25 bg-[#d4af37]/5 p-3"><p className="text-xs text-zinc-500">Saldo disponível</p><p className="mt-1 text-xl font-black text-[#e5c66c]">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p><p className="mt-1 text-[11px] text-zinc-500">Acumula até o próximo PIX.</p></div><div className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs text-zinc-500">Total já pago</p><p className="mt-1 text-xl font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(paidPayout)}</p><p className="mt-1 text-[11px] text-zinc-500">Baixas registradas com data, hora e comprovante.</p></div></div>
                 <div className="mt-4 grid gap-2 md:grid-cols-2">
                   <Select value={pix[store.id]?.pix_key_type??"cnpj"} onValueChange={(v)=>setPix((x)=>({...x,[store.id]:{...(x[store.id]??{pix_key:"",holder_name:"",holder_document:""}),pix_key_type:v}}))}><SelectTrigger className="border-white/10 bg-black/20"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="cpf">CPF</SelectItem><SelectItem value="cnpj">CNPJ</SelectItem><SelectItem value="email">E-mail</SelectItem><SelectItem value="phone">Telefone</SelectItem><SelectItem value="random">Aleatória</SelectItem></SelectContent></Select>
                   <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" placeholder="Chave PIX" value={pix[store.id]?.pix_key??""} onChange={(e)=>setPix((x)=>({...x,[store.id]:{...(x[store.id]??{pix_key_type:"cnpj",holder_name:"",holder_document:""}),pix_key:e.target.value}}))}/>
@@ -482,9 +486,11 @@ export default function PainelRevendedor() {
               </div>}
             </section>)}
 
-            {hasApprovedStore&&activeTab==="repasses"&&payouts.length>0&&<section className="space-y-2">
-              <h2 className="text-lg font-black">Histórico de repasses</h2>
-              {payouts.map((p)=><div key={p.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.025] p-4"><div><p className="font-bold">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(Number(p.amount))}</p><p className="text-xs text-zinc-500">{stores.find((s)=>s.id===p.store_id)?.name??"Loja parceira"}</p></div><div className="text-right text-sm"><p>{p.status==="eligible"?"Aguardando aprovação":p.status==="approved"?"Aprovado para pagamento":p.status==="paid"?"Pago":p.status==="cancelled"?"Cancelado":p.status}</p>{p.status==="paid"&&<p className="text-xs text-zinc-500">{p.paid_at?new Date(p.paid_at).toLocaleString("pt-BR"):""}{p.receipt_reference?` · ${p.receipt_reference}`:""}</p>}</div></div>)}
+            {hasApprovedStore&&activeTab==="repasses"&&<section className="space-y-3">
+              <h2 className="text-lg font-black">Histórico da carteira</h2>
+              {walletPayments.length===0&&<div className="rounded-xl border border-white/10 bg-white/[0.025] p-4 text-sm text-zinc-500">Nenhum PIX registrado ainda. O saldo continuará acumulando.</div>}
+              {walletPayments.map((payment)=><div key={payment.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.025] p-4"><div><p className="font-bold text-emerald-300">PIX recebido · {new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(Number(payment.amount))}</p><p className="text-xs text-zinc-500">{new Date(payment.paid_at).toLocaleString("pt-BR")}{payment.receipt_reference?` · ${payment.receipt_reference}`:""}</p></div><a href={payment.receipt_url} target="_blank" rel="noreferrer" className="text-xs font-bold text-[#e5c66c] underline">Ver comprovante</a></div>)}
+              {payouts.some((p)=>Math.max(0,Number(p.amount)-Number(p.paid_amount||0))>0)&&<div className="rounded-xl border border-[#d4af37]/20 bg-[#d4af37]/5 p-4 text-sm text-yellow-100">Créditos ainda não pagos permanecem na carteira e entram automaticamente no saldo disponível.</div>}
             </section>}
 
             {(!hasApprovedStore || activeTab==="loja") && <div className="rounded-2xl border border-[#d4af37]/20 bg-[#d4af37]/5 p-4 text-sm text-yellow-200">

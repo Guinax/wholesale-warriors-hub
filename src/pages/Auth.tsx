@@ -121,7 +121,7 @@ const Auth = () => {
             </>
           )}
         </div>
-        <button onClick={() => contactWhatsApp("Olá! Preciso de suporte com a Representante Oficial Família Maromba.")} className="w-full flex items-center justify-center gap-2 bg-[#25D366] text-white font-heading font-bold text-sm py-3 rounded-lg hover:opacity-90 transition-opacity"><MessageCircle className="w-4 h-4" />SUPORTE VIA WHATSAPP</button>
+        <button onClick={() => contactWhatsApp("Olá! Preciso de suporte com a Mansão Maromba.")} className="w-full flex items-center justify-center gap-2 bg-[#25D366] text-white font-heading font-bold text-sm py-3 rounded-lg hover:opacity-90 transition-opacity"><MessageCircle className="w-4 h-4" />SUPORTE VIA WHATSAPP</button>
         <p className="text-[10px] text-muted-foreground text-center">(19) 97115-1107 — atendimento direto com nossa equipe</p>
       </Card>
     </div>

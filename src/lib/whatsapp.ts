@@ -10,7 +10,7 @@ function open(message: string) {
 export function contactWhatsApp(message?: string) {
   open(
     message ??
-      "Olá! Vim pelo site da Representante Oficial Família Maromba e gostaria de falar com um consultor."
+      "Olá! Vim pelo site da Mansão Maromba e gostaria de falar com um consultor."
   );
 }
 
@@ -23,7 +23,7 @@ export function sendOrderWhatsApp(items: CartItem[], totalPrice: number) {
   );
   const total = `R$ ${totalPrice.toFixed(2).replace(".", ",")}`;
   const message = [
-    "*NOVO PEDIDO — REPRESENTANTE OFICIAL FAMÍLIA MAROMBA*",
+    "*NOVO PEDIDO — MANSÃO MAROMBA*",
     "",
     ...lines,
     "",

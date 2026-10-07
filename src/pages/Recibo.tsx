@@ -133,7 +133,7 @@ const Recibo = () => {
 
     doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
-    doc.text("REPRESENTANTE OFICIAL FAMÍLIA MAROMBA", 105, y, { align: "center" });
+    doc.text("MANSÃO MAROMBA", 105, y, { align: "center" });
     y += 7;
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");

@@ -12,6 +12,7 @@ type CourierLocation = { courier_id:string; lat:number; lng:number; accuracy_m:n
 type CourierPayout = { id:string; courier_id:string; amount:number; paid_amount:number; status:"pending"|"partial"|"paid"|"cancelled"; created_at:string; paid_at:string|null };
 type CourierAccount = { courier_id:string; pix_key_type:string; pix_key:string; holder_name:string; holder_document:string };
 type CourierWalletPayment = { id:string; courier_id:string; amount:number; receipt_url:string; receipt_reference:string|null; paid_at:string };
+type CourierWithdrawalRequest = { id:string; courier_id:string; amount:number; status:"requested"|"paid"|"cancelled"|"rejected"; requested_at:string; processed_at:string|null; receipt_url:string|null; receipt_reference:string|null };
 type WalletDraft = { amount:string; reference:string; receipt:File|null };
 
 const money=(value:number)=>new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(value||0);
@@ -34,11 +35,12 @@ export default function CouriersManager() {
   const [payouts,setPayouts]=useState<CourierPayout[]>([]);
   const [accounts,setAccounts]=useState<Record<string,CourierAccount>>({});
   const [payments,setPayments]=useState<CourierWalletPayment[]>([]);
+  const [withdrawals,setWithdrawals]=useState<CourierWithdrawalRequest[]>([]);
   const [walletDrafts,setWalletDrafts]=useState<Record<string,WalletDraft>>({});
 
   const load=useCallback(async()=>{
     setLoading(true);
-    const [profilesResult, locationsResult, payoutsResult, accountsResult, paymentsResult]=await Promise.all([
+    const [profilesResult, locationsResult, payoutsResult, accountsResult, paymentsResult, withdrawalsResult]=await Promise.all([
       supabase.from("courier_profiles" as never)
         .select("id,courier_code,full_name,phone,cpf,vehicle_type,vehicle_plate,cnh_number,cnh_category,cnh_expiry,status,is_online,created_at")
         .order("created_at",{ascending:false}),
@@ -52,6 +54,9 @@ export default function CouriersManager() {
       supabase.from("courier_wallet_payments" as never)
         .select("id,courier_id,amount,receipt_url,receipt_reference,paid_at")
         .order("paid_at",{ascending:false}),
+      supabase.from("courier_withdrawal_requests" as never)
+        .select("id,courier_id,amount,status,requested_at,processed_at,receipt_url,receipt_reference")
+        .order("requested_at",{ascending:false}),
     ]);
     setLoading(false);
     if(profilesResult.error) return toast.error(profilesResult.error.message);
@@ -63,6 +68,7 @@ export default function CouriersManager() {
     if(!payoutsResult.error) setPayouts((payoutsResult.data??[]) as unknown as CourierPayout[]);
     if(!accountsResult.error) setAccounts(Object.fromEntries(((accountsResult.data??[]) as unknown as CourierAccount[]).map((account)=>[account.courier_id,account])));
     if(!paymentsResult.error) setPayments((paymentsResult.data??[]) as unknown as CourierWalletPayment[]);
+    if(!withdrawalsResult.error) setWithdrawals((withdrawalsResult.data??[]) as unknown as CourierWithdrawalRequest[]);
   },[]);
 
   useEffect(()=>{
@@ -74,6 +80,7 @@ export default function CouriersManager() {
       .on("postgres_changes",{event:"*",schema:"public",table:"courier_payouts"},()=>{void load();})
       .on("postgres_changes",{event:"*",schema:"public",table:"courier_wallet_payments"},()=>{void load();})
       .on("postgres_changes",{event:"*",schema:"public",table:"courier_payout_accounts"},()=>{void load();})
+      .on("postgres_changes",{event:"*",schema:"public",table:"courier_withdrawal_requests"},()=>{void load();})
       .subscribe();
     const interval=window.setInterval(()=>{void load();},15000);
     return ()=>{
@@ -131,6 +138,41 @@ export default function CouriersManager() {
     }
   };
 
+  const payWithdrawal=async(c:Courier,request:CourierWithdrawalRequest)=>{
+    const draft=walletDrafts[c.id]??{amount:"",reference:"",receipt:null};
+    if(!draft.receipt) return toast.error("Anexe o comprovante PIX.");
+    if(draft.receipt.size>8*1024*1024) return toast.error("O comprovante deve ter no máximo 8 MB.");
+    if(!["image/jpeg","image/png","image/webp","application/pdf"].includes(draft.receipt.type)) return toast.error("Use comprovante JPG, PNG, WebP ou PDF.");
+
+    setSaving("withdraw-"+request.id);
+    let uploadedPath:string|null=null;
+    try{
+      const filename=safeFileName(draft.receipt.name||"comprovante");
+      uploadedPath=`courier-wallet-receipts/${c.id}/saque-${request.id}-${Date.now()}-${filename}`;
+      const {error:uploadError}=await supabase.storage.from("media").upload(uploadedPath,draft.receipt,{
+        cacheControl:"3600",upsert:false,contentType:draft.receipt.type,
+      });
+      if(uploadError) throw uploadError;
+
+      const {data:publicData}=supabase.storage.from("media").getPublicUrl(uploadedPath);
+      const {error}=await supabase.rpc("admin_courier_withdrawal_pay" as never,{
+        p_request_id:request.id,
+        p_receipt_url:publicData.publicUrl,
+        p_receipt_reference:draft.reference.trim()||filename,
+      } as never);
+      if(error) throw error;
+
+      toast.success("Saque pago e baixado da carteira.");
+      setWalletDrafts(current=>({...current,[c.id]:{amount:"",reference:"",receipt:null}}));
+      await load();
+    }catch(error){
+      if(uploadedPath) await supabase.storage.from("media").remove([uploadedPath]);
+      toast.error(error instanceof Error?error.message:"Não foi possível concluir o saque.");
+    }finally{
+      setSaving(null);
+    }
+  };
+
   const setStatus=async(c:Courier,status:Courier["status"])=>{
     setSaving(c.id);
     const {error}=await supabase.rpc("courier_command" as never,{p_action:"admin_status",p_payload:{courier_id:c.id,status}} as never);
@@ -154,6 +196,7 @@ export default function CouriersManager() {
       const account=accounts[c.id];
       const draft=walletDrafts[c.id]??{amount:"",reference:"",receipt:null};
       const history=payments.filter((p)=>p.courier_id===c.id);
+      const pendingWithdrawals=withdrawals.filter((w)=>w.courier_id===c.id&&w.status==="requested");
 
       return <Card key={c.id} className="p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -183,6 +226,21 @@ export default function CouriersManager() {
           </div>
 
           {account?<div className="mt-3 rounded-md border p-3 text-xs"><strong>PIX:</strong> {account.pix_key_type.toUpperCase()} • {account.pix_key}<br/><span className="text-muted-foreground">{account.holder_name} • {account.holder_document}</span></div>:<p className="mt-3 text-xs font-semibold text-amber-600">O entregador ainda não cadastrou a conta PIX.</p>}
+
+          {pendingWithdrawals.length>0&&<div className="mt-3 space-y-2 rounded-lg border border-amber-400/25 bg-amber-400/5 p-3">
+            <div className="text-xs font-bold uppercase tracking-wide text-amber-600">Solicitações de saque</div>
+            {pendingWithdrawals.map(request=><div key={request.id} className="rounded-md border bg-background/60 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2"><div><strong>{money(Number(request.amount))}</strong><div className="text-xs text-muted-foreground">Solicitado em {new Date(request.requested_at).toLocaleString("pt-BR")}</div></div><Badge variant="secondary">AGUARDANDO PIX</Badge></div>
+              {account?<div className="mt-2 text-xs text-muted-foreground">PIX: {account.pix_key_type.toUpperCase()} • {account.pix_key} • {account.holder_name}</div>:<div className="mt-2 text-xs font-semibold text-destructive">Conta PIX não cadastrada.</div>}
+              {account&&<div className="mt-3 grid gap-2">
+                <Input placeholder="ID/E2E/NSU do PIX (opcional)" value={draft.reference} onChange={(e)=>setDraft(c.id,{reference:e.target.value})}/>
+                <div className="flex flex-wrap gap-2">
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-xs font-medium hover:bg-muted"><Upload className="h-4 w-4"/>{draft.receipt?draft.receipt.name:"Anexar comprovante"}<input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={(e)=>setDraft(c.id,{receipt:e.target.files?.[0]??null})}/></label>
+                  <Button size="sm" disabled={saving==="withdraw-"+request.id||!draft.receipt} onClick={()=>void payWithdrawal(c,request)}>{saving==="withdraw-"+request.id?"Registrando...":"Pagar saque e dar baixa"}</Button>
+                </div>
+              </div>}
+            </div>)}
+          </div>}
 
           {available>0&&account&&<div className="mt-3 space-y-2">
             <div className="grid gap-2 md:grid-cols-[160px_1fr]">

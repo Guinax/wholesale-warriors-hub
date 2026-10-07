@@ -104,6 +104,7 @@ export default function Motoqueiro() {
   const [deliveryCode, setDeliveryCode] = useState<Record<string, string>>({});
   const [adult, setAdult] = useState<Record<string, boolean>>({});
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"inicio" | "entregas" | "carteira" | "perfil">("inicio");
   const [currentPosition, setCurrentPosition] = useState<{ lat: number; lng: number } | null>(null);
   const watchRef = useRef<number | null>(null);
   const lastLocationRefreshRef = useRef(0);
@@ -526,8 +527,8 @@ export default function Motoqueiro() {
 
         {profile.status !== "approved" && <Card className="mt-4 border-amber-400/25 bg-amber-400/[0.07] p-4 text-amber-100"><div className="flex items-start gap-3"><Clock3 className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Cadastro em análise.</strong><p className="mt-1 text-sm text-amber-100/70">Você pode revisar seus documentos abaixo. As corridas serão liberadas após a aprovação.</p></div></div></Card>}
 
-        <section id="inicio" className="mt-4 grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
-          <Card className="overflow-hidden rounded-[28px] border-yellow-400/15 bg-[#0b0b0b] p-0 text-white shadow-[0_0_35px_rgba(234,179,8,0.06)]">
+        <section id="inicio" className={activeTab==="inicio" ? "mt-4 grid gap-4 xl:grid-cols-[1.35fr_0.65fr]" : activeTab==="carteira" ? "mt-4 block" : "hidden"}>
+          <Card className={activeTab==="inicio" ? "overflow-hidden rounded-[28px] border-yellow-400/15 bg-[#0b0b0b] p-0 text-white shadow-[0_0_35px_rgba(234,179,8,0.06)]" : "hidden"}>
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-gradient-to-r from-yellow-400/[0.08] to-transparent p-4 sm:p-5">
               <div><div className="flex items-center gap-2"><MapPin className="h-5 w-5 text-yellow-300" /><h2 className="text-lg font-black">Mapa operacional</h2></div><p className="mt-1 text-xs text-zinc-500">{profile.is_online ? "Sua posição, coletas e oportunidades em tempo real." : "Fique online para compartilhar sua posição e receber corridas."}</p></div>
               <div className="rounded-2xl border border-yellow-400/20 bg-yellow-400/[0.06] px-3 py-2 text-right"><p className="text-[9px] font-bold uppercase tracking-wider text-zinc-500">Ativas</p><p className="text-lg font-black text-yellow-300">{active.length}/{profile.max_active_jobs}</p></div>
@@ -541,13 +542,13 @@ export default function Motoqueiro() {
             </div>
           </Card>
 
-          <div className="space-y-4">
-            <Card className="rounded-[28px] border-yellow-400/15 bg-black/80 p-5 text-white">
+          <div className={activeTab==="inicio" || activeTab==="carteira" ? "space-y-4" : "hidden"}>
+            <Card className={activeTab==="inicio" ? "rounded-[28px] border-yellow-400/15 bg-black/80 p-5 text-white" : "hidden"}>
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-yellow-400/70">Operação agora</p><h2 className="mt-2 text-2xl font-black">{primaryActive ? "Entrega em andamento" : "Pronto para rodar"}</h2>
               <p className="mt-2 text-sm leading-6 text-zinc-400">{primaryActive ? "Siga a sequência operacional abaixo. O destino final permanece protegido até o início do percurso." : profile.is_online ? "Você está online. Assim que uma corrida compatível aparecer, ela será destacada no mapa." : "Ative o modo online para começar a receber oportunidades próximas."}</p>
               {!primaryActive && <div className="mt-5 grid place-items-center rounded-2xl border border-dashed border-yellow-400/20 bg-yellow-400/[0.03] p-8 text-center"><Bike className="h-10 w-10 text-yellow-300/70" /><p className="mt-3 text-sm font-bold text-zinc-300">Nenhuma entrega ativa</p></div>}
             </Card>
-            <Card id="carteira" className="rounded-[28px] border-white/10 bg-[#0b0b0b] p-5 text-white">
+            <Card id="carteira" className={activeTab==="carteira" ? "rounded-[28px] border-white/10 bg-[#0b0b0b] p-5 text-white" : "hidden"}>
               <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">Carteira</p><h3 className="mt-1 font-black">Meus repasses</h3></div><WalletCards className="h-6 w-6 text-yellow-300" /></div>
               <div className="mt-4 grid grid-cols-2 gap-2"><div className="rounded-xl border border-yellow-400/20 bg-yellow-400/[0.05] p-3"><p className="text-[10px] text-zinc-500">Saldo disponível</p><p className="mt-1 text-2xl font-black text-yellow-300">{money(pendingPayoutTotal)}</p></div><div className="rounded-xl border border-white/10 bg-white/[0.02] p-3"><p className="text-[10px] text-zinc-500">Total recebido</p><p className="mt-1 text-2xl font-black text-emerald-300">{money(paidPayoutTotal)}</p></div></div>
 
@@ -572,7 +573,7 @@ export default function Motoqueiro() {
           </div>
         </section>
 
-        <section id="entregas" className="mt-4 space-y-4">
+        <section id="entregas" className={activeTab==="entregas" ? "mt-4 space-y-4" : "hidden"}>
           <div className="flex items-end justify-between gap-4 px-1"><div><p className="text-[10px] font-black uppercase tracking-[0.2em] text-yellow-400/70">Missões ativas</p><h2 className="mt-1 text-2xl font-black">Minhas entregas</h2></div><Route className="h-7 w-7 text-yellow-300" /></div>
           {active.length === 0 && <Card className="rounded-[28px] border-white/10 bg-black/60 p-6 text-center text-sm text-zinc-500">Nenhuma entrega ativa neste momento.</Card>}
           {active.map((job) => {
@@ -601,20 +602,32 @@ export default function Motoqueiro() {
           })}
         </section>
 
-        <section className="mt-4 grid gap-4 lg:grid-cols-2">
+        <section className={activeTab==="inicio" ? "mt-4 grid gap-4 lg:grid-cols-2" : "hidden"}>
           <Card className="rounded-[28px] border-white/10 bg-black/70 p-5 text-white"><div className="flex items-center justify-between"><div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-yellow-400/70">Oportunidades</p><h2 className="mt-1 text-xl font-black">Corridas disponíveis</h2></div><MapPin className="h-6 w-6 text-yellow-300" /></div><div className="mt-4 space-y-3">{available.length === 0 && <p className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 text-sm text-zinc-500">{profile.is_online ? "Nenhuma oportunidade próxima neste momento." : "Fique online para receber oportunidades próximas."}</p>}{available.map((job) => <button key={job.id} type="button" onClick={() => setSelectedJobId(job.id)} className={`w-full rounded-2xl border p-4 text-left transition ${selectedJobId === job.id ? "border-yellow-400/40 bg-yellow-400/[0.06]" : "border-white/10 bg-white/[0.02] hover:border-white/20"}`}><div className="flex items-start justify-between gap-3"><div><p className="text-xs text-zinc-500">{job.store_name}</p><p className="mt-1 font-black">{job.customer_city}</p><p className="mt-1 text-xs text-zinc-500">{job.route_km ? Number(job.route_km).toFixed(1) + " km" : "Distância calculada"}{job.eta_minutes ? " • ~" + job.eta_minutes + " min" : ""}</p></div><strong className="text-xl text-yellow-300">{money(Number(job.payout))}</strong></div></button>)}</div></Card>
           <Card className="rounded-[28px] border-white/10 bg-black/70 p-5 text-white"><div className="flex items-center justify-between"><div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-yellow-400/70">Rede Mansão Maromba</p><h2 className="mt-1 text-xl font-black">Lojas vinculadas</h2></div><Store className="h-6 w-6 text-yellow-300" /></div><div className="mt-4 grid gap-2">{(dashboard.links ?? []).length ? (dashboard.links ?? []).map((link) => <div key={link.store_id} className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm font-bold">{link.store_name}</div>) : <p className="rounded-xl border border-white/10 bg-white/[0.02] p-4 text-sm text-zinc-500">Você pode trabalhar para toda a rede mesmo sem vínculo fixo.</p>}</div></Card>
         </section>
 
-        {profile.status === "pending" && <Card id="perfil" className="mt-4 rounded-[28px] border-white/10 bg-black/70 p-5 text-white"><h2 className="text-xl font-black">Documentos do cadastro</h2><p className="mt-1 text-xs text-zinc-500">Complete ou corrija seus dados enquanto o cadastro estiver em análise.</p><div className="mt-4 grid gap-3"><Input inputMode="numeric" maxLength={14} className="border-white/10 bg-black/30" placeholder="CPF — 11 dígitos" value={registration.cpf} onChange={(e) => setRegistration({ ...registration, cpf: e.target.value })} /><div className="grid gap-3 sm:grid-cols-2"><select className="h-10 rounded-md border border-white/10 bg-black/30 px-3 text-sm" value={registration.vehicle_type} onChange={(e) => setRegistration({ ...registration, vehicle_type: e.target.value })}><option value="moto">Moto</option><option value="bike">Bicicleta</option><option value="carro">Carro</option><option value="utilitario">Utilitário / Fiorino</option><option value="caminhao">Caminhão leve</option><option value="outro">Outro</option></select>{registration.vehicle_type !== "bike" && <Input className="border-white/10 bg-black/30 uppercase" placeholder="Placa do veículo" value={registration.vehicle_plate} onChange={(e) => setRegistration({ ...registration, vehicle_plate: e.target.value.toUpperCase() })} />}</div>{registration.vehicle_type !== "bike" && <div className="grid gap-3 sm:grid-cols-3"><Input inputMode="numeric" maxLength={14} className="border-white/10 bg-black/30" placeholder="Número da CNH" value={registration.cnh_number} onChange={(e) => setRegistration({ ...registration, cnh_number: e.target.value })} /><select className="h-10 rounded-md border border-white/10 bg-black/30 px-3 text-sm" value={registration.cnh_category} onChange={(e) => setRegistration({ ...registration, cnh_category: e.target.value })}><option value="">Categoria CNH</option><option value="A">A</option><option value="B">B</option><option value="AB">AB</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="AC">AC</option><option value="AD">AD</option><option value="AE">AE</option></select><Input type="date" className="border-white/10 bg-black/30" value={registration.cnh_expiry} onChange={(e) => setRegistration({ ...registration, cnh_expiry: e.target.value })} aria-label="Validade da CNH" /></div>}<Button disabled={saving} onClick={() => void saveDocuments()} className="bg-yellow-400 font-black text-black hover:bg-yellow-300">{saving ? "Salvando..." : "Salvar documentos"}</Button></div></Card>}
+        {activeTab==="perfil" && profile.status === "pending" && <Card id="perfil" className="mt-4 rounded-[28px] border-white/10 bg-black/70 p-5 text-white"><h2 className="text-xl font-black">Documentos do cadastro</h2><p className="mt-1 text-xs text-zinc-500">Complete ou corrija seus dados enquanto o cadastro estiver em análise.</p><div className="mt-4 grid gap-3"><Input inputMode="numeric" maxLength={14} className="border-white/10 bg-black/30" placeholder="CPF — 11 dígitos" value={registration.cpf} onChange={(e) => setRegistration({ ...registration, cpf: e.target.value })} /><div className="grid gap-3 sm:grid-cols-2"><select className="h-10 rounded-md border border-white/10 bg-black/30 px-3 text-sm" value={registration.vehicle_type} onChange={(e) => setRegistration({ ...registration, vehicle_type: e.target.value })}><option value="moto">Moto</option><option value="bike">Bicicleta</option><option value="carro">Carro</option><option value="utilitario">Utilitário / Fiorino</option><option value="caminhao">Caminhão leve</option><option value="outro">Outro</option></select>{registration.vehicle_type !== "bike" && <Input className="border-white/10 bg-black/30 uppercase" placeholder="Placa do veículo" value={registration.vehicle_plate} onChange={(e) => setRegistration({ ...registration, vehicle_plate: e.target.value.toUpperCase() })} />}</div>{registration.vehicle_type !== "bike" && <div className="grid gap-3 sm:grid-cols-3"><Input inputMode="numeric" maxLength={14} className="border-white/10 bg-black/30" placeholder="Número da CNH" value={registration.cnh_number} onChange={(e) => setRegistration({ ...registration, cnh_number: e.target.value })} /><select className="h-10 rounded-md border border-white/10 bg-black/30 px-3 text-sm" value={registration.cnh_category} onChange={(e) => setRegistration({ ...registration, cnh_category: e.target.value })}><option value="">Categoria CNH</option><option value="A">A</option><option value="B">B</option><option value="AB">AB</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="AC">AC</option><option value="AD">AD</option><option value="AE">AE</option></select><Input type="date" className="border-white/10 bg-black/30" value={registration.cnh_expiry} onChange={(e) => setRegistration({ ...registration, cnh_expiry: e.target.value })} aria-label="Validade da CNH" /></div>}<Button disabled={saving} onClick={() => void saveDocuments()} className="bg-yellow-400 font-black text-black hover:bg-yellow-300">{saving ? "Salvando..." : "Salvar documentos"}</Button></div></Card>}
       </div>
+
+      {activeTab==="perfil" && profile.status !== "pending" && <Card id="perfil" className="mt-4 rounded-[28px] border-white/10 bg-black/70 p-5 text-white">
+        <div className="flex items-center gap-3"><ShieldCheck className="h-6 w-6 text-yellow-300"/><div><h2 className="text-xl font-black">Meu perfil</h2><p className="text-xs text-zinc-500">Cadastro e dados operacionais do entregador.</p></div></div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 text-sm">
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3"><span className="text-zinc-500">Nome</span><p className="font-bold">{profile.full_name}</p></div>
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3"><span className="text-zinc-500">Código</span><p className="font-bold">{profile.courier_code}</p></div>
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3"><span className="text-zinc-500">Telefone</span><p className="font-bold">{profile.phone}</p></div>
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3"><span className="text-zinc-500">Veículo</span><p className="font-bold">{profile.vehicle_type || "Não informado"}{profile.vehicle_plate ? " · " + profile.vehicle_plate : ""}</p></div>
+        </div>
+      </Card>}
 
       <nav className="fixed inset-x-0 bottom-0 z-[600] border-t border-yellow-400/15 bg-black/95 px-3 py-2 backdrop-blur lg:hidden">
         <div className="mx-auto grid max-w-md grid-cols-4 gap-1">
-          <a href="#inicio" className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-bold text-yellow-300"><MapPin className="h-5 w-5" />Início</a>
-          <a href="#entregas" className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-bold text-zinc-400 hover:text-yellow-300"><Bike className="h-5 w-5" />Entregas</a>
-          <a href="#carteira" className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-bold text-zinc-400 hover:text-yellow-300"><WalletCards className="h-5 w-5" />Carteira</a>
-          <a href="#perfil" className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-bold text-zinc-400 hover:text-yellow-300"><ShieldCheck className="h-5 w-5" />Perfil</a>
+          {([
+            ["inicio","Início",MapPin],
+            ["entregas","Entregas",Bike],
+            ["carteira","Carteira",WalletCards],
+            ["perfil","Perfil",ShieldCheck],
+          ] as const).map(([tab,label,Icon])=><button key={tab} type="button" onClick={()=>{setActiveTab(tab);window.scrollTo({top:0,behavior:"auto"});}} className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-bold ${activeTab===tab?"bg-yellow-400/10 text-yellow-300":"text-zinc-400 hover:text-yellow-300"}`}><Icon className="h-5 w-5"/>{label}</button>)}
         </div>
       </nav>
     </main>

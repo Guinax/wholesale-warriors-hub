@@ -33,8 +33,8 @@ export default defineConfig(({ mode }) => ({
       },
       includeAssets: ["favicon.ico", "favicon-maromba-v2.png", "apple-touch-icon-maromba-v2.png", "icon-192-maromba-v2.png", "icon-512-maromba-v2.png", "icon-maskable-maromba-v2.png"],
       manifest: {
-        name: "Mansão Maromba",
-        short_name: "Família Maromba",
+        name: "Adega Maromba",
+        short_name: "Adega Maromba",
         description: "Portal de atacado exclusivo para revendedores",
         theme_color: "#0F0F10",
         background_color: "#0F0F10",

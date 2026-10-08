@@ -35,7 +35,7 @@ const Auth = () => {
   const [recoverySent, setRecoverySent] = useState(false);
 
   useEffect(() => {
-    document.title = "Cadastro e Login | Família Maromba";
+    document.title = "Cadastro e Login | Adega Maromba";
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) navigate(nextPath, { replace: true });
     });
@@ -93,8 +93,8 @@ const Auth = () => {
           </button>
         )}
         <div className="text-center space-y-1">
-          <img src={logo} alt="Mansão Maromba" className="w-20 h-20 object-contain mx-auto" />
-          <h1 className="text-2xl font-heading font-bold">Família Maromba</h1>
+          <img src={logo} alt="Adega Maromba" className="w-20 h-20 object-contain mx-auto" />
+          <h1 className="text-2xl font-heading font-bold">Adega Maromba</h1>
           <p className="text-sm text-muted-foreground">{mode === "recovery" ? "Recupere sua senha" : "Entre para finalizar compras e acessar sua conta"}</p>
         </div>
         {mode === "recovery" ? (
@@ -121,7 +121,7 @@ const Auth = () => {
             </>
           )}
         </div>
-        <button onClick={() => contactWhatsApp("Olá! Preciso de suporte com a Mansão Maromba.")} className="w-full flex items-center justify-center gap-2 bg-[#25D366] text-white font-heading font-bold text-sm py-3 rounded-lg hover:opacity-90 transition-opacity"><MessageCircle className="w-4 h-4" />SUPORTE VIA WHATSAPP</button>
+        <button onClick={() => contactWhatsApp("Olá! Preciso de suporte com a Adega Maromba.")} className="w-full flex items-center justify-center gap-2 bg-[#25D366] text-white font-heading font-bold text-sm py-3 rounded-lg hover:opacity-90 transition-opacity"><MessageCircle className="w-4 h-4" />SUPORTE VIA WHATSAPP</button>
         <p className="text-[10px] text-muted-foreground text-center">(19) 97115-1107 — atendimento direto com nossa equipe</p>
       </Card>
     </div>

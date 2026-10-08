@@ -35,13 +35,18 @@ const MediaUploader = ({
       toast.error(`Arquivo muito grande. Máximo ${maxMb}MB.`);
       return;
     }
+    if (kind === "video" && file.type && !file.type.startsWith("video/")) {
+      toast.error("Selecione um arquivo de vídeo válido (como MP4).");
+      return;
+    }
     setUploading(true);
     try {
       const { url } = await uploadMedia(file, folder);
       onChange(url);
       toast.success("Arquivo enviado!");
-    } catch {
-      toast.error("Não foi possível enviar o arquivo");
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "Erro desconhecido";
+      toast.error(`Não foi possível enviar o arquivo: ${detail}`);
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";

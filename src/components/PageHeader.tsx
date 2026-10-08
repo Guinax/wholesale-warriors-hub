@@ -25,7 +25,7 @@ const PageHeader = ({ eyebrow, title, subtitle, backTo }: PageHeaderProps) => {
           <span className="font-heading font-bold text-xs tracking-wider hidden sm:inline">VOLTAR</span>
         </button>
         <Link to="/" className="font-heading font-black text-xs tracking-wider text-foreground">
-          FAMÍLIA MAROMBA
+          ADEGA MAROMBA
         </Link>
         <button className="relative p-2" onClick={openCart} aria-label="Carrinho">
           <ShoppingCart className="w-5 h-5 text-foreground" />

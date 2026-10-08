@@ -9,7 +9,7 @@ const Bebidas = () => {
       title="BEBIDAS"
       subtitle="Whisky, vodka, gin e drinks da linha Mansão Maromba. Compra a partir de 1 unidade. Preço de atacado automático a partir de 6 unidades."
       products={products.map(toCategoryProduct)}
-      docTitle="Bebidas — Família Maromba"
+      docTitle="Bebidas — Adega Maromba"
     />
   );
 };

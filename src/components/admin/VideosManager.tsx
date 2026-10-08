@@ -98,7 +98,7 @@ const VideosManager = () => {
 
     setSaving(false);
     if (error) {
-      toast.error("Erro ao salvar vídeo");
+      toast.error(`Erro ao salvar vídeo: ${error.message}`);
       return;
     }
     logAudit(form.id ? "video_update" : "video_create", { entity: "videos", details: payload });

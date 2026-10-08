@@ -7,9 +7,9 @@ const BebidasNaturais = () => {
     <CategoryPage
       eyebrow="LINHA NATURAL"
       title="BEBIDAS NATURAIS"
-      subtitle="Sucos naturais Mansão Maromba em garrafas de 500 ml. Compra a partir de 1 unidade. Preço de atacado automático a partir de 6 unidades. Frete calculado separadamente."
+      subtitle="Sucos Adega Maromba em garrafas de 500 ml. Compra a partir de 1 unidade. Preço de atacado automático a partir de 6 unidades. Frete calculado separadamente."
       products={products.map(toCategoryProduct)}
-      docTitle="Bebidas Naturais — Mansão Maromba"
+      docTitle="Bebidas Naturais — Adega Maromba"
     />
   );
 };

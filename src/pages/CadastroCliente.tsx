@@ -117,7 +117,7 @@ export default function CadastroCliente() {
     <div className="min-h-screen bg-background grid place-items-center p-4">
       <Card className="w-full max-w-md p-6 space-y-5">
         <div className="text-center">
-          <img src={logo} alt="Família Maromba" className="w-20 h-20 object-contain mx-auto" />
+          <img src={logo} alt="Adega Maromba" className="w-20 h-20 object-contain mx-auto" />
           <h1 className="font-heading font-black text-2xl">CRIAR CONTA</h1>
           <p className="text-sm text-muted-foreground mt-1">Pessoa física — compra a partir de 1 unidade.</p>
         </div>

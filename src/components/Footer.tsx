@@ -13,12 +13,12 @@ const Footer = () => {
       <div className="container space-y-8">
         {/* Logo & brand */}
         <div className="flex flex-col items-center gap-3">
-          <img src={logo} alt="Mansão Maromba" className="w-16 h-16 object-contain" width={64} height={64} />
+          <img src={logo} alt="Adega Maromba" className="w-16 h-16 object-contain" width={64} height={64} />
           <p className="font-heading font-black text-base tracking-wider text-foreground">
-            MANSÃO MAROMBA
+            ADEGA MAROMBA
           </p>
           <p className="text-xs text-muted-foreground text-center max-w-xs">
-            Portal exclusivo de atacado para revendedores autorizados.
+            Adega independente. Trabalhamos com produtos da Mansão Maromba.
           </p>
         </div>
 
@@ -43,7 +43,7 @@ const Footer = () => {
         </div>
 
         <div className="text-center text-[10px] text-muted-foreground font-heading tracking-wider pt-4 border-t border-border">
-          © 2026 MANSÃO MAROMBA — TODOS OS DIREITOS RESERVADOS
+          © 2026 ADEGA MAROMBA — TODOS OS DIREITOS RESERVADOS
         </div>
       </div>
     </footer>

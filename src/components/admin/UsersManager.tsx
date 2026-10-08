@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Users, Search, RefreshCw, Save, Eye } from "lucide-react";
+import { Users, Search, RefreshCw, Save, Eye, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -68,6 +68,8 @@ const UsersManager = () => {
   const [selected, setSelected] = useState<Profile | null>(null);
   const [form, setForm] = useState<Partial<Profile>>({});
   const [saving, setSaving] = useState(false);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -85,6 +87,7 @@ const UsersManager = () => {
 
   useEffect(() => {
     load();
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
   }, []);
 
   const openDetails = (p: Profile) => {
@@ -117,6 +120,35 @@ const UsersManager = () => {
     });
     setSelected(null);
     load();
+  };
+
+  const handleDelete = async (p: Profile) => {
+    if (!currentUserId) {
+      toast.error("Não foi possível verificar sua conta. Entre novamente.");
+      return;
+    }
+    if (p.user_id === currentUserId) {
+      toast.error("Sua conta administrativa não pode ser excluída.");
+      return;
+    }
+    if (!window.confirm(`Excluir definitivamente o cadastro de ${p.full_name || p.email}? Esta ação não pode ser desfeita.`)) return;
+
+    setDeletingUserId(p.user_id);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-delete-user", {
+        body: { user_id: p.user_id },
+      });
+      if (error || !data?.success) {
+        throw new Error(data?.error || error?.message || "Não foi possível excluir o usuário.");
+      }
+      toast.success("Usuário excluído com sucesso.");
+      if (selected?.user_id === p.user_id) setSelected(null);
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao excluir usuário.");
+    } finally {
+      setDeletingUserId(null);
+    }
   };
 
   const filtered = profiles.filter((p) => {
@@ -180,6 +212,17 @@ const UsersManager = () => {
                   <Badge variant="secondary" className="font-mono text-[10px]">
                     {p.user_code}
                   </Badge>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-destructive hover:text-destructive"
+                    aria-label={p.user_id === currentUserId ? "Sua conta está protegida" : `Excluir ${p.full_name || p.email}`}
+                    title={p.user_id === currentUserId ? "Sua conta está protegida" : "Excluir usuário"}
+                    disabled={!currentUserId || p.user_id === currentUserId || deletingUserId !== null}
+                    onClick={(event) => { event.stopPropagation(); void handleDelete(p); }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                   <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Ver e editar">
                     <Eye className="w-4 h-4 text-muted-foreground" />
                   </Button>

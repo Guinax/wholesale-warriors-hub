@@ -35,7 +35,7 @@ export default defineConfig(({ mode }) => ({
       manifest: {
         name: "Adega Maromba",
         short_name: "Adega Maromba",
-        description: "Portal de atacado exclusivo para revendedores",
+        description: "Adega Maromba — loja virtual de bebidas e outros produtos",
         theme_color: "#0F0F10",
         background_color: "#0F0F10",
         display: "standalone",

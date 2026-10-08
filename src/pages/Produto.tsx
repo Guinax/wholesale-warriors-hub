@@ -43,7 +43,7 @@ const Produto = () => {
       setProduct(next);
       setQty(1);
       setLoading(false);
-      if (next) document.title = `${next.name} | Família Maromba`;
+      if (next) document.title = `${next.name} | Adega Maromba`;
     })();
     return () => { active = false; };
   }, [id]);
@@ -83,7 +83,7 @@ const Produto = () => {
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Voltar">
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <Link to="/" className="font-heading font-black text-xs tracking-wider">FAMÍLIA MAROMBA</Link>
+          <Link to="/" className="font-heading font-black text-xs tracking-wider">ADEGA MAROMBA</Link>
           <button onClick={openCart} className="relative p-2" aria-label="Carrinho">
             <ShoppingCart className="w-5 h-5" />
             {totalItems > 0 && <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold grid place-items-center">{totalItems}</span>}
@@ -126,7 +126,7 @@ const Produto = () => {
 
           <div className="flex items-start gap-3 text-sm text-muted-foreground border rounded-xl p-4">
             <ShieldCheck className="w-5 h-5 text-primary shrink-0" />
-            <p>Compra feita pela plataforma oficial Família Maromba. O pagamento é concluído no checkout seguro integrado ao pedido.</p>
+            <p>Compra feita pela plataforma oficial Adega Maromba. O pagamento é concluído no checkout seguro integrado ao pedido.</p>
           </div>
         </div>
       </main>

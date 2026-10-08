@@ -9,7 +9,7 @@ const Acessorios = () => {
       title="ACESSÓRIOS"
       subtitle="Cintos, straps, luvas e tudo que turbina o treino dos seus clientes."
       products={products.map(toCategoryProduct)}
-      docTitle="Acessórios — Família Maromba"
+      docTitle="Acessórios — Adega Maromba"
     />
   );
 };

@@ -85,7 +85,7 @@ export default function OAuthConsent() {
           <div className="inline-flex p-3 rounded-full bg-primary/10">
             <Shield className="w-6 h-6 text-primary" />
           </div>
-          <h1 className="text-2xl font-heading font-bold">Conectar ao Família Maromba</h1>
+          <h1 className="text-2xl font-heading font-bold">Conectar ao Adega Maromba</h1>
         </div>
 
         {error && (
@@ -101,7 +101,7 @@ export default function OAuthConsent() {
             <div className="space-y-3 text-sm">
               <p>
                 <span className="font-semibold">{details.client?.name ?? "Um aplicativo"}</span>
-                {" "}quer se conectar à sua conta na Mansão Maromba.
+                {" "}quer se conectar à sua conta na Adega Maromba.
               </p>
               <p className="text-muted-foreground">
                 Isso permite que ele use as ferramentas do app como você — consultar produtos, seus pedidos e status de entrega.

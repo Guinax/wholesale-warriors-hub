@@ -9,7 +9,7 @@ const Alimentos = () => {
       title="ALIMENTAR"
       subtitle="Barras, pastas, snacks e alimentos fitness. Compra a partir de 1 unidade. Preço de atacado automático a partir de 6 unidades."
       products={products.map(toCategoryProduct)}
-      docTitle="Alimentar — Família Maromba"
+      docTitle="Alimentar — Adega Maromba"
     />
   );
 };

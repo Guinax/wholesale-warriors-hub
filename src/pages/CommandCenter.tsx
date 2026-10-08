@@ -70,7 +70,7 @@ const CommandCenter = () => {
   const [platforms, setPlatforms] = useState<string[]>(["Instagram", "Facebook"]);
 
   useEffect(() => {
-    document.title = "Centro de Comando | Família Maromba";
+    document.title = "Centro de Comando | Adega Maromba";
   }, []);
 
   useEffect(() => {
@@ -182,7 +182,7 @@ const CommandCenter = () => {
     try {
       if (navigator.share) {
         await navigator.share({
-          title: headline.trim() || campaignName.trim() || "Família Maromba",
+          title: headline.trim() || campaignName.trim() || "Adega Maromba",
           text: shareText,
           url: destinationUrl,
         });

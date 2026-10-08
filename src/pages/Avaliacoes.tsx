@@ -33,7 +33,7 @@ const Avaliacoes = () => {
   const [filter, setFilter] = useState<number | null>(null);
 
   useEffect(() => {
-    document.title = "Avaliações — Família Maromba";
+    document.title = "Avaliações — Adega Maromba";
     supabase
       .from("reviews")
       .select("*")

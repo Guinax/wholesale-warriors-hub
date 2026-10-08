@@ -13,7 +13,7 @@ const Compartilhar = () => {
   const [shareUrl, setShareUrl] = useState("");
 
   useEffect(() => {
-    document.title = "Compartilhar Cadastro | Família Maromba";
+    document.title = "Compartilhar Cadastro | Adega Maromba";
     const origin =
       typeof window !== "undefined" ? window.location.origin : "https://wholesale-warriors-hub.vercel.app";
     setShareUrl(`${origin}/cadastro-login`);
@@ -38,7 +38,7 @@ const Compartilhar = () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Mansão Maromba",
+          title: "Adega Maromba",
           text: "Cadastre-se e acesse preços de atacado exclusivos!",
           url: shareUrl,
         });
@@ -55,7 +55,7 @@ const Compartilhar = () => {
 
   const shareWhatsApp = () => {
     const msg = encodeURIComponent(
-      `🔥 Mansão Maromba\n\nCadastre-se e garanta preços de atacado exclusivos:\n${shareUrl}`
+      `🔥 Adega Maromba\n\nCadastre-se e garanta preços de atacado exclusivos:\n${shareUrl}`
     );
     window.open(`https://wa.me/?text=${msg}`, "_blank");
   };

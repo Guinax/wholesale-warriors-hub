@@ -298,7 +298,7 @@ export default function PainelRevendedor() {
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#e5c66c]">Área do parceiro</p>
                       <h1 className="mt-1 text-xl font-black sm:text-2xl">{stores.length===0 ? "Ative sua operação local" : "Cadastro recebido com sucesso"}</h1>
-                      <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-300">{stores.length===0 ? "Cadastre sua loja abaixo para entrar na rede de parceiros Mansão Maromba." : "Sua loja já está salva. Agora ela passa pela análise de segurança e condições comerciais antes da liberação operacional."}</p>
+                      <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-300">{stores.length===0 ? "Cadastre sua loja abaixo para entrar na rede de parceiros Adega Maromba." : "Sua loja já está salva. Agora ela passa pela análise de segurança e condições comerciais antes da liberação operacional."}</p>
                     </div>
                   </div>
                   {stores.length>0&&<span className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-xs font-black text-amber-200"><Clock3 className="h-3.5 w-3.5"/>Em análise</span>}
@@ -355,7 +355,7 @@ export default function PainelRevendedor() {
                 <div className="relative">
                   <div className="inline-flex items-center gap-2 rounded-full border border-[#d4af37]/25 bg-[#d4af37]/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] text-[#e5c66c]">
                     <StoreIcon className="h-3.5 w-3.5"/>
-                    Seja um parceiro Mansão Maromba
+                    Seja um parceiro Adega Maromba
                   </div>
                   <h2 className="mt-4 max-w-2xl text-2xl font-black leading-tight sm:text-3xl">Transforme sua loja em um ponto ativo da rede.</h2>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-300 sm:text-base">Receba oportunidades de pedidos próximos, opere seu estoque pelo app e acompanhe entregas e repasses em um só lugar.</p>

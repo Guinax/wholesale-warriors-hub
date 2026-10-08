@@ -133,7 +133,7 @@ const CadastroCNPJ = () => {
           <button onClick={() => navigate("/")} className="p-2 -ml-2">
             <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
-          <img src={logo} alt="Família Maromba" className="w-7 h-7 object-contain" />
+          <img src={logo} alt="Adega Maromba" className="w-7 h-7 object-contain" />
           <span className="font-heading font-bold text-xs tracking-wider text-foreground">
             CADASTRO REVENDEDOR
           </span>

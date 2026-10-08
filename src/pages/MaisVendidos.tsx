@@ -23,7 +23,7 @@ const MaisVendidos = () => {
   const { addItem } = useCart();
 
   useEffect(() => {
-    document.title = "Mais Vendidos — Família Maromba";
+    document.title = "Mais Vendidos — Adega Maromba";
     let active = true;
 
     (async () => {

@@ -16,7 +16,7 @@ const ResetPassword = () => {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    document.title = "Redefinir senha | Família Maromba";
+    document.title = "Redefinir senha | Adega Maromba";
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") setReady(true);
     });

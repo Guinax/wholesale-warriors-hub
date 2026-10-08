@@ -7,10 +7,10 @@ const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID ?? "project-ref-unse
 
 export default defineMcp({
   name: "familia-maromba-mcp",
-  title: "Mansão Maromba",
+  title: "Adega Maromba",
   version: "0.1.0",
   instructions:
-    "Ferramentas do portal de atacado Família Maromba. Use `list_products` para navegar no catálogo, `get_order` para consultar um pedido pelo código e `list_my_orders` para ver os pedidos do usuário autenticado.",
+    "Ferramentas do portal de atacado Adega Maromba. Use `list_products` para navegar no catálogo, `get_order` para consultar um pedido pelo código e `list_my_orders` para ver os pedidos do usuário autenticado.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated",

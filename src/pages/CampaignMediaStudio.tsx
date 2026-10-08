@@ -29,7 +29,7 @@ const CampaignMediaStudio = () => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    document.title = "Mídia de Campanhas | Família Maromba";
+    document.title = "Mídia de Campanhas | Adega Maromba";
   }, []);
 
   useEffect(() => {

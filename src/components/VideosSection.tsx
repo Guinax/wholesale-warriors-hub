@@ -8,7 +8,7 @@ const isUpload = (v: DbVideo) => v.source === "upload" && !!v.video_url;
 const coverUrl = (v: DbVideo) => {
   if (isUpload(v)) {
     // thumbnail_url pode ser URL assinada já resolvida ou caminho do bucket
-    return v.thumbnail_url || v.playback_url || "";
+    return v.thumbnail_url || "";
   }
   return v.youtube_id ? youtubeThumb(v.youtube_id) : "";
 };
@@ -42,7 +42,7 @@ const VideosSection = () => {
               <video
                 className="absolute inset-0 w-full h-full"
                 src={main.playback_url || undefined}
-                poster={coverUrl(main) || undefined}
+                poster={main.thumbnail_url || undefined}
                 controls
                 autoPlay
                 playsInline
@@ -107,7 +107,7 @@ const VideosSection = () => {
                     <video
                       className="absolute inset-0 w-full h-full"
                       src={v.playback_url || undefined}
-                      poster={coverUrl(v) || undefined}
+                      poster={v.thumbnail_url || undefined}
                       controls
                       autoPlay
                       playsInline

@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Users, Search, RefreshCw, Save, Eye, Trash2 } from "lucide-react";
+import { Users, Search, RefreshCw, Save, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -11,8 +11,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
@@ -70,40 +68,6 @@ const UsersManager = () => {
   const [selected, setSelected] = useState<Profile | null>(null);
   const [form, setForm] = useState<Partial<Profile>>({});
   const [saving, setSaving] = useState(false);
-  const [toDelete, setToDelete] = useState<Profile | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [adminIds, setAdminIds] = useState<Set<string>>(new Set());
-  const [rolesLoaded, setRolesLoaded] = useState(false);
-
-  useEffect(() => {
-    const loadRoles = async () => {
-      const { data, error } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
-      if (error) {
-        setRolesLoaded(false);
-        toast.error("Não foi possível conferir as contas administrativas.");
-        return;
-      }
-      setAdminIds(new Set((data ?? []).map((role) => role.user_id)));
-      setRolesLoaded(true);
-    };
-    void loadRoles();
-  }, []);
-
-  const handleDelete = async () => {
-    if (!toDelete || !rolesLoaded || adminIds.has(toDelete.user_id)) return;
-    setDeleting(true);
-    const { data, error } = await supabase.functions.invoke("admin-delete-user", {
-      body: { user_id: toDelete.user_id },
-    });
-    setDeleting(false);
-    if (error || !data?.success) {
-      toast.error(data?.error || error?.message || "Não foi possível excluir o usuário.");
-      return;
-    }
-    toast.success("Usuário excluído com sucesso.");
-    setToDelete(null);
-    void load();
-  };
 
   const load = async () => {
     setLoading(true);
@@ -219,17 +183,6 @@ const UsersManager = () => {
                   <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Ver e editar">
                     <Eye className="w-4 h-4 text-muted-foreground" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-destructive"
-                    aria-label={adminIds.has(p.user_id) ? "Administrador protegido" : "Excluir usuário"}
-                    title={adminIds.has(p.user_id) ? "Conta administrativa protegida" : "Excluir usuário"}
-                    disabled={!rolesLoaded || adminIds.has(p.user_id)}
-                    onClick={(event) => { event.stopPropagation(); setToDelete(p); }}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
                 </div>
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
@@ -244,26 +197,6 @@ const UsersManager = () => {
           ))}
         </div>
       )}
-
-      <Dialog open={!!toDelete} onOpenChange={(open) => { if (!open && !deleting) setToDelete(null); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Excluir usuário?</DialogTitle>
-            <DialogDescription>
-              Você está prestes a excluir permanentemente {toDelete?.full_name || toDelete?.email}
-              {" "}({toDelete?.user_code}). O acesso dessa conta será removido.
-              Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setToDelete(null)} disabled={deleting}>Cancelar</Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              <Trash2 className="w-4 h-4 mr-2" />
-              {deleting ? "Excluindo..." : "Confirmar exclusão"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">

@@ -10,11 +10,11 @@ WITH reference_price AS (
  LIMIT 1
 ), flavors(name, sort_order, image_url) AS (
  VALUES
- ('Suco Adega Maromba Laranja 500 ml', 101, '/produtos/bebidas-naturais/adega-maromba/laranja.png'),
- ('Suco Adega Maromba Laranja com Acerola 500 ml', 102, '/produtos/bebidas-naturais/adega-maromba/laranja_com_acerola.png'),
- ('Suco Adega Maromba Maracujá 500 ml', 103, '/produtos/bebidas-naturais/adega-maromba/maracuja.png'),
- ('Suco Adega Maromba Uva 500 ml', 104, '/produtos/bebidas-naturais/adega-maromba/uva.png'),
- ('Suco Adega Maromba Abacaxi com Hortelã 500 ml', 105, '/produtos/bebidas-naturais/adega-maromba/abacaxi_com_hortela.png')
+ ('Suco Adega Maromba Laranja 500 ml', 101, '/produtos/bebidas-naturais/adega-maromba/laranja.svg'),
+ ('Suco Adega Maromba Laranja com Acerola 500 ml', 102, '/produtos/bebidas-naturais/adega-maromba/laranja_com_acerola.svg'),
+ ('Suco Adega Maromba Maracujá 500 ml', 103, '/produtos/bebidas-naturais/adega-maromba/maracuja.svg'),
+ ('Suco Adega Maromba Uva 500 ml', 104, '/produtos/bebidas-naturais/adega-maromba/uva.svg'),
+ ('Suco Adega Maromba Abacaxi com Hortelã 500 ml', 105, '/produtos/bebidas-naturais/adega-maromba/abacaxi_com_hortela.svg')
 )
 INSERT INTO public.products
  (name, category, image_url, unit_price, wholesale_price, min_qty, stock, active, in_catalog, badge, sort_order, catalog_order, weight_kg, width_cm, height_cm, length_cm)

@@ -122,7 +122,7 @@ const Admin = () => {
   const [restockPending,setRestockPending]=useState(0);
 
   useEffect(() => {
-    document.title = "Painel Admin | Família Maromba";
+    document.title = "Painel Admin | Adega Maromba";
   }, []);
 
   useEffect(() => {

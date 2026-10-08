@@ -9,10 +9,10 @@ export interface DbVideo {
   sort_order: number;
   active: boolean;
   source: string;
-  /** Caminho do arquivo no bucket "videos" (quando source = "upload") */
+  /** URL pública ou caminho legado do arquivo de vídeo. */
   video_url: string | null;
   thumbnail_url: string | null;
-  /** URL assinada resolvida em runtime para vídeos enviados */
+  /** URL de reprodução resolvida em runtime. */
   playback_url?: string | null;
 }
 

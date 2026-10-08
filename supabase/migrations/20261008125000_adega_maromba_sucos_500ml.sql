@@ -1,7 +1,7 @@
 -- Prepara os cinco sucos de 500 ml comercializados pela Adega Maromba.
 -- Preserva os preços já utilizados para a categoria bebidas_naturais.
 -- Não altera preços, estoque ou identidade dos produtos antigos.
--- Novos sabores iniciam com estoque zero; imagens definitivas requerem envio dos PNGs.
+-- Novos sabores iniciam com estoque zero; imagens SVG individuais já estão no repositório.
 WITH reference_price AS (
  SELECT unit_price, wholesale_price
  FROM public.products

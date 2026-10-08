@@ -29,7 +29,7 @@ const Comissoes = () => {
   const [orderValue, setOrderValue] = useState<number>(5000);
 
   useEffect(() => {
-    document.title = "Margem de Comissão — Família Maromba";
+    document.title = "Margem de Comissão — Adega Maromba";
     supabase
       .from("commission_tiers")
       .select("*")

@@ -7,7 +7,7 @@ const BebidasNaturais = () => {
     <CategoryPage
       eyebrow="LINHA NATURAL"
       title="BEBIDAS NATURAIS"
-      subtitle="Sucos naturais Larandelly em garrafas de 500 ml. Compra a partir de 1 unidade. Preço de atacado automático a partir de 6 unidades. Frete calculado separadamente."
+      subtitle="Sucos naturais Larandelly em garrafas de 500 ml. Compra a partir de 1 unidade. Preço de atacado automático a partir de 10 unidades, podendo combinar sabores. Frete calculado separadamente."
       products={products.map(toCategoryProduct)}
       docTitle="Bebidas Naturais — Adega Maromba"
     />

@@ -23,6 +23,11 @@ function parsePrice(price: string): number {
   return parseFloat(price.replace("R$", "").replace(/\./g, "").replace(",", ".").trim());
 }
 
+function tierMinimum(item: { name: string; minQty?: number }): number {
+  if (item.name.startsWith("Suco Natural Larandelly")) return 10;
+  return Number.isSafeInteger(item.minQty) && (item.minQty ?? 0) > 1 ? item.minQty! : 6;
+}
+
 function normalize(raw: unknown): CartItem[] {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -32,12 +37,12 @@ function normalize(raw: unknown): CartItem[] {
       const name = String(i.name ?? "");
       const wholesalePrice = String(i.wholesalePrice ?? "R$ 0,00");
       const unitPrice = String(i.unitPrice ?? i.wholesalePrice ?? "R$ 0,00");
-      const minQty = 1;
+      const minQty = tierMinimum({ name, minQty: Number(i.minQty) });
       const rawStock = Number(i.stock);
       const stock = Number.isSafeInteger(rawStock) && rawStock >= 0 ? rawStock : undefined;
       const requestedQty = Number.isFinite(Number(i.qty)) ? Math.max(1, Math.floor(Number(i.qty))) : 1;
       const qty = stock === undefined ? requestedQty : Math.min(requestedQty, Math.max(1, stock));
-      const selectedPrice = qty >= 6 ? parsePrice(wholesalePrice) : parsePrice(unitPrice);
+      const selectedPrice = qty >= minQty ? parsePrice(wholesalePrice) : parsePrice(unitPrice);
       return { productId, name, unitPrice, wholesalePrice, priceNum: Number.isFinite(selectedPrice) ? selectedPrice : 0, qty, minQty, stock };
     })
     .filter((i) => i.name.length > 0 && (i.stock === undefined || i.stock > 0));
@@ -116,13 +121,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
           const requestedQty = i.qty + item.qty;
           const qty = stock === undefined ? requestedQty : Math.min(requestedQty, stock);
           const unitPrice = item.unitPrice ?? i.unitPrice;
+          const minQty = tierMinimum(item);
           const wholesalePrice = item.wholesalePrice;
-          return { ...i, unitPrice, wholesalePrice, stock, qty, minQty: 1, priceNum: parsePrice(qty >= 6 ? wholesalePrice : unitPrice) };
+          return { ...i, unitPrice, wholesalePrice, stock, qty, minQty, priceNum: parsePrice(qty >= minQty ? wholesalePrice : unitPrice) };
         });
       }
       const stock = item.stock;
       const qty = stock === undefined ? Math.max(1, item.qty) : Math.min(Math.max(1, item.qty), stock);
-      return [...prev, { ...item, stock, qty, minQty: 1, priceNum: parsePrice(qty >= 6 ? item.wholesalePrice : item.unitPrice) }];
+      const minQty = tierMinimum(item);
+      return [...prev, { ...item, stock, qty, minQty, priceNum: parsePrice(qty >= minQty ? item.wholesalePrice : item.unitPrice) }];
     });
     setIsOpen(true);
   }, []);
@@ -150,7 +157,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         if ((i.productId ?? i.name) !== key) return [i];
         if (stock === 0) return [];
         const nextQty = Math.min(i.qty, stock);
-        return [{ ...i, stock, qty: nextQty, minQty: 1, priceNum: parsePrice(nextQty >= 6 ? i.wholesalePrice : i.unitPrice) }];
+        return [{ ...i, stock, qty: nextQty, minQty: tierMinimum(i), priceNum: parsePrice(nextQty >= 6 ? i.wholesalePrice : i.unitPrice) }];
       })
     );
   }, []);

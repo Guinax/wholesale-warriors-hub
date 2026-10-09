@@ -23,14 +23,27 @@ function parsePrice(price: string): number {
   return parseFloat(price.replace("R$", "").replace(/\./g, "").replace(",", ".").trim());
 }
 
+function isNaturalJuice(item: { name: string }): boolean {
+  return item.name.startsWith("Suco Natural Larandelly");
+}
+
 function tierMinimum(item: { name: string; minQty?: number }): number {
-  if (item.name.startsWith("Suco Natural Larandelly")) return 10;
+  if (isNaturalJuice(item)) return 10;
   return Number.isSafeInteger(item.minQty) && (item.minQty ?? 0) > 1 ? item.minQty! : 6;
+}
+
+function applyTierPricing(items: CartItem[]): CartItem[] {
+  const juiceQty = items.reduce((sum, item) => sum + (isNaturalJuice(item) ? item.qty : 0), 0);
+  return items.map((item) => {
+    const minQty = tierMinimum(item);
+    const wholesaleApplies = isNaturalJuice(item) ? juiceQty >= 10 : item.qty >= minQty;
+    return { ...item, minQty, priceNum: parsePrice(wholesaleApplies ? item.wholesalePrice : item.unitPrice) };
+  });
 }
 
 function normalize(raw: unknown): CartItem[] {
   if (!Array.isArray(raw)) return [];
-  return raw
+  const normalized = raw
     .filter((i): i is Record<string, unknown> => !!i && typeof i === "object")
     .map((i) => {
       const productId = typeof i.productId === "string" && i.productId ? i.productId : undefined;
@@ -46,6 +59,7 @@ function normalize(raw: unknown): CartItem[] {
       return { productId, name, unitPrice, wholesalePrice, priceNum: Number.isFinite(selectedPrice) ? selectedPrice : 0, qty, minQty, stock };
     })
     .filter((i) => i.name.length > 0 && (i.stock === undefined || i.stock > 0));
+  return applyTierPricing(normalized);
 }
 
 function readStorage(): CartItem[] {
@@ -115,7 +129,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems((prev) => {
       const existing = prev.find((i) => item.productId ? i.productId === item.productId : i.name === item.name);
       if (existing) {
-        return prev.map((i) => {
+        return applyTierPricing(prev.map((i) => {
           if (item.productId ? i.productId !== item.productId : i.name !== item.name) return i;
           const stock = item.stock ?? i.stock;
           const requestedQty = i.qty + item.qty;
@@ -124,29 +138,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
           const minQty = tierMinimum(item);
           const wholesalePrice = item.wholesalePrice;
           return { ...i, unitPrice, wholesalePrice, stock, qty, minQty, priceNum: parsePrice(qty >= minQty ? wholesalePrice : unitPrice) };
-        });
+        }));
       }
       const stock = item.stock;
       const qty = stock === undefined ? Math.max(1, item.qty) : Math.min(Math.max(1, item.qty), stock);
       const minQty = tierMinimum(item);
-      return [...prev, { ...item, stock, qty, minQty, priceNum: parsePrice(qty >= minQty ? item.wholesalePrice : item.unitPrice) }];
+      return applyTierPricing([...prev, { ...item, stock, qty, minQty, priceNum: parsePrice(qty >= minQty ? item.wholesalePrice : item.unitPrice) }]);
     });
     setIsOpen(true);
   }, []);
 
   const removeItem = useCallback((key: string) => {
-    setItems((prev) => prev.filter((i) => (i.productId ?? i.name) !== key));
+    setItems((prev) => applyTierPricing(prev.filter((i) => (i.productId ?? i.name) !== key)));
   }, []);
 
   const updateQty = useCallback((key: string, qty: number) => {
     if (!Number.isSafeInteger(qty)) return;
     setItems((prev) =>
-      prev.flatMap((i) => {
+      applyTierPricing(prev.flatMap((i) => {
         if ((i.productId ?? i.name) !== key) return [i];
         if (qty <= 0) return [];
         const nextQty = i.stock === undefined ? Math.max(1, qty) : Math.min(Math.max(1, qty), i.stock);
         return [{ ...i, qty: nextQty, minQty: tierMinimum(i), priceNum: parsePrice(nextQty >= tierMinimum(i) ? i.wholesalePrice : i.unitPrice) }];
-      })
+      }))
     );
   }, []);
 

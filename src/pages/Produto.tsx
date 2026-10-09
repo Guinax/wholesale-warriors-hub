@@ -57,7 +57,7 @@ const Produto = () => {
       unitPrice: formatCurrency(product.unit_price),
       wholesalePrice: formatCurrency(product.wholesale_price),
       qty: safeQty,
-      minQty: 1,
+      minQty: product.min_qty ?? (product.category === "bebidas_naturais" ? 10 : 6),
       stock: product.stock,
     });
   };

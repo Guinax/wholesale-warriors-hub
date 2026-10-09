@@ -145,7 +145,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         if ((i.productId ?? i.name) !== key) return [i];
         if (qty <= 0) return [];
         const nextQty = i.stock === undefined ? Math.max(1, qty) : Math.min(Math.max(1, qty), i.stock);
-        return [{ ...i, qty: nextQty, minQty: 1, priceNum: parsePrice(nextQty >= 6 ? i.wholesalePrice : i.unitPrice) }];
+        return [{ ...i, qty: nextQty, minQty: tierMinimum(i), priceNum: parsePrice(nextQty >= tierMinimum(i) ? i.wholesalePrice : i.unitPrice) }];
       })
     );
   }, []);
@@ -157,7 +157,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         if ((i.productId ?? i.name) !== key) return [i];
         if (stock === 0) return [];
         const nextQty = Math.min(i.qty, stock);
-        return [{ ...i, stock, qty: nextQty, minQty: tierMinimum(i), priceNum: parsePrice(nextQty >= 6 ? i.wholesalePrice : i.unitPrice) }];
+        return [{ ...i, stock, qty: nextQty, minQty: tierMinimum(i), priceNum: parsePrice(nextQty >= tierMinimum(i) ? i.wholesalePrice : i.unitPrice) }];
       })
     );
   }, []);

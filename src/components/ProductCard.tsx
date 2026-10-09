@@ -22,6 +22,7 @@ const ProductCard = ({
   name,
   unitPrice,
   wholesalePrice,
+  minQty,
   stock,
   image,
   viewMode = "grid",
@@ -35,7 +36,7 @@ const ProductCard = ({
 
   const handleAdd = () => {
     if (stock !== undefined && stock < qty) return;
-    addItem({ productId, name, unitPrice, wholesalePrice, qty, minQty: 1, stock });
+    addItem({ productId, name, unitPrice, wholesalePrice, qty, minQty, stock });
     setQty(1);
   };
 
@@ -109,10 +110,10 @@ const ProductCard = ({
                 {name}
               </h3>
               <p className="text-[10px] text-muted-foreground">
-                {qty >= 6 ? "Atacado aplicado" : "Preço unitário"}
+                {qty >= minQty ? "Atacado aplicado" : "Preço unitário"}
               </p>
               <span className="font-heading font-black text-base text-foreground">
-                {qty >= 6 ? wholesalePrice : unitPrice}
+                {qty >= minQty ? wholesalePrice : unitPrice}
               </span>
             </div>
 
@@ -209,15 +210,15 @@ const ProductCard = ({
 
           <div className="flex items-baseline gap-2">
             <span className="text-[10px] font-heading font-semibold tracking-wider text-primary">
-              {qty >= 6 ? "ATACADO APLICADO" : "PREÇO UNITÁRIO"}
+              {qty >= minQty ? "ATACADO APLICADO" : "PREÇO UNITÁRIO"}
             </span>
             <span className="font-heading font-black text-xl text-foreground">
-              {qty >= 6 ? wholesalePrice : unitPrice}
+              {qty >= minQty ? wholesalePrice : unitPrice}
             </span>
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Atacado: {wholesalePrice}/un a partir de 6 unidades deste produto.
+            Atacado: {wholesalePrice}/un a partir de {minQty} unidades deste produto.
           </p>
 
           <div className="flex items-center gap-3">

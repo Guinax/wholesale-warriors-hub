@@ -277,7 +277,7 @@ export default function PainelRevendedor() {
   const waitingPayout = walletPayouts.reduce((sum,p)=>sum+Math.max(0,Number(p.amount||0)-Number(p.paid_amount||0)),0);
   const paidPayout = walletPayouts.reduce((sum,p)=>sum+Number(p.paid_amount||0),0);
   const openStore = approvedStores.find((s) => s.is_open) ?? approvedStores[0] ?? null;
-  const totalAvailable = inventory.filter(i => approvedStores.some(s => s.id === i.store_id)).reduce((sum, item) => sum + Math.max(0, Number(item.on_hand) - Number(item.reserved)), 0);
+  const totalAvailable = inventory.filter(i => approvedStores.some(s => s.id === i.store_id)).reduce((sum, item) => sum + Math.max(0, Number(item.on_hand) - Number(item.reserved)), 0);\n  const pendingContractStore = approvedStores.find((s) => s.accepted_terms_version !== s.terms_version) ?? null;
 
   return (
     <div className="contents">
@@ -299,7 +299,7 @@ export default function PainelRevendedor() {
             </div>
           </header>
 
-          <div className="space-y-6 p-4 md:p-7">
+          <div className="space-y-6 p-4 md:p-7">\n            {pendingContractStore && <section role="alert" className="rounded-2xl border border-[#d4af37]/30 bg-[#d4af37]/10 p-4 shadow-lg">\n              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">\n                <div>\n                  <p className="font-bold text-[#f3d97a]">Ação necessária: contrato da parceria pendente</p>\n                  <p className="mt-1 text-sm text-zinc-300">Revise e aceite o contrato vigente para manter sua loja apta a receber pedidos.</p>\n                </div>\n                <Button className="shrink-0 bg-[#d4af37] font-bold text-black hover:bg-[#e8c65a]" disabled={saving==="terms-"+pendingContractStore.id} onClick={()=>{switchTab("loja"); window.setTimeout(()=>document.getElementById("minha-loja")?.scrollIntoView({behavior:"smooth",block:"start"}),50);}}>Revisar e aceitar</Button>\n              </div>\n            </section>
             {!hasApprovedStore && <section id="visao-geral" className="relative overflow-hidden rounded-3xl border border-[#d4af37]/20 bg-gradient-to-br from-[#1c170a] via-[#101114] to-[#090a0c] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.38)] sm:p-6">
               <div className="pointer-events-none absolute -right-14 -top-20 h-52 w-52 rounded-full bg-[#d4af37]/10 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-24 left-10 h-44 w-44 rounded-full bg-amber-500/10 blur-3xl" />

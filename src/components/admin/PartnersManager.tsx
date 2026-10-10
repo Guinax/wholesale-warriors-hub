@@ -30,6 +30,7 @@ type Store={
   delivery_mode:string;
   own_driver_available:boolean;
   created_at?:string;
+  last_seen_at?:string|null;
 };
 type Inv={store_id:string;on_hand:number;reserved:number};
 type Dashboard={stores?:Store[];inventory?:Inv[]};

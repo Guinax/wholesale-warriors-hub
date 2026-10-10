@@ -60,6 +60,7 @@ const Pagamento = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const forceCentral = Boolean((location.state as { forceCentral?: boolean } | null)?.forceCentral);
+  const isLocalRetail = items.reduce((sum, item) => sum + item.qty, 0) <= 6;
   const { toast } = useToast();
 
   const [method, setMethod] = useState<PaymentMethod>("pix");
@@ -177,6 +178,12 @@ const Pagamento = () => {
       }));
 
       const totalUnits = items.reduce((sum, item) => sum + item.qty, 0);
+      if (totalUnits <= 6) {
+        setShippingCost(0);
+        setShippingEta("");
+        setCheckingCep(false);
+        return;
+      }
       const fallbackCost = shippingCostFor(info.state, totalPrice, totalUnits);
       const fallbackEta = shippingEtaFor(info.state);
       setShippingCost(fallbackCost);
@@ -303,10 +310,15 @@ const Pagamento = () => {
 
     // Prefer a local partner when CEP geocoding is available. Any routing failure
     // intentionally falls through to the existing central checkout.
-    if (deliveryCoords && !freeShippingTestActive && !forceCentral) {
+    if (isLocalRetail && !freeShippingTestActive) {
+      if (!deliveryCoords) {
+        setSubmitting(false);
+        toast({ title: "Localização necessária", description: "Não foi possível localizar o endereço pelo CEP. Confira o CEP para solicitar entrega local.", variant: "destructive" });
+        return;
+      }
       const partnerItems = items.map((i) => ({ product_id: i.productId, name: i.name, qty: i.qty })).filter((i) => i.product_id);
       if (partnerItems.length === items.length) {
-        const { data: routed } = await supabase.rpc("partner_command" as never, {
+        const { data: routed, error: routeError } = await supabase.rpc("partner_command" as never, {
           p_action: "create_request",
           p_payload: {
             terms: acceptedTerms,
@@ -324,7 +336,13 @@ const Pagamento = () => {
           navigate(`/pedido-local/${requestId}`);
           return;
         }
+        setSubmitting(false);
+        toast({ title: "Entrega local indisponível", description: routeError?.message || "Nenhuma loja parceira aceitou a solicitação. Nenhuma cobrança foi criada.", variant: "destructive" });
+        return;
       }
+      setSubmitting(false);
+      toast({ title: "Produto indisponível para entrega local", variant: "destructive" });
+      return;
     }
 
     const snapshot = JSON.stringify({ customer, docType, method, items, orderTotal, freeShippingTestActive });
@@ -533,7 +551,7 @@ const Pagamento = () => {
             </div>
             <div className="border-t border-border pt-3 space-y-2">
               <div className="flex justify-between text-xs"><span className="text-muted-foreground">Produtos</span><span>{formatCurrency(totalPrice)}</span></div>
-              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{freeShippingTestActive ? "Grátis (teste admin)" : checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{isLocalRetail && !freeShippingTestActive ? "Calculado após aceite da loja" : freeShippingTestActive ? "Grátis (teste admin)" : checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>
               {shippingEta && <p className="text-[10px] text-muted-foreground">Prazo estimado: {shippingEta}</p>}
               {shippingEta && <p className="text-[10px] text-muted-foreground">{shippingLoad.boxes} caixa{shippingLoad.boxes > 1 ? "s" : ""} · peso estimado {shippingLoad.estimatedWeightKg.toFixed(1).replace(".", ",")} kg</p>}
               {isAdmin && (
@@ -544,7 +562,7 @@ const Pagamento = () => {
               )}
               <div className="border-t border-border pt-3 flex justify-between items-center">
                 <span className="font-heading font-bold text-xs tracking-wider text-muted-foreground">TOTAL</span>
-                <span className="font-heading font-black text-xl text-foreground">{formatCurrency(orderTotal)}</span>
+                <span className="font-heading font-black text-xl text-foreground">{isLocalRetail && !freeShippingTestActive ? `${formatCurrency(totalPrice)} + entrega` : formatCurrency(orderTotal)}</span>
               </div>
             </div>
           </div>

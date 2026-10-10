@@ -12,6 +12,7 @@ export type AdminPartnerMapStore = {
   city: string | null;
   state: string | null;
   address: string;
+  last_seen_at?: string | null;
 };
 
 type Props = {
@@ -98,13 +99,16 @@ export default function PartnerNetworkMap({ stores, selectedId, onSelect }: Prop
         color: "#71717a",
       };
       const isSelected = store.id === selectedId;
+      const lastSeen = store.last_seen_at ? new Date(store.last_seen_at).getTime() : 0;
+      const isOnline = lastSeen > 0 && Date.now() - lastSeen <= 90_000;
+      const presence = isOnline ? { label: "Online", color: "#16a34a" } : { label: "Offline", color: "#dc2626" };
 
       const icon = L.divIcon({
         className: "admin-partner-map-marker",
         html: '<span style="' +
           'display:grid;place-items:center;width:36px;height:36px;border-radius:50% 50% 50% 6px;' +
           'border:3px solid #ffffff;box-shadow:0 3px 10px rgba(0,0,0,.45);font-weight:900;color:#fff;' +
-          'background:' + status.color + ';' +
+          'background:' + presence.color + ';' +
           (isSelected ? 'outline:4px solid #111827;outline-offset:2px;' : '') +
           '">L</span>',
         iconSize: [38, 42],
@@ -115,7 +119,7 @@ export default function PartnerNetworkMap({ stores, selectedId, onSelect }: Prop
       const title = document.createElement("strong");
       title.textContent = store.name;
       const detail = document.createElement("div");
-      detail.textContent = `${status.label} · ${[store.city, store.state].filter(Boolean).join("/") || store.address}`;
+      detail.textContent = `${presence.label} · ${status.label} · ${[store.city, store.state].filter(Boolean).join("/") || store.address}`;
       tooltip.append(title, detail);
 
       L.marker([Number(store.lat), Number(store.lng)], {
@@ -160,10 +164,7 @@ export default function PartnerNetworkMap({ stores, selectedId, onSelect }: Prop
       <div ref={container} className="absolute inset-0 z-0 min-h-[420px] w-full" aria-label="Mapa administrativo da rede de parceiros" />
 
       <div className="absolute left-3 top-3 z-[500] flex flex-wrap gap-2 rounded-lg border bg-background/95 p-2 text-[11px] shadow-sm backdrop-blur">
-        <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-green-600" /> Aprovado</span>
-        <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-amber-600" /> Pendente</span>
-        <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-red-600" /> Reprovado</span>
-        <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-slate-500" /> Suspenso</span>
+        <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-green-600" /> Online</span>\n        <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-red-600" /> Offline</span>
       </div>
 
       <button
@@ -172,7 +173,7 @@ export default function PartnerNetworkMap({ stores, selectedId, onSelect }: Prop
         className="absolute right-3 top-3 z-[500] flex items-center gap-2 rounded-lg border bg-background/95 px-3 py-2 text-xs font-semibold shadow-sm backdrop-blur"
       >
         <LocateFixed className="h-4 w-4" />
-        Ver todas
+        Ver todos os parceiros
       </button>
 
       {tileError && (

@@ -84,7 +84,7 @@ export default function PainelRevendedor() {
           .order("created_at", { ascending: false });
         if (error) {
           setLoadFailed(true);
-          toast.error("Não foi possível carregar o status do seu cadastro. Atualize a página e tente novamente.");
+          toast.error("Não foi possível consultar lojas parceiras. Verifique as permissões do cadastro.");
           return;
         }
         loadedStores = (data ?? []) as unknown as Store[];
@@ -438,14 +438,57 @@ export default function PainelRevendedor() {
                   <Settings2 className="h-5 w-5 text-[#e5c66c]"/>
                 </div>
                 {store.status==="approved"&&store.accepted_terms_version!==store.terms_version&&<div className="mt-4 rounded-xl border border-[#d4af37]/20 bg-[#d4af37]/5 p-4"><p className="font-semibold text-yellow-200">Condições atualizadas</p><p className="mt-1 text-xs text-zinc-400">Aceite a versão {store.terms_version} para reabrir a operação.</p><Button className="mt-3 bg-[#d4af37] font-bold text-black hover:bg-[#e8c65a]" disabled={saving==="terms-"+store.id} onClick={()=>void acceptTerms(store)}>Aceitar condições</Button></div>}
-                <div className="mt-4 grid gap-3 md:grid-cols-2">
-                  <div><Label className="text-zinc-300">Modalidade de entrega</Label><Select value={store.delivery_mode} onValueChange={(value:Store["delivery_mode"])=>setStores((prev)=>prev.map((s)=>s.id===store.id?{...s,delivery_mode:value,own_driver_available:value==="third_party"?false:s.own_driver_available}:s))}><SelectTrigger className="mt-1 border-white/10 bg-black/20"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="own">Entregador próprio</SelectItem><SelectItem value="third_party">Entregador terceirizado</SelectItem><SelectItem value="hybrid">Híbrido</SelectItem></SelectContent></Select></div>
-                  <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/20 p-4"><div><Label className="text-zinc-300">Motoqueiro disponível</Label><p className="text-xs text-zinc-500">Prioriza entrega própria.</p></div><Switch disabled={store.delivery_mode==="third_party"} checked={store.own_driver_available} onCheckedChange={(checked)=>setStores((prev)=>prev.map((s)=>s.id===store.id?{...s,own_driver_available:checked}:s))}/></div>
-                </div>
-                <div className="mt-3 rounded-xl border border-white/10 bg-black/20 p-4">
-                  <div className="flex items-center justify-between gap-3"><div><Label className="text-zinc-300">Loja recebendo pedidos</Label><p className="text-xs text-zinc-500">Abra somente com estoque e operação prontos.</p></div><Switch disabled={store.status!=="approved"} checked={store.is_open} onCheckedChange={(checked)=>setStores((prev)=>prev.map((s)=>s.id===store.id?{...s,is_open:checked}:s))}/></div>
-                  <div className="mt-3 grid gap-2 md:grid-cols-3"><input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" type="number" min="0" step="0.01" aria-label="Taxa base" value={store.delivery_base} onChange={(e)=>setStores((prev)=>prev.map((s)=>s.id===store.id?{...s,delivery_base:Number(e.target.value)}:s))}/><input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" type="number" min="0" step="0.01" aria-label="Valor por km" value={store.delivery_per_km} onChange={(e)=>setStores((prev)=>prev.map((s)=>s.id===store.id?{...s,delivery_per_km:Number(e.target.value)}:s))}/><input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" type="number" min="0" step="0.01" aria-label="Valor por kg" value={store.delivery_per_kg} onChange={(e)=>setStores((prev)=>prev.map((s)=>s.id===store.id?{...s,delivery_per_kg:Number(e.target.value)}:s))}/></div>
-                  <div className="mt-3 flex flex-wrap gap-2"><Button variant="outline" className="border-white/15 bg-transparent" disabled={saving==="settings-"+store.id||store.status!=="approved"} onClick={()=>void saveStoreSettings(store)}>Salvar tarifas e abertura</Button><Button className="bg-[#d4af37] font-bold text-black hover:bg-[#e8c65a]" disabled={saving===store.id} onClick={()=>void saveDelivery(store)}>Salvar operação</Button></div>
+                <div className="mt-4 space-y-4">
+                  <section className={`rounded-2xl border p-4 transition-colors ${store.is_open ? "border-amber-400/40 bg-[#1d1d21]" : "border-white/10 bg-[#18181b]"}`}>
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">Status operacional <span className={`ml-2 rounded px-2 py-1 text-[10px] ${store.is_open ? "bg-emerald-500/10 text-emerald-300" : "bg-rose-500/10 text-rose-300"}`}>{store.is_open ? "RECEBENDO PEDIDOS" : "PAUSADO"}</span></p>
+                        <h3 className="mt-2 text-xl font-bold text-white">{store.is_open ? "Loja Aberta" : "Loja Fechada"}</h3>
+                        <p className="mt-1 max-w-xs text-xs text-zinc-400">Ative para receber pedidos. É necessário ter estoque disponível e condições aceitas.</p>
+                      </div>
+                      <Switch aria-label="Abrir ou fechar loja" disabled={store.status!=="approved"} checked={store.is_open} onCheckedChange={(checked)=>setStores(prev=>prev.map(s=>s.id===store.id?{...s,is_open:checked}:s))}/>
+                    </div>
+                  </section>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-2xl border border-white/10 bg-[#18181b] p-3">
+                      <Label className="text-xs text-zinc-300">Entrega</Label>
+                      <p className="mb-2 mt-1 text-[11px] text-zinc-500">Modalidade</p>
+                      <Select value={store.delivery_mode} onValueChange={(value:Store["delivery_mode"])=>setStores(prev=>prev.map(s=>s.id===store.id?{...s,delivery_mode:value,own_driver_available:value==="third_party"?false:s.own_driver_available}:s))}>
+                        <SelectTrigger className="h-9 border-white/10 bg-[#121214] text-xs"><SelectValue/></SelectTrigger>
+                        <SelectContent><SelectItem value="hybrid">Híbrido</SelectItem><SelectItem value="own">Própria</SelectItem><SelectItem value="third_party">Terceirizada</SelectItem></SelectContent>
+                      </Select>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-[#18181b] p-3">
+                      <Label className="text-xs text-zinc-300">Entregador</Label>
+                      <div className="mt-5 flex items-center justify-between gap-2">
+                        <div><p className="text-xs font-semibold text-white">{store.own_driver_available ? "Ativo" : "Inativo"}</p><p className="text-[10px] text-zinc-500">Frota interna</p></div>
+                        <Switch aria-label="Entregador disponível" disabled={store.delivery_mode==="third_party"} checked={store.own_driver_available} onCheckedChange={(checked)=>setStores(prev=>prev.map(s=>s.id===store.id?{...s,own_driver_available:checked}:s))}/>
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-[#18181b] p-3">
+                      <p className="text-xs font-semibold text-zinc-300">Tempo médio</p>
+                      <p className="mt-3 text-sm font-bold text-white">Após aceite</p>
+                      <p className="mt-1 text-[10px] text-zinc-500">Prazo informado na cotação do pedido</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-[#18181b] p-3">
+                      <p className="text-xs font-semibold text-zinc-300">Taxa de entrega</p>
+                      <p className="mt-3 text-lg font-bold text-amber-300">R$ 7,50</p>
+                      <p className="mt-1 text-[10px] text-zinc-500">Até 3 km; + R$ 1,50/km adicional</p>
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-[#18181b] p-4">
+                    <p className="text-sm font-semibold text-white">Configurações de tarifas</p>
+                    <p className="mt-1 text-xs text-zinc-400">Parâmetros cadastrais. A cotação do varejo segue a regra padrão de distância.</p>
+                    <div className="mt-3 grid gap-3 md:grid-cols-3">
+                      <div><Label className="mb-1 block text-xs text-zinc-300">Taxa base (R$)</Label><input className="h-10 w-full rounded-lg border border-white/10 bg-[#121214] px-3" type="number" min="0" step="0.01" aria-label="Taxa base" value={store.delivery_base} onChange={(e)=>setStores(prev=>prev.map(s=>s.id===store.id?{...s,delivery_base:Number(e.target.value)}:s))}/></div>
+                      <div><Label className="mb-1 block text-xs text-zinc-300">Adicional por km (R$)</Label><input className="h-10 w-full rounded-lg border border-white/10 bg-[#121214] px-3" type="number" min="0" step="0.01" aria-label="Valor por km" value={store.delivery_per_km} onChange={(e)=>setStores(prev=>prev.map(s=>s.id===store.id?{...s,delivery_per_km:Number(e.target.value)}:s))}/></div>
+                      <div><Label className="mb-1 block text-xs text-zinc-300">Adicional por kg (R$)</Label><input className="h-10 w-full rounded-lg border border-white/10 bg-[#121214] px-3" type="number" min="0" step="0.01" aria-label="Valor por kg" value={store.delivery_per_kg} onChange={(e)=>setStores(prev=>prev.map(s=>s.id===store.id?{...s,delivery_per_kg:Number(e.target.value)}:s))}/></div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Button className="w-full rounded-full bg-[#facc15] font-bold text-[#121214] hover:bg-yellow-400" disabled={saving==="settings-"+store.id||saving===store.id||store.status!=="approved"} onClick={async()=>{await saveDelivery(store); await saveStoreSettings(store);}}>Confirmar alterações</Button>
+                    <p className="text-center text-[11px] text-zinc-500">Salva a operação e a abertura da loja no Supabase.</p>
+                  </div>
                 </div>
               </div>
               </>}

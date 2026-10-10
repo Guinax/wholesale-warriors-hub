@@ -551,7 +551,8 @@ const Pagamento = () => {
             </div>
             <div className="border-t border-border pt-3 space-y-2">
               <div className="flex justify-between text-xs"><span className="text-muted-foreground">Produtos</span><span>{formatCurrency(totalPrice)}</span></div>
-              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{isLocalRetail && !freeShippingTestActive ? "Calculado após aceite da loja" : freeShippingTestActive ? "Grátis (teste admin)" : checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{isLocalRetail && !freeShippingTestActive ? "A partir de R$ 7,50 (até 3 km)" : freeShippingTestActive ? "Grátis (teste admin)" : checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>
+              {isLocalRetail && !freeShippingTestActive && <p className="text-[10px] text-muted-foreground">Tarifa: R$ 7,50 até 3 km + R$ 1,50 por km excedente. O valor exato depende da distância entre a loja que aceitar o pedido e a entrega. Você verá o total antes de pagar.</p>}
               {shippingEta && <p className="text-[10px] text-muted-foreground">Prazo estimado: {shippingEta}</p>}
               {shippingEta && <p className="text-[10px] text-muted-foreground">{shippingLoad.boxes} caixa{shippingLoad.boxes > 1 ? "s" : ""} · peso estimado {shippingLoad.estimatedWeightKg.toFixed(1).replace(".", ",")} kg</p>}
               {isAdmin && (
@@ -578,7 +579,7 @@ const Pagamento = () => {
             </label>
           </div>
           <button disabled={submitting || checkingCep || !validCep || customer.state !== validatedState || !acceptedTerms || !adultConfirmed} onClick={handleConfirm} className="w-full bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon disabled:opacity-40 disabled:cursor-not-allowed">
-            {submitting ? "ABRINDO CHECKOUT..." : "PAGAR NA INFINITEPAY"}
+            {submitting ? (isLocalRetail && !freeShippingTestActive ? "BUSCANDO LOJA..." : "ABRINDO CHECKOUT...") : (isLocalRetail && !freeShippingTestActive ? "SOLICITAR ENTREGA LOCAL — SEM PAGAMENTO" : "PAGAR NA INFINITEPAY")}
           </button>
         </aside>
       </main>

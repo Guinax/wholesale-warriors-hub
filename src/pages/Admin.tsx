@@ -29,7 +29,6 @@ import VideosManager from "@/components/admin/VideosManager";
 import PagesManager from "@/components/admin/PagesManager";
 import CatalogManager from "@/components/admin/CatalogManager";
 import ExpeditionManager from "@/components/admin/ExpeditionManager";
-import InventoryManager from "@/components/admin/InventoryManager";
 import PayoutsManager from "@/components/admin/PayoutsManager";
 import PartnersManager from "@/components/admin/PartnersManager";
 import OperationReadiness from "@/components/admin/OperationReadiness";
@@ -330,7 +329,6 @@ const Admin = () => {
             <TabsTrigger value="pages">Páginas</TabsTrigger>
             <TabsTrigger value="catalog">Catálogo</TabsTrigger>
             <TabsTrigger value="expedition">Expedição</TabsTrigger>
-            <TabsTrigger value="inventory">Estoque unificado</TabsTrigger>
             <TabsTrigger value="payouts">Repasses</TabsTrigger>
             <TabsTrigger value="partners">Parceiros</TabsTrigger>
             <TabsTrigger value="couriers">Entregadores</TabsTrigger>
@@ -483,9 +481,6 @@ const Admin = () => {
           </TabsContent>
           <TabsContent value="expedition" className="mt-4">
             <ExpeditionManager />
-          </TabsContent>
-          <TabsContent value="inventory" className="mt-4">
-            <InventoryManager />
           </TabsContent>
           <TabsContent value="payouts" className="mt-4">
             <PayoutsManager />

@@ -34,6 +34,7 @@ type Store = {
   delivery_per_kg: number;
   terms_version: number;
   accepted_terms_version: number;
+  last_seen_at?: string | null;
 };
 
 type InventoryItem = { store_id:string; product_id:string; on_hand:number; reserved:number; name:string };
@@ -119,6 +120,18 @@ export default function PainelRevendedor() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    const heartbeat = () => { void supabase.rpc("partner_heartbeat" as never); };
+    heartbeat();
+    const timer = window.setInterval(heartbeat, 30000);
+    const onVisibility = () => { if (document.visibilityState === "visible") heartbeat(); };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
 
   useEffect(() => {
     const channel = supabase.channel("partner-operations-live")

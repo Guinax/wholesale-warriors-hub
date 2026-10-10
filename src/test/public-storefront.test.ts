@@ -44,6 +44,6 @@ describe("Public storefront and auth routing contracts", () => {
     expect(auth).toContain('rawNext.startsWith("/")');
     expect(auth).toContain('!rawNext.startsWith("//")');
     expect(auth).toContain('!rawNext.includes("\\\\")');
-    expect(auth).toContain('"/minha-conta"');
+    expect(auth).toContain('? rawNext : "/"');
   });
 });

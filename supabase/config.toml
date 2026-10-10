@@ -1,1 +1,8 @@
 project_id = "svkatjljeyyuobayjqjv"
+
+# Dispatcher uses a private server-only secret rather than a browser JWT.
+[functions.push-dispatch]
+verify_jwt = false
+
+[functions.push-subscriptions]
+verify_jwt = true

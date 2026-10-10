@@ -476,15 +476,6 @@ export default function PainelRevendedor() {
                       <p className="mt-1 text-[10px] text-zinc-500">Até 3 km; + R$ 1,50/km adicional</p>
                     </div>
                   </div>
-                  <div className="rounded-2xl border border-white/10 bg-[#18181b] p-4">
-                    <p className="text-sm font-semibold text-white">Configurações de tarifas</p>
-                    <p className="mt-1 text-xs text-zinc-400">Parâmetros cadastrais. A cotação do varejo segue a regra padrão de distância.</p>
-                    <div className="mt-3 grid gap-3 md:grid-cols-3">
-                      <div><Label className="mb-1 block text-xs text-zinc-300">Taxa base (R$)</Label><input className="h-10 w-full rounded-lg border border-white/10 bg-[#121214] px-3" type="number" min="0" step="0.01" aria-label="Taxa base" value={store.delivery_base} onChange={(e)=>setStores(prev=>prev.map(s=>s.id===store.id?{...s,delivery_base:Number(e.target.value)}:s))}/></div>
-                      <div><Label className="mb-1 block text-xs text-zinc-300">Adicional por km (R$)</Label><input className="h-10 w-full rounded-lg border border-white/10 bg-[#121214] px-3" type="number" min="0" step="0.01" aria-label="Valor por km" value={store.delivery_per_km} onChange={(e)=>setStores(prev=>prev.map(s=>s.id===store.id?{...s,delivery_per_km:Number(e.target.value)}:s))}/></div>
-                      <div><Label className="mb-1 block text-xs text-zinc-300">Adicional por kg (R$)</Label><input className="h-10 w-full rounded-lg border border-white/10 bg-[#121214] px-3" type="number" min="0" step="0.01" aria-label="Valor por kg" value={store.delivery_per_kg} onChange={(e)=>setStores(prev=>prev.map(s=>s.id===store.id?{...s,delivery_per_kg:Number(e.target.value)}:s))}/></div>
-                    </div>
-                  </div>
                   <div className="space-y-2">
                     <Button className="w-full rounded-full bg-[#facc15] font-bold text-[#121214] hover:bg-yellow-400" disabled={saving==="settings-"+store.id||saving===store.id||store.status!=="approved"} onClick={async()=>{await saveDelivery(store); await saveStoreSettings(store);}}>Confirmar alterações</Button>
                     <p className="text-center text-[11px] text-zinc-500">Salva a operação e a abertura da loja no Supabase.</p>

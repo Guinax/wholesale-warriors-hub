@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Package, RefreshCw, Truck, CheckCircle2, Bike, MapPin } from "lucide-react";
+import { Package, RefreshCw, Truck, CheckCircle2, Bike, MapPin, Store } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -16,6 +16,7 @@ const statusLabels: Record<string, string> = { pending: "Aguardando pagamento", 
 type PartnerTracking = {
   id: string;
   order_code?: string | null;
+  subtotal?: number | null;
   store_name?: string | null;
   status: string;
   eta_minutes?: number | null;
@@ -35,6 +36,8 @@ type CourierTracking = {
   updated_at?: string | null;
 };
 
+const requestStatusLabels: Record<string,string> = { searching:"Aguardando aceite da loja", accepted:"Loja aceitou — calculando entrega", quoted:"Loja encontrada — frete disponível", payment_pending:"Aguardando pagamento", paid:"Pagamento confirmado", delivering:"Saiu para entrega", delivered:"Entregue", expired:"Nenhuma loja disponível", cancelled:"Solicitação cancelada", canceled:"Solicitação cancelada" };
+
 const partnerSteps = [
   { key: "payment_pending", label: "Pagamento" },
   { key: "paid", label: "Preparando" },
@@ -44,7 +47,7 @@ const partnerSteps = [
 
 const partnerStepIndex = (status?: string | null) => {
   if (!status) return -1;
-  if (["accepted", "quoted"].includes(status)) return 0;
+  if (["searching", "accepted", "quoted"].includes(status)) return -1;
   return partnerSteps.findIndex((step) => step.key === status);
 };
 
@@ -112,12 +115,15 @@ export default function MeusPedidos() {
     const refresh = () => { if (document.visibilityState === "visible") void load(); };
     const channel = supabase.channel(`my-orders-${userId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `user_id=eq.${userId}` }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "partner_requests" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "courier_jobs" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "courier_locations" }, () => void load())
       .subscribe();
     document.addEventListener("visibilitychange", refresh);
+    const interval = window.setInterval(refresh, 15000);
     return () => {
       document.removeEventListener("visibilitychange", refresh);
+      window.clearInterval(interval);
       void supabase.removeChannel(channel);
     };
   }, [load, userId]);
@@ -130,6 +136,8 @@ export default function MeusPedidos() {
     return map;
   }, [partnerTracking]);
 
+  const pendingRequests = partnerTracking.filter((request) => !request.order_code && ["searching","accepted","quoted","expired","cancelled","canceled"].includes(request.status));
+
   return <div className="min-h-screen bg-background">
     <PageHeader eyebrow="MINHA CONTA" title="MEUS PEDIDOS" subtitle="Seu histórico de compras, pagamentos e entregas em um só lugar." />
     <main className="container max-w-3xl py-6 space-y-4">
@@ -139,7 +147,14 @@ export default function MeusPedidos() {
       </div>
       {error && <Card role="alert" className="p-4 text-destructive">{error}{!userId && <Link to="/auth?next=%2Fmeus-pedidos" className="block underline mt-2">Entrar novamente</Link>}</Card>}
       {loading && <p role="status" className="text-sm text-muted-foreground">Carregando pedidos...</p>}
-      {!loading && !error && orders.length === 0 && <Card className="p-8 text-center space-y-3"><Package className="mx-auto text-primary" /><p>Você ainda não fez pedidos.</p><Link to="/" className="text-primary underline">Ver catálogo</Link></Card>}
+      {!loading && !error && orders.length === 0 && pendingRequests.length === 0 && <Card className="p-8 text-center space-y-3"><Package className="mx-auto text-primary" /><p>Você ainda não fez pedidos.</p><Link to="/" className="text-primary underline">Ver catálogo</Link></Card>}
+      {pendingRequests.map((request) => <Card key={request.id} className="p-4 space-y-3">
+        <div className="flex items-center gap-2 font-semibold"><Store className="h-4 w-4 text-primary" /> Solicitação de entrega local</div>
+        <p className="text-sm font-semibold" role="status">{requestStatusLabels[request.status] ?? request.status}</p>
+        <p className="text-xs text-muted-foreground">{request.status === "searching" ? "Estamos procurando uma loja parceira para atender seu pedido." : request.status === "accepted" ? "A loja confirmou disponibilidade. Estamos calculando o frete." : request.status === "quoted" ? "Confira o valor da entrega antes de confirmar o pagamento." : "Consulte os detalhes da solicitação."}</p>
+        {request.store_name && <p className="text-sm">Loja: {request.store_name}</p>}
+        <Button asChild variant="outline" className="w-full sm:w-auto"><Link to={`/pedido-local/${request.id}`}>Acompanhar solicitação</Link></Button>
+      </Card>)}
       {orders.map((order) => {
         const partner = trackingByOrder.get(order.order_code);
         const courier = courierTracking[order.id];
@@ -148,6 +163,7 @@ export default function MeusPedidos() {
           <div className="flex justify-between flex-wrap gap-2"><strong>{order.order_code}</strong><strong>{formatCurrency(order.total_amount)}</strong></div>
           <p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleString("pt-BR")}</p>
           <p className="text-sm">{statusLabels[order.payment_status] ?? order.payment_status}</p>
+          {partner && <p className="text-sm font-semibold" role="status">{requestStatusLabels[partner.status] ?? partner.status}</p>}
 
           {partner && <div className="rounded-xl border border-border p-3 space-y-3">
             <div className="flex items-start justify-between gap-3 flex-wrap">

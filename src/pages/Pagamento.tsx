@@ -219,6 +219,7 @@ const Pagamento = () => {
       return;
     }
     let active = true;
+    setLocalEstimate(null);
     setLocalEstimateLoading(true);
     const payload = items.map(i => ({product_id: i.productId, qty: i.qty}));
     void supabase.rpc("preview_partner_delivery" as never, {
@@ -228,7 +229,7 @@ const Pagamento = () => {
     } as never).then(({data, error}) => {
       if (!active) return;
       const result = data as {available?:boolean;estimated_shipping?:number}|null;
-      setLocalEstimate(!error && result?.available && Number.isFinite(Number(result.estimated_shipping))
+      setLocalEstimate(!error && result?.available && result.estimated_shipping != null && Number.isFinite(Number(result.estimated_shipping))
         ? Number(result.estimated_shipping) : null);
       setLocalEstimateLoading(false);
     });
@@ -576,7 +577,7 @@ const Pagamento = () => {
             </div>
             <div className="border-t border-border pt-3 space-y-2">
               <div className="flex justify-between text-xs"><span className="text-muted-foreground">Produtos</span><span>{formatCurrency(totalPrice)}</span></div>
-              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{isLocalRetail && !freeShippingTestActive ? (localEstimate != null ? formatCurrency(localEstimate) : localEstimateLoading ? "Calculando..." : "Aguardando cálculo") : freeShippingTestActive ? "Grátis (teste admin)" : checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{isLocalRetail && !freeShippingTestActive ? (localEstimate != null ? formatCurrency(localEstimate) : localEstimateLoading ? "Calculando..." : "Indisponível") : freeShippingTestActive ? "Grátis (teste admin)" : checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>
               {isLocalRetail && !freeShippingTestActive && <p className="text-[10px] text-muted-foreground">O frete é calculado pela distância da loja parceira até o endereço. O valor definitivo e o total serão confirmados antes do pagamento.</p>}
               {shippingEta && <p className="text-[10px] text-muted-foreground">Prazo estimado: {shippingEta}</p>}
               {shippingEta && <p className="text-[10px] text-muted-foreground">{shippingLoad.boxes} caixa{shippingLoad.boxes > 1 ? "s" : ""} · peso estimado {shippingLoad.estimatedWeightKg.toFixed(1).replace(".", ",")} kg</p>}

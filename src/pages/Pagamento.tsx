@@ -576,8 +576,8 @@ const Pagamento = () => {
             </div>
             <div className="border-t border-border pt-3 space-y-2">
               <div className="flex justify-between text-xs"><span className="text-muted-foreground">Produtos</span><span>{formatCurrency(totalPrice)}</span></div>
-              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{isLocalRetail && !freeShippingTestActive ? (localEstimateLoading ? "Consultando lojas próximas..." : localEstimate != null ? `${formatCurrency(localEstimate)} (estimativa)` : "A partir de R$ 7,50 (até 3 km)") : freeShippingTestActive ? "Grátis (teste admin)" : checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>
-              {isLocalRetail && !freeShippingTestActive && <p className="text-[10px] text-muted-foreground">Tarifa: R$ 7,50 até 3 km + R$ 1,50 por km excedente. O valor exato depende da distância entre a loja que aceitar o pedido e a entrega. Você verá o total antes de pagar.</p>}
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{isLocalRetail && !freeShippingTestActive ? (localEstimate != null ? formatCurrency(localEstimate) : localEstimateLoading ? "Calculando..." : "Aguardando cálculo") : freeShippingTestActive ? "Grátis (teste admin)" : checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>
+              {isLocalRetail && !freeShippingTestActive && <p className="text-[10px] text-muted-foreground">O frete é calculado pela distância da loja parceira até o endereço. O valor definitivo e o total serão confirmados antes do pagamento.</p>}
               {shippingEta && <p className="text-[10px] text-muted-foreground">Prazo estimado: {shippingEta}</p>}
               {shippingEta && <p className="text-[10px] text-muted-foreground">{shippingLoad.boxes} caixa{shippingLoad.boxes > 1 ? "s" : ""} · peso estimado {shippingLoad.estimatedWeightKg.toFixed(1).replace(".", ",")} kg</p>}
               {isAdmin && (
@@ -588,7 +588,7 @@ const Pagamento = () => {
               )}
               <div className="border-t border-border pt-3 flex justify-between items-center">
                 <span className="font-heading font-bold text-xs tracking-wider text-muted-foreground">TOTAL</span>
-                <span className="font-heading font-black text-xl text-foreground">{isLocalRetail && !freeShippingTestActive ? (localEstimate != null ? `${formatCurrency(totalPrice + localEstimate)} (estimado)` : `${formatCurrency(totalPrice)} + entrega`) : formatCurrency(orderTotal)}</span>
+                <span className="font-heading font-black text-xl text-foreground">{isLocalRetail && !freeShippingTestActive ? (localEstimate != null ? formatCurrency(totalPrice + localEstimate) : "Aguardando frete") : formatCurrency(orderTotal)}</span>
               </div>
             </div>
           </div>

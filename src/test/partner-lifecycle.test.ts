@@ -63,8 +63,9 @@ describe("Partner delivery and payout lifecycle contracts", () => {
 
   it("keeps admin payout actions explicit in the UI", () => {
     const source = read("src/components/admin/PayoutsManager.tsx");
-    expect(source).toContain('"approve_payout"');
-    expect(source).toContain('"record_payout"');
-    expect(source).toContain("receipt_reference");
+    expect(source).toContain('"admin_partner_wallet_pay"');
+    expect(source).toContain("p_receipt_url");
+    expect(source).toContain("p_receipt_reference");
+    expect(source).toContain("available + 0.001");
   });
 });

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -67,10 +66,6 @@ export default function PartnersManager(){
 
   const save=async(s:Store,statusOverride?:string)=>{
     const nextStatus=statusOverride??s.status;
-    if(s.commission_bps<0||s.commission_bps>10000||s.fee_bps<0||s.fee_bps>10000||s.commission_bps+s.fee_bps>10000){
-      toast.error("Comissão e taxa precisam somar no máximo 100%.");
-      return;
-    }
     setSaving(s.id);
     const {error}=await supabase.rpc("partner_command" as never,{
       p_action:"admin_store",
@@ -207,7 +202,7 @@ export default function PartnersManager(){
               <p><strong>Operação:</strong> {s.is_open?"aberta":"fechada"}</p>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid gap-3">
               <div>
                 <Label>Status</Label>
                 <Select value={s.status} onValueChange={v=>setStores(x=>x.map(y=>y.id===s.id?{...y,status:v}:y))}>
@@ -219,14 +214,6 @@ export default function PartnersManager(){
                     <SelectItem value="suspended">Suspenso</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div>
-                <Label>Comissão (%)</Label>
-                <Input type="number" min="0" max="100" step="0.01" value={s.commission_bps/100} onChange={e=>setStores(x=>x.map(y=>y.id===s.id?{...y,commission_bps:Math.round(Number(e.target.value)*100)}:y))}/>
-              </div>
-              <div>
-                <Label>Taxa plataforma (%)</Label>
-                <Input type="number" min="0" max="100" step="0.01" value={s.fee_bps/100} onChange={e=>setStores(x=>x.map(y=>y.id===s.id?{...y,fee_bps:Math.round(Number(e.target.value)*100)}:y))}/>
               </div>
             </div>
 
@@ -240,7 +227,7 @@ export default function PartnersManager(){
                 Reprovar
               </Button>
             </div>:<Button disabled={saving===s.id} onClick={()=>void save(s)}>
-              {saving===s.id?"Salvando...":"Salvar status e condições"}
+              {saving===s.id?"Salvando...":"Salvar status"}
             </Button>}
           </CardContent>
         </Card>;

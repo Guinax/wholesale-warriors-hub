@@ -32,7 +32,6 @@ import ExpeditionManager from "@/components/admin/ExpeditionManager";
 import InventoryManager from "@/components/admin/InventoryManager";
 import PayoutsManager from "@/components/admin/PayoutsManager";
 import PartnersManager from "@/components/admin/PartnersManager";
-import ShippingIntegrationManager from "@/components/admin/ShippingIntegrationManager";
 import OperationReadiness from "@/components/admin/OperationReadiness";
 import CouriersManager from "@/components/admin/CouriersManager";
 import PartnerRestockOrdersManager from "@/components/admin/PartnerRestockOrdersManager";
@@ -528,7 +527,7 @@ const Admin = () => {
                 </div>
               )}
             </Card>
-            <ShippingIntegrationManager />
+            <PartnerRestockOrdersManager />
           </TabsContent>
           <TabsContent value="products" className="mt-4">
             <ProductsManager />

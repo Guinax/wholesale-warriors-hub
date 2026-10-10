@@ -171,7 +171,7 @@ export default function PainelRevendedor() {
     setSaving("stock-"+key);
     const {error}=await supabase.rpc("partner_command" as never,{p_action:"stock",p_payload:{store_id:storeId,product_id:productId,on_hand:qty,reason}} as never);
     setSaving(null); if(error) return toast.error(error.message);
-    toast.success(`Estoque atualizado de ${current} para ${qty}.`); setStockDraft(x=>({...x,[key]:""})); setStockReason(x=>({...x,[key]:""})); await load();
+    toast.success(`Estoque atualizado de ${current} para ${qty}.`); setStockDraft(x=>({...x,[key]:""})); await load();
   };
 
   const saveDelivery = async (store: Store) => {

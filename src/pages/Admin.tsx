@@ -32,7 +32,6 @@ import ExpeditionManager from "@/components/admin/ExpeditionManager";
 import InventoryManager from "@/components/admin/InventoryManager";
 import PayoutsManager from "@/components/admin/PayoutsManager";
 import PartnersManager from "@/components/admin/PartnersManager";
-import ShippingIntegrationManager from "@/components/admin/ShippingIntegrationManager";
 import OperationReadiness from "@/components/admin/OperationReadiness";
 import CouriersManager from "@/components/admin/CouriersManager";
 import PartnerRestockOrdersManager from "@/components/admin/PartnerRestockOrdersManager";
@@ -119,7 +118,6 @@ const Admin = () => {
   const [filterPayment, setFilterPayment] = useState<string>("all");
   const [selected, setSelected] = useState<Order | null>(null);
   const [restockUnread,setRestockUnread]=useState(0);
-  const [restockPending,setRestockPending]=useState(0);
 
   useEffect(() => {
     document.title = "Painel Admin | Família Maromba";
@@ -329,7 +327,6 @@ const Admin = () => {
           <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="operation">Conferência</TabsTrigger>
             <TabsTrigger value="orders">Pedidos</TabsTrigger>
-            <TabsTrigger value="restock" className="relative">Reposição parceiros{restockPending>0&&<span className="ml-1 rounded-full bg-destructive px-1.5 text-[10px] text-destructive-foreground">{restockPending}</span>}</TabsTrigger>
             <TabsTrigger value="pages">Páginas</TabsTrigger>
             <TabsTrigger value="catalog">Catálogo</TabsTrigger>
             <TabsTrigger value="expedition">Expedição</TabsTrigger>
@@ -344,7 +341,6 @@ const Admin = () => {
             <TabsTrigger value="videos">Vídeos</TabsTrigger>
           </TabsList>
           <TabsContent value="operation" className="mt-4"><OperationReadiness onNavigate={setActiveTab} /></TabsContent>
-          <TabsContent value="restock" className="mt-4"><PartnerRestockOrdersManager onPendingChange={setRestockPending}/></TabsContent>
           <TabsContent value="orders" className="space-y-4 mt-4">
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <Card className="p-3">
@@ -528,7 +524,7 @@ const Admin = () => {
                 </div>
               )}
             </Card>
-            <ShippingIntegrationManager />
+            <PartnerRestockOrdersManager />
           </TabsContent>
           <TabsContent value="products" className="mt-4">
             <ProductsManager />

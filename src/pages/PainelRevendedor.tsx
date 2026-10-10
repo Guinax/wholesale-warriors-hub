@@ -309,7 +309,7 @@ export default function PainelRevendedor() {
                 </div>
                 <Button className="shrink-0 bg-[#d4af37] font-bold text-black hover:bg-[#e8c65a]" disabled={saving==="terms-"+pendingContractStore.id} onClick={()=>{switchTab("loja"); window.setTimeout(()=>document.getElementById("minha-loja")?.scrollIntoView({behavior:"smooth",block:"start"}),50);}}>Revisar e aceitar</Button>
               </div>
-            </section>
+            </section>}
             {!hasApprovedStore && <section id="visao-geral" className="relative overflow-hidden rounded-3xl border border-[#d4af37]/20 bg-gradient-to-br from-[#1c170a] via-[#101114] to-[#090a0c] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.38)] sm:p-6">
               <div className="pointer-events-none absolute -right-14 -top-20 h-52 w-52 rounded-full bg-[#d4af37]/10 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-24 left-10 h-44 w-44 rounded-full bg-amber-500/10 blur-3xl" />

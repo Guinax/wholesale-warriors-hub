@@ -74,6 +74,8 @@ const Pagamento = () => {
   const [validCep, setValidCep] = useState(false);
   const [validatedState, setValidatedState] = useState("");
   const [deliveryCoords, setDeliveryCoords] = useState<{latitude:number;longitude:number}|null>(null);
+  const [localEstimate, setLocalEstimate] = useState<number | null>(null);
+  const [localEstimateLoading, setLocalEstimateLoading] = useState(false);
   const [docType, setDocType] = useState<"cpf" | "cnpj">("cpf");
   const [testWithoutShipping, setTestWithoutShipping] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -209,6 +211,29 @@ const Pagamento = () => {
     });
     return () => { active = false; };
   }, [customer.zip, totalPrice, items]);
+
+  useEffect(() => {
+    if (!isLocalRetail || !validCep || !deliveryCoords || items.some(i => !i.productId)) {
+      setLocalEstimate(null);
+      setLocalEstimateLoading(false);
+      return;
+    }
+    let active = true;
+    setLocalEstimateLoading(true);
+    const payload = items.map(i => ({product_id: i.productId, qty: i.qty}));
+    void supabase.rpc("preview_partner_delivery" as never, {
+      p_lat: deliveryCoords.latitude,
+      p_lng: deliveryCoords.longitude,
+      p_items: payload,
+    } as never).then(({data, error}) => {
+      if (!active) return;
+      const result = data as {available?:boolean;estimated_shipping?:number}|null;
+      setLocalEstimate(!error && result?.available && Number.isFinite(Number(result.estimated_shipping))
+        ? Number(result.estimated_shipping) : null);
+      setLocalEstimateLoading(false);
+    });
+    return () => {active=false};
+  }, [isLocalRetail, validCep, deliveryCoords?.latitude, deliveryCoords?.longitude, items]);
 
   const freeShippingTestActive = isAdmin && testWithoutShipping;
   const effectiveShippingCost = freeShippingTestActive ? 0 : shippingCost;
@@ -551,7 +576,8 @@ const Pagamento = () => {
             </div>
             <div className="border-t border-border pt-3 space-y-2">
               <div className="flex justify-between text-xs"><span className="text-muted-foreground">Produtos</span><span>{formatCurrency(totalPrice)}</span></div>
-              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{isLocalRetail && !freeShippingTestActive ? "Calculado após aceite da loja" : freeShippingTestActive ? "Grátis (teste admin)" : checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{isLocalRetail && !freeShippingTestActive ? (localEstimateLoading ? "Consultando lojas próximas..." : localEstimate != null ? `${formatCurrency(localEstimate)} (estimativa)` : "A partir de R$ 7,50 (até 3 km)") : freeShippingTestActive ? "Grátis (teste admin)" : checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>
+              {isLocalRetail && !freeShippingTestActive && <p className="text-[10px] text-muted-foreground">Tarifa: R$ 7,50 até 3 km + R$ 1,50 por km excedente. O valor exato depende da distância entre a loja que aceitar o pedido e a entrega. Você verá o total antes de pagar.</p>}
               {shippingEta && <p className="text-[10px] text-muted-foreground">Prazo estimado: {shippingEta}</p>}
               {shippingEta && <p className="text-[10px] text-muted-foreground">{shippingLoad.boxes} caixa{shippingLoad.boxes > 1 ? "s" : ""} · peso estimado {shippingLoad.estimatedWeightKg.toFixed(1).replace(".", ",")} kg</p>}
               {isAdmin && (
@@ -562,7 +588,7 @@ const Pagamento = () => {
               )}
               <div className="border-t border-border pt-3 flex justify-between items-center">
                 <span className="font-heading font-bold text-xs tracking-wider text-muted-foreground">TOTAL</span>
-                <span className="font-heading font-black text-xl text-foreground">{isLocalRetail && !freeShippingTestActive ? `${formatCurrency(totalPrice)} + entrega` : formatCurrency(orderTotal)}</span>
+                <span className="font-heading font-black text-xl text-foreground">{isLocalRetail && !freeShippingTestActive ? (localEstimate != null ? `${formatCurrency(totalPrice + localEstimate)} (estimado)` : `${formatCurrency(totalPrice)} + entrega`) : formatCurrency(orderTotal)}</span>
               </div>
             </div>
           </div>
@@ -578,7 +604,7 @@ const Pagamento = () => {
             </label>
           </div>
           <button disabled={submitting || checkingCep || !validCep || customer.state !== validatedState || !acceptedTerms || !adultConfirmed} onClick={handleConfirm} className="w-full bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon disabled:opacity-40 disabled:cursor-not-allowed">
-            {submitting ? "ABRINDO CHECKOUT..." : "PAGAR NA INFINITEPAY"}
+            {submitting ? (isLocalRetail && !freeShippingTestActive ? "BUSCANDO LOJA..." : "ABRINDO CHECKOUT...") : (isLocalRetail && !freeShippingTestActive ? "SOLICITAR ENTREGA LOCAL — SEM PAGAMENTO" : "PAGAR NA INFINITEPAY")}
           </button>
         </aside>
       </main>

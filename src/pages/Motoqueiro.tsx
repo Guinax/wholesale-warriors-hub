@@ -114,6 +114,7 @@ export default function Motoqueiro() {
   const [withdrawalRequests, setWithdrawalRequests] = useState<CourierWithdrawalRequest[]>([]);
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [pixDraft, setPixDraft] = useState({ pix_key_type: "cpf", pix_key: "", holder_name: "", holder_document: "" });
+  const pixDraftInitializedRef = useRef(false);
   const [registration, setRegistration] = useState({ full_name: "", phone: "", cpf: "", vehicle_type: "moto", vehicle_plate: "", cnh_number: "", cnh_category: "", cnh_expiry: "" });
   const [deliveryCode, setDeliveryCode] = useState<Record<string, string>>({});
   const [adult, setAdult] = useState<Record<string, boolean>>({});
@@ -169,12 +170,16 @@ export default function Motoqueiro() {
 
         const account = accountResult.data as unknown as CourierPayoutAccount | null;
         setPayoutAccount(account);
-        setPixDraft(account ? {
-          pix_key_type: account.pix_key_type,
-          pix_key: account.pix_key,
-          holder_name: account.holder_name,
-          holder_document: account.holder_document,
-        } : { pix_key_type: "cpf", pix_key: "", holder_name: "", holder_document: "" });
+        // Realtime/GPS updates must not erase unsaved PIX form input.
+        if (!pixDraftInitializedRef.current) {
+          setPixDraft(account ? {
+            pix_key_type: account.pix_key_type,
+            pix_key: account.pix_key,
+            holder_name: account.holder_name,
+            holder_document: account.holder_document,
+          } : { pix_key_type: "cpf", pix_key: "", holder_name: "", holder_document: "" });
+          pixDraftInitializedRef.current = true;
+        }
         setWalletPayments((paymentResult.data ?? []) as unknown as CourierWalletPayment[]);
         setWithdrawalRequests((withdrawalResult.data ?? []) as unknown as CourierWithdrawalRequest[]);
       } else {

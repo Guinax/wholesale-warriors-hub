@@ -49,7 +49,6 @@ export default function PainelRevendedor() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [stockDraft, setStockDraft] = useState<Record<string,string>>({});
   const [stockView, setStockView] = useState<"grid"|"list">("grid");
-  const [stockReason, setStockReason] = useState<Record<string,string>>({});
   const [catalogProducts,setCatalogProducts]=useState<CatalogProduct[]>([]);
   const [requests, setRequests] = useState<Request[]>([]);
   const [registering, setRegistering] = useState(false);
@@ -154,9 +153,8 @@ export default function PainelRevendedor() {
   };
 
   const saveStock = async (storeId:string, productId:string, current:number) => {
-    const key=storeId+":"+productId; const qty=Number(stockDraft[key]); const reason=(stockReason[key]??"").trim();
+    const key=storeId+":"+productId; const qty=Number(stockDraft[key]); const reason="Ajuste de estoque pelo parceiro";
     if(!Number.isInteger(qty)||qty<0||qty>1000000) return toast.error("Informe uma quantidade válida.");
-    if(reason.length<3) return toast.error("Informe o motivo do ajuste de estoque.");
     setSaving("stock-"+key);
     const {error}=await supabase.rpc("partner_command" as never,{p_action:"stock",p_payload:{store_id:storeId,product_id:productId,on_hand:qty,reason}} as never);
     setSaving(null); if(error) return toast.error(error.message);
@@ -505,7 +503,6 @@ export default function PainelRevendedor() {
                     </div>
                     <div className={`mt-3 grid gap-2 ${stockView==="list"?"md:mt-0 md:min-w-[360px] md:grid-cols-[100px_1fr_auto]":""}`}>
                       <input className="h-9 rounded-lg border border-white/10 bg-black/30 px-2" type="number" min="0" step="1" placeholder={String(i.on_hand)} value={stockDraft[key]??""} onChange={(e)=>setStockDraft((x)=>({...x,[key]:e.target.value}))}/>
-                      <input className="h-9 rounded-lg border border-white/10 bg-black/30 px-2" placeholder="Motivo do ajuste" value={stockReason[key]??""} onChange={(e)=>setStockReason((x)=>({...x,[key]:e.target.value}))}/>
                       <Button size="sm" variant="outline" className="border-[#d4af37]/25 bg-[#d4af37]/5 text-yellow-200 hover:bg-[#d4af37]/10" disabled={saving==="stock-"+key} onClick={()=>void saveStock(i.store_id,i.product_id,i.on_hand)}>Atualizar estoque</Button>
                     </div>
                   </div>})}

@@ -268,6 +268,12 @@ const Admin = () => {
     });
   }, [orders, search, filterDelivery, filterPayment]);
 
+  // Pedidos de atacado são atendidos pela central quando somam mais de seis unidades.
+  const wholesaleOrders = useMemo(() => orders.filter((order) => {
+    const items = Array.isArray(order.items) ? order.items as OrderItem[] : [];
+    return items.reduce((total, item) => total + Number(item.qty ?? item.quantity ?? 0), 0) > 6;
+  }), [orders]);
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
   }
@@ -494,7 +500,34 @@ const Admin = () => {
           <TabsContent value="couriers" className="mt-4">
             <CouriersManager />
           </TabsContent>
-          <TabsContent value="shipping" className="mt-4">
+          <TabsContent value="shipping" className="mt-4 space-y-4">
+            <Card className="space-y-4 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-bold">Pedidos do atacado — central logística</h2>
+                  <p className="text-xs text-muted-foreground">Atualização em tempo real · pedidos acima de 6 unidades · {wholesaleOrders.length} pedido(s)</p>
+                </div>
+                <Button variant="outline" size="sm" disabled={fetching} onClick={() => void loadOrders()}><RefreshCw className="mr-2 h-4 w-4" />Atualizar</Button>
+              </div>
+              {wholesaleOrders.length === 0 ? <p className="rounded-lg border p-4 text-sm text-muted-foreground">Nenhum pedido de atacado registrado.</p> : (
+                <div className="space-y-2">
+                  {wholesaleOrders.map((order) => (
+                    <div key={order.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3">
+                      <div className="min-w-0">
+                        <p className="font-semibold">#{order.order_code} · {order.customer_name}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleString("pt-BR")} · {order.address_city}/{order.address_state}</p>
+                        <p className="mt-1 text-xs">{Array.isArray(order.items) ? (order.items as OrderItem[]).reduce((n, item) => n + Number(item.qty ?? item.quantity ?? 0), 0) : 0} unidades · {formatCurrency(Number(order.total_amount))}</p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant={order.payment_status === "paid" && !requiresPaymentReconciliation(order) ? "default" : "destructive"}>{requiresPaymentReconciliation(order) ? "Pagamento em conferência" : order.payment_status === "paid" ? "Pago" : "Aguardando pagamento"}</Badge>
+                        <Badge variant="outline">{trackingLabel(order.delivery_status)}</Badge>
+                        <Button size="sm" variant="outline" onClick={() => { setSelected(order); setActiveTab("orders"); }}>Ver pedido</Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
             <ShippingIntegrationManager />
           </TabsContent>
           <TabsContent value="products" className="mt-4">

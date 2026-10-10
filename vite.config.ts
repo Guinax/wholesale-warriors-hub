@@ -50,6 +50,7 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       workbox: {
+        importScripts: ["/push-handler.js"],
         navigateFallbackDenylist: [/^\/~oauth/, /^\/admin/],
         runtimeCaching: [
           {

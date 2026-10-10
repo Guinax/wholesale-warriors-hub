@@ -1,2 +1,0 @@
--- Reserved for the future atomic order flow. Do not expose a standalone stock-reservation RPC.
--- Each reservation must be tied to a customer order and payment lifecycle.

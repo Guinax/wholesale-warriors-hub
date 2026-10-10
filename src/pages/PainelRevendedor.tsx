@@ -13,6 +13,7 @@ import PushPermissionButton from "@/components/PushPermissionButton";
 
 const PartnerDeliveryBoard = lazy(() => import("@/components/partners/PartnerDeliveryBoard"));
 const PartnerRestockRequest = lazy(() => import("@/components/partners/PartnerRestockRequest"));
+const PartnerOwnProducts = lazy(() => import("@/components/partners/PartnerOwnProducts"));
 
 type Offer = PartnerOffer;
 type Request = PartnerRequest;
@@ -510,6 +511,7 @@ export default function PainelRevendedor() {
                   <div><h2 className="text-lg font-black">Meu estoque</h2><p className="text-xs text-zinc-500">Disponível = físico menos reservado.</p></div>
                   <div className="flex items-center gap-2"><div className="flex rounded-lg border border-white/10 bg-black/20 p-1"><Button type="button" size="sm" variant="ghost" onClick={()=>setStockView("grid")} className={stockView==="grid"?"bg-[#d4af37]/15 text-yellow-200":"text-zinc-400"}><Grid2X2 className="h-4 w-4"/>Grade</Button><Button type="button" size="sm" variant="ghost" onClick={()=>setStockView("list")} className={stockView==="list"?"bg-[#d4af37]/15 text-yellow-200":"text-zinc-400"}><List className="h-4 w-4"/>Lista</Button></div><Boxes className="h-5 w-5 text-[#e5c66c]"/></div>
                 </div>
+                <Suspense fallback={<div className="mt-4 p-4 text-sm text-zinc-500">Carregando produtos...</div>}><PartnerOwnProducts storeId={store.id}/></Suspense>
                 <Suspense fallback={<div className="mt-4 rounded-xl border border-white/10 p-4 text-sm text-zinc-500">Carregando reposição...</div>}><PartnerRestockRequest storeId={store.id} products={catalogProducts}/></Suspense>
                 {catalogProducts.length===0?<p className="mt-3 text-sm text-zinc-500">Nenhum produto ativo no catálogo.</p>:<div className={stockView==="grid"?"mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3":"mt-4 space-y-2"}>
                   {catalogProducts.map((p)=>{const i=inventory.find((x)=>x.store_id===store.id&&x.product_id===p.id)??{store_id:store.id,product_id:p.id,on_hand:0,reserved:0,name:p.name};const key=i.store_id+":"+i.product_id;return <div key={key} className={`rounded-2xl border border-white/10 bg-black/20 p-3 ${stockView==="list"?"md:flex md:items-center md:justify-between md:gap-4":""}`}>

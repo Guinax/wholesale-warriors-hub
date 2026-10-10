@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { lookupCep, maskCepValue, onlyDigitsCep } from "@/lib/shipping";
 import { Bell, Boxes, CheckCircle2, Clock3, Home, MapPin, Package, Settings2, ShieldCheck, Sparkles, Store as StoreIcon, Truck, WalletCards, Grid2X2, List } from "lucide-react";
 import type { PartnerOffer, PartnerRequest } from "@/lib/partnerDelivery";
+import PushPermissionButton from "@/components/PushPermissionButton";
 
 const PartnerDeliveryBoard = lazy(() => import("@/components/partners/PartnerDeliveryBoard"));
 const PartnerRestockRequest = lazy(() => import("@/components/partners/PartnerRestockRequest"));
@@ -268,6 +269,8 @@ export default function PainelRevendedor() {
   const totalAvailable = inventory.filter(i => approvedStores.some(s => s.id === i.store_id)).reduce((sum, item) => sum + Math.max(0, Number(item.on_hand) - Number(item.reserved)), 0);
 
   return (
+    <div className="contents">
+      {stores.some((s) => s.status === "approved") && <div className="fixed bottom-20 right-3 z-40 rounded-xl bg-black/90 p-2 shadow-lg"><PushPermissionButton role="partner" /></div>}
     <main className={hasApprovedStore && ["inicio", "pedidos"].includes(activeTab) ? "min-h-screen bg-[#0c0c0c] pb-24 text-[#f5efdf] md:pb-8" : "min-h-screen bg-[#0a0b0d] text-zinc-100 pb-24 md:pb-8"}>
       <div className="mx-auto min-h-screen max-w-[1600px]">
         <div className="min-w-0">
@@ -516,5 +519,6 @@ export default function PainelRevendedor() {
         </>}
       </nav>
     </main>
+    </div>
   );
 }

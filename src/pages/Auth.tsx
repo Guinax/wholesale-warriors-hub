@@ -26,7 +26,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const rawNext = params.get("next") ?? "";
-  const nextPath = rawNext.startsWith("/") && !rawNext.startsWith("//") && !rawNext.includes("\\") ? rawNext : "/minha-conta";
+  const nextPath = rawNext.startsWith("/") && !rawNext.startsWith("//") && !rawNext.includes("\\") ? rawNext : "/";
   const [mode, setMode] = useState<"login" | "recovery">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

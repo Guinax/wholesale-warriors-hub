@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import CourierMap, { type CourierMapPoint } from "@/components/courier/CourierMap";
+import PushPermissionButton from "@/components/PushPermissionButton";
 
 type CourierProfile = {
   id: string;
@@ -524,6 +525,8 @@ export default function Motoqueiro() {
   };
 
   return (
+    <div className="contents">
+      {dashboard.profile?.status === "approved" && <div className="fixed bottom-20 right-3 z-40 rounded-xl bg-black/90 p-2 shadow-lg"><PushPermissionButton role="courier" /></div>}
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,#2a2108_0%,#0b0b0b_28%,#050505_70%)] pb-24 text-white">
       <div className="mx-auto max-w-7xl px-3 py-4 sm:px-5 lg:px-7">
         <header className="overflow-hidden rounded-[28px] border border-yellow-400/20 bg-black/80 shadow-[0_0_45px_rgba(234,179,8,0.08)] backdrop-blur">
@@ -700,5 +703,6 @@ export default function Motoqueiro() {
         </div>
       </nav>
     </main>
+    </div>
   );
 }

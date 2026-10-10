@@ -56,6 +56,7 @@ const MinhaConta = () => {
     setSaving(false);
     if(error){ toast({title:"Não foi possível salvar",description:error.message,variant:"destructive"}); return; }
     toast({title:"Dados salvos",description:"Confirmado no banco. O checkout usará estes dados nas próximas compras."});
+    navigate("/", { replace: true });
   };
 
   if(loading) return <div className="min-h-screen bg-background flex items-center justify-center text-sm text-muted-foreground">Carregando seus dados...</div>;

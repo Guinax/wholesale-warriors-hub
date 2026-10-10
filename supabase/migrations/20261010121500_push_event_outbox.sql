@@ -20,7 +20,7 @@ begin
  select 'partner_offer',new.request_id,s.owner_id
  from public.partner_stores s
  where s.id=new.store_id and s.status='approved' and s.is_open
-   and not new.declined and new.available_at<=now()
+   and not new.declined
  on conflict do nothing;
  return new;
 end $$;
@@ -32,7 +32,7 @@ create or replace function private.queue_courier_job_push()
 returns trigger language plpgsql security definer set search_path='' as $$
 begin
  if new.status='searching' and new.courier_id is null
-   and (tg_op='INSERT' or old.status is distinct from 'searching') then
+   and tg_op in ('INSERT','UPDATE') then
   insert into public.web_push_outbox(kind,target_id,recipient_id)
   select 'courier_job',new.id,c.user_id from public.courier_profiles c
   where c.status='approved' and c.is_online

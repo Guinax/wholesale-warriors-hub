@@ -439,7 +439,6 @@ const Pagamento = () => {
 
     try {
       const checkoutUrl = await createPaymentLink(orderCode, `${window.location.origin}/recibo/${orderCode}`);
-      clearCart?.();
       window.location.href = checkoutUrl;
     } catch (error) {
       toast({

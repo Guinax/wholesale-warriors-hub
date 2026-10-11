@@ -621,7 +621,7 @@ const Pagamento = () => {
               <span className="text-[11px] text-foreground">Confirmo que tenho 18 anos ou mais e estou ciente de que poderá ser exigido documento oficial com foto no recebimento de bebidas alcoólicas.</span>
             </label>
           </div>
-          <button disabled={loadingProfile || submitting || checkingCep || !validCep || (isLocalRetail && !freeShippingTestActive && !addressConfirmed) || customer.state !== validatedState || !acceptedTerms || !adultConfirmed} onClick={handleConfirm} className="w-full bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon disabled:opacity-40 disabled:cursor-not-allowed">
+          <button disabled={loadingProfile || submitting || checkingCep || !validCep || customer.state !== validatedState || !acceptedTerms || !adultConfirmed} onClick={handleConfirm} className="w-full bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon disabled:opacity-40 disabled:cursor-not-allowed">
             {submitting ? (isLocalRetail && !freeShippingTestActive ? "BUSCANDO LOJA..." : "ABRINDO CHECKOUT...") : "FINALIZAR PAGAMENTO"}
           </button>
         </aside>

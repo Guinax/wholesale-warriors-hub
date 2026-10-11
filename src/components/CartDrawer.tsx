@@ -1,18 +1,9 @@
-import { useState } from "react";
-import { Minus, Plus, Trash2, ShoppingCart, ArrowLeft, Truck } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingCart, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/orderUtils";
-import {
-  lookupCep,
-  maskCepValue,
-  onlyDigitsCep,
-  shippingCostFor,
-  shippingEtaFor,
-} from "@/lib/shipping";
-import { getLiveShippingQuote } from "@/lib/liveShipping";
 import { supabase } from "@/integrations/supabase/client";
 
 const CartDrawer = () => {
@@ -25,75 +16,12 @@ const CartDrawer = () => {
     updateStock,
     totalItems,
     totalPrice,
-    shipping,
-    setShipping,
-    shippingCost,
-    grandTotal,
   } = useCart();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [cep, setCep] = useState(shipping?.cep ?? "");
-  const [calculating, setCalculating] = useState(false);
   const [checkingStock, setCheckingStock] = useState(false);
 
-  const handleCalcFrete = async () => {
-    if (onlyDigitsCep(cep).length !== 8) {
-      toast({ title: "CEP inválido", description: "Digite os 8 dígitos do CEP.", variant: "destructive" });
-      return;
-    }
-    setCalculating(true);
-    const info = await lookupCep(cep);
-    setCalculating(false);
-    if (!info) {
-      toast({ title: "CEP não encontrado", description: "Confira o CEP e tente novamente.", variant: "destructive" });
-      return;
-    }
-    const fallbackCost = shippingCostFor(info.state, totalPrice, totalItems);
-    const fallbackEta = shippingEtaFor(info.state);
-    const itemsKey = items
-      .map((item) => `${item.productId ?? item.name}:${item.qty}`)
-      .sort()
-      .join("|");
-
-    let cost = fallbackCost;
-    let eta = fallbackEta;
-    let source: "regional" | "melhor_envio" = "regional";
-
-    const quoteItems = items.flatMap((item) =>
-      item.productId ? [{ product_id: item.productId, qty: item.qty }] : []
-    );
-    if (quoteItems.length === items.length && quoteItems.length > 0) {
-      try {
-        const live = await getLiveShippingQuote(info.cep, quoteItems);
-        if (live) {
-          cost = live.cost;
-          eta = live.etaDays === 1
-            ? `1 dia útil · ${live.company || live.serviceName}`
-            : `${live.etaDays} dias úteis · ${live.company || live.serviceName}`;
-          source = "melhor_envio";
-        }
-      } catch {
-        // Mantém o fallback regional.
-      }
-    }
-
-    setShipping({ ...info, cost, eta, source, itemsKey });
-    toast({
-      title: source === "melhor_envio" ? "Frete cotado" : "Estimativa de frete",
-      description: `${info.city}/${info.state} · o valor final será confirmado no checkout.`,
-    });
-  };
-
   const handleCheckout = async () => {
-    if (!shipping) {
-      toast({
-        title: "Informe o CEP de entrega",
-        description: "Calcule o frete antes de ir para o pagamento.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     const trackedItems = items.filter((item) => item.productId);
     if (trackedItems.length > 0) {
       setCheckingStock(true);
@@ -244,29 +172,6 @@ const CartDrawer = () => {
                   R$ {totalPrice.toFixed(2).replace(".", ",")}
                 </span>
               </div>
-              <div className="rounded-xl border border-border bg-card p-3 space-y-2">
-                <div className="flex items-center gap-2 text-xs font-heading font-bold text-foreground">
-                  <Truck className="w-4 h-4 text-primary" /> ESTIMAR FRETE
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    value={cep}
-                    inputMode="numeric"
-                    placeholder="00000-000"
-                    onChange={(e) => setCep(maskCepValue(e.target.value))}
-                    className="min-w-0 flex-1 rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground"
-                  />
-                  <button onClick={handleCalcFrete} disabled={calculating} className="rounded-md bg-secondary px-3 text-xs font-heading font-bold text-foreground disabled:opacity-50">
-                    {calculating ? "..." : "CALCULAR"}
-                  </button>
-                </div>
-                {shipping && (
-                  <div className="text-[11px] text-muted-foreground">
-                    {shipping.city}/{shipping.state} · {shipping.eta} · <strong className="text-foreground">{formatCurrency(shippingCost)}</strong>
-                    <span className="block mt-1">Estimativa. O checkout confirma a cotação disponível antes da cobrança.</span>
-                  </div>
-                )}
-              </div>
               <button
                 onClick={closeCart}
                 className="w-full flex items-center justify-center gap-2 bg-secondary text-foreground font-heading font-bold text-xs tracking-wider py-3 rounded-lg hover:bg-secondary/70 transition-colors"
@@ -279,7 +184,7 @@ const CartDrawer = () => {
                 disabled={checkingStock}
                 className="w-full bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {checkingStock ? "CONFERINDO ESTOQUE..." : "IR PARA PAGAMENTO"}
+                {checkingStock ? "CONFERINDO ESTOQUE..." : "FINALIZAR PEDIDO"}
               </button>
             </div>
           </>

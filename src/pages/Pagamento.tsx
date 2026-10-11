@@ -76,7 +76,6 @@ const Pagamento = () => {
   const [deliveryCoords, setDeliveryCoords] = useState<{latitude:number;longitude:number}|null>(null);
   const [localEstimate, setLocalEstimate] = useState<number | null>(null);
   const [localEstimateLoading, setLocalEstimateLoading] = useState(false);
-  const [confirmedAddress, setConfirmedAddress] = useState("");
   const [docType, setDocType] = useState<"cpf" | "cnpj">("cpf");
   const [testWithoutShipping, setTestWithoutShipping] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -213,8 +212,30 @@ const Pagamento = () => {
     return () => { active = false; };
   }, [customer.zip, totalPrice, items]);
 
-  const addressSignature = `${customer.zip}|${customer.number.trim()}|${customer.complement.trim()}`;
-  const addressConfirmed = validCep && customer.number.trim().length > 0 && (!editing || confirmedAddress === addressSignature);
+  const addressConfirmed = validCep && !checkingCep && customer.state === validatedState &&
+    Boolean(customer.street.trim() && customer.number.trim() && customer.city.trim());
+
+  // Persist the complete validated delivery address automatically, including its house number.
+  useEffect(() => {
+    if (loadingProfile || !addressConfirmed) return;
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || cancelled) return;
+      const { error } = await supabase.from("profiles").update({
+        address_street: customer.street.trim(),
+        address_number: customer.number.trim(),
+        address_complement: customer.complement.trim(),
+        address_city: customer.city.trim(),
+        address_state: customer.state.trim(),
+        address_zip: customer.zip,
+      }).eq("user_id", user.id);
+      if (error && !cancelled) {
+        toast({ title: "Não foi possível salvar o endereço", description: "Confira seus dados e tente novamente.", variant: "destructive" });
+      }
+    }, 800);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [loadingProfile, addressConfirmed, customer.street, customer.number, customer.complement, customer.city, customer.state, customer.zip, toast]);
 
   useEffect(() => {
     if (!isLocalRetail || !addressConfirmed || !deliveryCoords || items.some(i => !i.productId)) {
@@ -546,8 +567,7 @@ const Pagamento = () => {
                       <Field label="Número *" value={customer.number} inputMode="numeric" placeholder="Ex.: 123" onChange={(v) => setCustomer({ ...customer, number: v })} />
                       <Field label="Complemento" value={customer.complement} placeholder="Apto, bloco, referência..." onChange={(v) => setCustomer({ ...customer, complement: v })} />
                     </div>
-                    <p className="text-[10px] text-muted-foreground">Informe o número e confirme somente se estiver alterando o endereço.</p>
-                    <button type="button" disabled={!customer.number.trim() || checkingCep} onClick={() => setConfirmedAddress(addressSignature)} className="w-full rounded-lg bg-primary px-4 py-3 text-sm font-heading font-bold text-primary-foreground disabled:opacity-50">{addressConfirmed ? "ENDEREÇO CONFIRMADO" : "OK — CONFIRMAR ENDEREÇO"}</button>
+                    <p className="text-[10px] text-muted-foreground">Informe o número. O endereço será salvo automaticamente.</p>
                   </div>
                 )}
 

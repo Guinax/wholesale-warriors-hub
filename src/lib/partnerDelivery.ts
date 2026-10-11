@@ -49,7 +49,15 @@ export function deliveryStage(status: string): DeliveryFilter | null {
 export function assignedRequests(requests: PartnerRequest[], stores: PartnerMapStore[]): PartnerRequest[] {
   const ids = new Set(stores.filter(s => s.status === "approved").map(s => s.id));
   // The dashboard also returns the current user's purchases. Those are not store work.
-  return requests.filter(r => r.store_id && ids.has(r.store_id) && deliveryStage(r.status) && (r.status !== "paid" || Boolean(r.accepted_at)));
+  return requests.filter(r =>
+    r.store_id &&
+    ids.has(r.store_id) &&
+    (
+      (r.status === "paid" && Boolean(r.accepted_at)) ||
+      r.status === "delivering" ||
+      r.status === "delivered"
+    )
+  );
 }
 
 export function canDispatch(request: PartnerRequest): boolean {

@@ -214,7 +214,7 @@ const Pagamento = () => {
   }, [customer.zip, totalPrice, items]);
 
   const addressSignature = `${customer.zip}|${customer.number.trim()}|${customer.complement.trim()}`;
-  const addressConfirmed = validCep && customer.number.trim().length > 0 && confirmedAddress === addressSignature;
+  const addressConfirmed = validCep && customer.number.trim().length > 0 && (!editing || confirmedAddress === addressSignature);
 
   useEffect(() => {
     if (!isLocalRetail || !addressConfirmed || !deliveryCoords || items.some(i => !i.productId)) {
@@ -499,7 +499,7 @@ const Pagamento = () => {
                 <p>{customer.email} · {customer.phone}</p>
                 <p>{customer.street}, {customer.number}{customer.complement ? ` — ${customer.complement}` : ""}</p>
                 <p>{customer.city}/{customer.state} · CEP {customer.zip}</p>
-                <p className="text-[10px] pt-1">Dados salvos no seu cadastro. É só confirmar o pagamento.</p>
+                <p className="text-[10px] pt-1">Dados salvos no seu cadastro. Aceite as condições abaixo para finalizar o pagamento.</p>
               </div>
             ) : (
               <div className="grid sm:grid-cols-2 gap-3">
@@ -546,7 +546,7 @@ const Pagamento = () => {
                       <Field label="Número *" value={customer.number} inputMode="numeric" placeholder="Ex.: 123" onChange={(v) => setCustomer({ ...customer, number: v })} />
                       <Field label="Complemento" value={customer.complement} placeholder="Apto, bloco, referência..." onChange={(v) => setCustomer({ ...customer, complement: v })} />
                     </div>
-                    <p className="text-[10px] text-muted-foreground">Confira o endereço e informe o número para continuar.</p>
+                    <p className="text-[10px] text-muted-foreground">Informe o número e confirme somente se estiver alterando o endereço.</p>
                     <button type="button" disabled={!customer.number.trim() || checkingCep} onClick={() => setConfirmedAddress(addressSignature)} className="w-full rounded-lg bg-primary px-4 py-3 text-sm font-heading font-bold text-primary-foreground disabled:opacity-50">{addressConfirmed ? "ENDEREÇO CONFIRMADO" : "OK — CONFIRMAR ENDEREÇO"}</button>
                   </div>
                 )}
@@ -594,7 +594,7 @@ const Pagamento = () => {
             </div>
             <div className="border-t border-border pt-3 space-y-2">
               <div className="flex justify-between text-xs"><span className="text-muted-foreground">Produtos</span><span>{formatCurrency(totalPrice)}</span></div>
-              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{isLocalRetail && !freeShippingTestActive ? (localEstimate != null ? formatCurrency(localEstimate) : !addressConfirmed ? "Confirme o endereço" : localEstimateLoading ? "Calculando..." : "Indisponível") : freeShippingTestActive ? "Grátis (teste admin)" : checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{isLocalRetail && !freeShippingTestActive ? (localEstimate != null ? formatCurrency(localEstimate) : !addressConfirmed ? "Verificando endereço" : localEstimateLoading ? "Calculando..." : "Indisponível") : freeShippingTestActive ? "Grátis (teste admin)" : checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>
               {isLocalRetail && !freeShippingTestActive && <p className="text-[10px] text-muted-foreground">O frete é calculado pela distância da loja parceira até o endereço. O valor definitivo e o total serão confirmados antes do pagamento.</p>}
               {shippingEta && <p className="text-[10px] text-muted-foreground">Prazo estimado: {shippingEta}</p>}
               {shippingEta && <p className="text-[10px] text-muted-foreground">{shippingLoad.boxes} caixa{shippingLoad.boxes > 1 ? "s" : ""} · peso estimado {shippingLoad.estimatedWeightKg.toFixed(1).replace(".", ",")} kg</p>}
@@ -621,8 +621,8 @@ const Pagamento = () => {
               <span className="text-[11px] text-foreground">Confirmo que tenho 18 anos ou mais e estou ciente de que poderá ser exigido documento oficial com foto no recebimento de bebidas alcoólicas.</span>
             </label>
           </div>
-          <button disabled={submitting || checkingCep || !validCep || (isLocalRetail && !freeShippingTestActive && !addressConfirmed) || customer.state !== validatedState || !acceptedTerms || !adultConfirmed} onClick={handleConfirm} className="w-full bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon disabled:opacity-40 disabled:cursor-not-allowed">
-            {submitting ? (isLocalRetail && !freeShippingTestActive ? "BUSCANDO LOJA..." : "ABRINDO CHECKOUT...") : (isLocalRetail && !freeShippingTestActive ? "SOLICITAR ENTREGA LOCAL — SEM PAGAMENTO" : "PAGAR NA INFINITEPAY")}
+          <button disabled={loadingProfile || submitting || checkingCep || !validCep || (isLocalRetail && !freeShippingTestActive && !addressConfirmed) || customer.state !== validatedState || !acceptedTerms || !adultConfirmed} onClick={handleConfirm} className="w-full bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-4 rounded-lg hover:opacity-90 transition-opacity glow-neon disabled:opacity-40 disabled:cursor-not-allowed">
+            {submitting ? (isLocalRetail && !freeShippingTestActive ? "BUSCANDO LOJA..." : "ABRINDO CHECKOUT...") : "FINALIZAR PAGAMENTO"}
           </button>
         </aside>
       </main>

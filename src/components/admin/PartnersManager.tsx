@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CheckCircle2, Clock3, MapPinned, RefreshCw, Store as StoreIcon, XCircle } from "lucide-react";
+import { CheckCircle2, Clock3, Copy, MapPinned, RefreshCw, Store as StoreIcon, XCircle } from "lucide-react";
 import PartnerNetworkMap from "@/components/admin/PartnerNetworkMap";
 
 type Store={
@@ -177,6 +177,12 @@ export default function PartnersManager(){
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <CardTitle className="text-lg">{s.name}</CardTitle>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <span><strong>ID único do parceiro:</strong> <code className="break-all select-all">{s.id}</code></span>
+                  <Button type="button" size="sm" variant="ghost" className="h-7 px-2" aria-label={`Copiar ID de ${s.name}`} onClick={()=>void navigator.clipboard.writeText(s.id).then(()=>toast.success("ID do parceiro copiado.")).catch(()=>toast.error("Não foi possível copiar o ID."))}>
+                    <Copy className="h-3.5 w-3.5 mr-1"/>Copiar ID
+                  </Button>
+                </div>
                 {pending&&<p className="mt-1 text-xs font-semibold text-amber-600 dark:text-amber-300">Aguardando sua liberação</p>}
               </div>
               <div className="flex flex-wrap gap-2">

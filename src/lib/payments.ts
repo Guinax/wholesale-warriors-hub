@@ -54,16 +54,12 @@ export async function createPaymentLink(
       throw new Error("A InfinitePay retornou um link inválido. Tente novamente.");
     }
 
-    // Em PWA instalado, abrir em uma nova janela/aba força o checkout a sair do
-    // webview do app. Se o navegador bloquear a abertura, fazemos fallback para
-    // navegação direta na mesma janela.
-    const externalWindow = window.open(url.href, "_blank", "noopener,noreferrer");
-    if (!externalWindow) {
-      window.location.assign(url.href);
-      return await new Promise<string>(() => {});
-    }
+    // Navegar no mesmo contexto mantém a sessão do aplicativo durante o retorno
+    // da InfinitePay. Uma aba externa pode usar armazenamento de sessão isolado
+    // no Android/PWA e impedir a visualização segura do recibo.
+    window.location.assign(url.href);
+    return await new Promise<string>(() => {});
 
-    return url.href;
   } catch (error) {
     throw error instanceof Error ? error : new Error("Não foi possível abrir o pagamento. Tente novamente.");
   }

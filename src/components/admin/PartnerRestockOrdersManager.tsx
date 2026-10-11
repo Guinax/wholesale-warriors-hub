@@ -106,6 +106,8 @@ export default function PartnerRestockOrdersManager({onPendingChange}:{onPending
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2"><Store className="h-4 w-4"/><p className="font-bold">{order.partner_stores?.name??"Parceiro"}</p></div>
+            <p className="mt-1 text-xs text-muted-foreground">ID único do parceiro: <code className="select-all break-all">{order.store_id}</code></p>
+            <p className="text-xs text-muted-foreground">ID da reposição: <code className="select-all break-all">{order.id}</code></p>
             <p className="mt-1 text-xs text-muted-foreground">{[order.partner_stores?.city,order.partner_stores?.state].filter(Boolean).join("/")} · {new Date(order.created_at).toLocaleString("pt-BR")}</p>
           </div>
           <div className="flex flex-wrap gap-2">

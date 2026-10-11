@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { lookupCep, maskCepValue, onlyDigitsCep } from "@/lib/shipping";
 import { Bell, Boxes, CheckCircle2, Clock3, Home, MapPin, Package, Settings2, ShieldCheck, Sparkles, Store as StoreIcon, Truck, WalletCards, Grid2X2, List } from "lucide-react";
 import type { PartnerOffer, PartnerRequest } from "@/lib/partnerDelivery";
 import PushPermissionButton from "@/components/PushPermissionButton";
+import { enablePush } from "@/lib/pushNotifications";
 
 const PartnerDeliveryBoard = lazy(() => import("@/components/partners/PartnerDeliveryBoard"));
 const PartnerRestockRequest = lazy(() => import("@/components/partners/PartnerRestockRequest"));
@@ -47,6 +48,41 @@ export default function PainelRevendedor() {
   const [stores, setStores] = useState<Store[]>([]);
   const [saving, setSaving] = useState<string | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
+  const previousOfferIds = useRef<Set<string> | null>(null);
+  const soundContext = useRef<AudioContext | null>(null);
+  const unlockSound = () => {
+    try {
+      const AudioContextClass = window.AudioContext;
+      if (!AudioContextClass) return;
+      soundContext.current ??= new AudioContextClass();
+      void soundContext.current.resume();
+    } catch { /* Audio may be disabled by device settings. */ }
+  };
+  const playOrderAlert = () => {
+    const context = soundContext.current;
+    if (!context || context.state !== "running") return;
+    [0, 0.22, 0.44].forEach(offset => {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.value = 880;
+      gain.gain.setValueAtTime(0.0001, context.currentTime + offset);
+      gain.gain.exponentialRampToValueAtTime(0.18, context.currentTime + offset + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + offset + 0.18);
+      oscillator.connect(gain).connect(context.destination);
+      oscillator.start(context.currentTime + offset);
+      oscillator.stop(context.currentTime + offset + 0.19);
+    });
+  };
+  useEffect(() => {
+    const current = new Set(offers.map(offer => offer.id));
+    if (previousOfferIds.current && offers.some(offer => !previousOfferIds.current!.has(offer.id)) && stores.some(store => store.status === "approved" && store.is_open)) {
+      playOrderAlert();
+      toast.info("Novo pedido disponível para sua loja.");
+    }
+    previousOfferIds.current = current;
+  }, [offers, stores]);
+
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [stockDraft, setStockDraft] = useState<Record<string,string>>({});
   const [stockView, setStockView] = useState<"grid"|"list">("grid");
@@ -177,6 +213,12 @@ export default function PainelRevendedor() {
     const { error } = await supabase.rpc("partner_command" as never,{p_action:"settings",p_payload:{store_id:store.id,is_open:store.is_open,delivery_base:Number(store.delivery_base),delivery_per_km:Number(store.delivery_per_km),delivery_per_kg:Number(store.delivery_per_kg)}} as never);
     setSaving(null);
     if(error) return toast.error(error.message);
+    if (store.is_open) {
+      unlockSound();
+      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+        void enablePush("partner").catch(() => toast.warning("Ative os avisos de pedidos pelo botão de notificações."));
+      }
+    }
     toast.success(store.is_open ? "Loja aberta para receber pedidos." : "Operação da loja atualizada.");
     void load();
   };

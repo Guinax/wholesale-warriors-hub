@@ -50,6 +50,7 @@ export default function PainelRevendedor() {
   const [offers, setOffers] = useState<Offer[]>([]);
   const previousOfferIds = useRef<Set<string> | null>(null);
   const soundContext = useRef<AudioContext | null>(null);
+  const lastPartnerAlertRef = useRef(0);
   const unlockSound = () => {
     try {
       const AudioContextClass = window.AudioContext;
@@ -77,10 +78,25 @@ export default function PainelRevendedor() {
   useEffect(() => {
     const current = new Set(offers.map(offer => offer.id));
     if (previousOfferIds.current && offers.some(offer => !previousOfferIds.current!.has(offer.id)) && stores.some(store => store.status === "approved" && store.is_open)) {
+      lastPartnerAlertRef.current = Date.now();
       playOrderAlert();
       toast.info("Novo pedido disponível para sua loja.");
     }
     previousOfferIds.current = current;
+  }, [offers, stores]);
+
+  useEffect(() => {
+    const hasOpenStore = stores.some(store => store.status === "approved" && store.is_open);
+    if (!hasOpenStore || offers.length === 0) return;
+    const alertPendingOffer = () => {
+      const now = Date.now();
+      if (now - lastPartnerAlertRef.current < 4500) return;
+      lastPartnerAlertRef.current = now;
+      playOrderAlert();
+    };
+    alertPendingOffer();
+    const timer = window.setInterval(alertPendingOffer, 5000);
+    return () => window.clearInterval(timer);
   }, [offers, stores]);
 
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -194,12 +210,12 @@ export default function PainelRevendedor() {
       .on("postgres_changes", { event: "*", schema: "public", table: "partner_payouts" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "partner_wallet_payments" }, () => void load())
       .subscribe();
-    const fallback = window.setInterval(() => void load(), 30000);
+    const fallback = window.setInterval(() => void load(), stores.some(store => store.status === "approved" && store.is_open) ? 5000 : 30000);
     return () => {
       window.clearInterval(fallback);
       void supabase.removeChannel(channel);
     };
-  }, [load]);
+  }, [load, stores]);
 
   const acceptTerms = async (store: Store) => {
     setSaving("terms-"+store.id);

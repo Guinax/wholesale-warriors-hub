@@ -33,14 +33,11 @@ export default function PushPermissionButton({ role, automatic = true }: { role:
       return;
     }
 
-    if (Notification.permission === "default") {
-      // Browsers may require a user gesture before showing this native prompt.
-      // Try on first approved access; the fallback button remains only until permission is decided.
-      void activate(false);
-    }
+    // Browsers require a user gesture for the first permission request.
+    // Keep the button visible until subscription is confirmed by the server.
   }, [automatic, support.ok]);
 
-  if (enabled || (support.ok && typeof Notification !== "undefined" && Notification.permission === "granted")) {
+  if (enabled) {
     return null;
   }
 

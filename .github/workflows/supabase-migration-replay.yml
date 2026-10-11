@@ -1,0 +1,33 @@
+name: Supabase migration replay (isolated)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - fix/supabase-migration-drift-20261011
+    paths:
+      - 'supabase/migrations/**'
+      - '.github/workflows/supabase-migration-replay.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start isolated local Supabase database
+        run: supabase start -x studio,imgproxy,inbucket,analytics,vector,edge-runtime,logflare,postgres-meta
+      - name: Replay every migration on empty local database
+        run: supabase db reset --local --yes
+      - name: Verify expected objects exist
+        run: |
+          supabase db lint --local --level error
+      - name: Shut down isolated database
+        if: always()
+        run: supabase stop --no-backup

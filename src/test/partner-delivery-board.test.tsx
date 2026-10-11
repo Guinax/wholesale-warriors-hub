@@ -58,7 +58,7 @@ describe("Partner delivery map", () => {
     const link = screen.getByRole("link", { name: "Abrir rota no mapa" });
     expect(link.getAttribute("href")).toContain("origin=-22.58%2C-47.51");
   });
-  it("uses automatic route pricing and requires the delivery code and age confirmation", () => {
+  it("uses automatic route pricing and leaves final delivery confirmation to the courier flow", () => {
     const command = vi.fn(async () => {});
     const view = render(<PartnerDeliveryBoard {...base} requests={[{ ...request, status: "accepted", payment_status: null, route_km: 4, shipping: 9, eta_minutes: 30 }]} onCommand={command} />);
     selectOrder();
@@ -67,13 +67,11 @@ describe("Partner delivery map", () => {
     expect(screen.queryByLabelText("Prazo (min)")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Enviar cotação" })).not.toBeInTheDocument();
     expect(screen.getByText(/Trajeto calculado:/)).toBeInTheDocument();
+
     view.rerender(<PartnerDeliveryBoard {...base} requests={[{ ...request, status: "delivering" }]} onCommand={command} />);
-    expect(screen.getByLabelText("Código informado pelo cliente")).toBeRequired();
-    expect(screen.getByRole("checkbox")).toBeRequired();
-    fireEvent.change(screen.getByLabelText("Código informado pelo cliente"), { target: { value: "abcd1234" } });
-    fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.submit(screen.getByRole("button", { name: "Confirmar entrega" }).closest("form")!);
-    expect(command).toHaveBeenCalledWith("deliver", { request_id: request.id, code: "ABCD1234", adult_verified: true }, "Entrega confirmada.");
+    expect(screen.queryByLabelText("Código informado pelo cliente")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Confirmar entrega" })).not.toBeInTheDocument();
+    expect(screen.getByTestId("partner-courier-controls")).toHaveTextContent("request-1:store-1");
   });
   it("does not fabricate coordinates for missing or invalid positions", () => {
     expect(coordinates({ lat: null, lng: null })).toBeNull();

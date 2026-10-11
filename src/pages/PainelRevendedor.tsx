@@ -61,17 +61,17 @@ export default function PainelRevendedor() {
   const playOrderAlert = () => {
     const context = soundContext.current;
     if (!context || context.state !== "running") return;
-    [0, 0.22, 0.44].forEach(offset => {
+    [0, 0.24, 0.48, 0.84, 1.08, 1.32].forEach((offset, index) => {
       const oscillator = context.createOscillator();
       const gain = context.createGain();
       oscillator.type = "sine";
-      oscillator.frequency.value = 880;
+      oscillator.frequency.value = index % 2 === 0 ? 880 : 1046;
       gain.gain.setValueAtTime(0.0001, context.currentTime + offset);
-      gain.gain.exponentialRampToValueAtTime(0.18, context.currentTime + offset + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + offset + 0.18);
+      gain.gain.exponentialRampToValueAtTime(0.24, context.currentTime + offset + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + offset + 0.2);
       oscillator.connect(gain).connect(context.destination);
       oscillator.start(context.currentTime + offset);
-      oscillator.stop(context.currentTime + offset + 0.19);
+      oscillator.stop(context.currentTime + offset + 0.21);
     });
   };
   useEffect(() => {

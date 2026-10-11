@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { Bike, Network, UserPlus } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Bike, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -30,6 +30,7 @@ export default function PartnerCourierControls({ requestId, storeId }: { request
   const [jobs, setJobs] = useState<Job[]>([]);
   const [code, setCode] = useState("");
   const [saving, setSaving] = useState(false);
+  const autoRequestedRef = useRef(false);
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.rpc("partner_courier_command" as never, { p_action: "dashboard", p_payload: {} } as never);
@@ -49,6 +50,22 @@ export default function PartnerCourierControls({ requestId, storeId }: { request
   }, [load]);
 
   const current = jobs.find((job) => job.request_id === requestId && job.status !== "cancelled");
+
+  useEffect(() => {
+    if (current || autoRequestedRef.current) return;
+    autoRequestedRef.current = true;
+    void supabase.rpc("partner_courier_command" as never, {
+      p_action: "request_network",
+      p_payload: { request_id: requestId },
+    } as never).then(({ error }) => {
+      if (error) {
+        autoRequestedRef.current = false;
+        toast.error("Não foi possível iniciar a busca automática por entregador.");
+        return;
+      }
+      void load();
+    });
+  }, [current, requestId, load]);
 
   const linkCourier = async () => {
     if (code.trim().length < 4) return toast.error("Informe o ID do entregador.");
@@ -101,8 +118,8 @@ export default function PartnerCourierControls({ requestId, storeId }: { request
   const available = couriers.filter((item) => item.status === "approved" && item.is_online);
 
   return <div className="delivery-action-form">
-    <p className="delivery-form-title">Escolher entrega</p>
-    <p className="delivery-hint">Use um entregador da sua loja ou deixe a rede procurar alguém online perto de você.</p>
+    <p className="delivery-form-title">Buscando entregador</p>
+    <p className="delivery-hint">A rede é acionada automaticamente e continua procurando até algum entregador online aceitar.</p>
 
     {available.length > 0 && <div className="delivery-form-grid">
       {available.map((courier) => <button
@@ -113,13 +130,6 @@ export default function PartnerCourierControls({ requestId, storeId }: { request
         onClick={() => void command("assign_store_courier", { request_id: requestId, courier_id: courier.id }, "Entregador da loja atribuído.")}
       ><Bike size={16} /> {courier.full_name} · {courier.courier_code}</button>)}
     </div>}
-
-    <button
-      type="button"
-      className="delivery-button delivery-button-primary"
-      disabled={saving}
-      onClick={() => void command("request_network", { request_id: requestId }, "Pedido enviado para a rede de entregadores.")}
-    ><Network size={16} /> Chamar entregadores da rede</button>
 
     <div className="delivery-form-grid">
       <label>ID de um entregador para vincular à loja

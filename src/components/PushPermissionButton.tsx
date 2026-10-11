@@ -7,6 +7,9 @@ import { enablePush, pushSupport, type PushRole } from "@/lib/pushNotifications"
 export default function PushPermissionButton({ role, automatic = true, onUserGesture }: { role: PushRole; automatic?: boolean; onUserGesture?: () => void }) {
   const [busy, setBusy] = useState(false);
   const [enabled, setEnabled] = useState(false);
+  const [permission, setPermission] = useState<NotificationPermission | "unsupported">(
+    typeof Notification === "undefined" ? "unsupported" : Notification.permission,
+  );
   const attemptedRef = useRef(false);
   const support = pushSupport();
 
@@ -19,6 +22,7 @@ export default function PushPermissionButton({ role, automatic = true, onUserGes
     setBusy(true);
     try {
       await enablePush(role);
+      setPermission(typeof Notification === "undefined" ? "unsupported" : Notification.permission);
       setEnabled(true);
       toast.success("Avisos ativados neste aparelho.");
     } catch (error) {
@@ -41,6 +45,21 @@ export default function PushPermissionButton({ role, automatic = true, onUserGes
     // Keep the button visible until subscription is confirmed by the server.
   }, [automatic, support.ok]);
 
+  useEffect(() => {
+    if (!support.ok || typeof Notification === "undefined") return;
+    const refreshPermission = () => {
+      const current = Notification.permission;
+      setPermission(current);
+      if (current === "granted" && !enabled && !busy) void activate(false);
+    };
+    document.addEventListener("visibilitychange", refreshPermission);
+    window.addEventListener("focus", refreshPermission);
+    return () => {
+      document.removeEventListener("visibilitychange", refreshPermission);
+      window.removeEventListener("focus", refreshPermission);
+    };
+  }, [support.ok, enabled, busy]);
+
   if (enabled) {
     return null;
   }
@@ -53,7 +72,11 @@ export default function PushPermissionButton({ role, automatic = true, onUserGes
         <BellRing className="mr-2 h-4 w-4" />
         {busy ? "Ativando..." : "Permitir avisos de pedidos"}
       </Button>
-      <p className="text-xs text-muted-foreground">Autorize uma vez neste aparelho. Depois os avisos ficam automáticos.</p>
+      <p className="text-xs text-muted-foreground">
+        {permission === "denied"
+          ? "Notificações bloqueadas no Android. Abra Configurações > Apps > Mansão Maromba (ou Chrome) > Notificações e toque em Permitir. Ao voltar para o app, a ativação será detectada automaticamente."
+          : "Autorize uma vez neste aparelho. Depois os avisos ficam automáticos."}
+      </p>
     </div>
   );
 }

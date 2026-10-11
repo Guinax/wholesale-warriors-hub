@@ -1,13 +1,10 @@
 import { createClient } from "npm:@supabase/supabase-js@2.103.3";
 import webpush from "npm:web-push@3.6.7";
 
-// Server-only dispatch. Set PUSH_DISPATCH_SECRET, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY,
+// Server-only dispatch. The cron secret is stored in Supabase Vault; set VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY,
 // VAPID_SUBJECT in Supabase Edge Function secrets. Never ship private keys to the browser.
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
-  const secret = Deno.env.get("PUSH_DISPATCH_SECRET");
-  if (!secret || req.headers.get("x-push-dispatch-secret") !== secret)
-    return new Response("Unauthorized", { status: 401 });
   const url = Deno.env.get("SUPABASE_URL");
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const publicKey = Deno.env.get("VAPID_PUBLIC_KEY");
@@ -15,8 +12,12 @@ Deno.serve(async (req) => {
   const subject = Deno.env.get("VAPID_SUBJECT");
   if (!url || !key || !publicKey || !privateKey || !subject)
     return new Response("Missing server configuration", { status: 503 });
-  webpush.setVapidDetails(subject, publicKey, privateKey);
   const db = createClient(url, key, { auth: { persistSession: false } });
+  const suppliedSecret = req.headers.get("x-push-dispatch-secret") || "";
+  if (!suppliedSecret) return new Response("Unauthorized", { status: 401 });
+  const { data: authorized, error: authError } = await db.rpc("verify_push_dispatch_secret", { p_secret: suppliedSecret });
+  if (authError || authorized !== true) return new Response("Unauthorized", { status: 401 });
+  webpush.setVapidDetails(subject, publicKey, privateKey);
   const { data: jobs, error } = await db.from("web_push_outbox")
     .select("id,kind,target_id,recipient_id,attempts").is("sent_at", null)
     .lt("attempts", 5).order("created_at").limit(30);

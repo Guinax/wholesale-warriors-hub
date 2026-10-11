@@ -136,7 +136,7 @@ export default function MeusPedidos() {
     return map;
   }, [partnerTracking]);
 
-  const pendingRequests = partnerTracking.filter((request) => !request.order_code && ["searching","accepted","quoted","expired","cancelled","canceled"].includes(request.status));
+  const pendingRequests = partnerTracking.filter((request) => ["searching","accepted","quoted","payment_pending"].includes(request.status) && (!request.order_code || !orders.some((order) => order.order_code === request.order_code)));
 
   return <div className="min-h-screen bg-background">
     <PageHeader eyebrow="MINHA CONTA" title="MEUS PEDIDOS" subtitle="Seu histórico de compras, pagamentos e entregas em um só lugar." />
@@ -153,7 +153,7 @@ export default function MeusPedidos() {
         <p className="text-sm font-semibold" role="status">{requestStatusLabels[request.status] ?? request.status}</p>
         <p className="text-xs text-muted-foreground">{request.status === "searching" ? "Estamos procurando uma loja parceira para atender seu pedido." : request.status === "accepted" ? "A loja confirmou disponibilidade. Estamos calculando o frete." : request.status === "quoted" ? "Confira o valor da entrega antes de confirmar o pagamento." : "Consulte os detalhes da solicitação."}</p>
         {request.store_name && <p className="text-sm">Loja: {request.store_name}</p>}
-        <Button asChild variant="outline" className="w-full sm:w-auto"><Link to={`/pedido-local/${request.id}`}>Acompanhar solicitação</Link></Button>
+        <Button asChild variant="outline" className="w-full sm:w-auto"><Link to={`/pedido-local/${request.id}`}>{request.status === "payment_pending" ? "Continuar pagamento" : request.status === "quoted" ? "Conferir frete e pagar" : "Acompanhar solicitação"}</Link></Button>
       </Card>)}
       {orders.map((order) => {
         const partner = trackingByOrder.get(order.order_code);
@@ -244,6 +244,7 @@ export default function MeusPedidos() {
             )}
             {order.delivery_status === "entregue" && <p className="text-xs text-muted-foreground">Pedido entregue. Ele continuará salvo no seu histórico.</p>}
           </div>}
+          {order.payment_status === "pending" && partner?.id && ["payment_pending", "quoted"].includes(partner.status) && <Button asChild className="w-full sm:w-auto"><Link to={`/pedido-local/${partner.id}`}>Continuar pagamento</Link></Button>}
           <Button asChild variant="outline" className="w-full sm:w-auto"><Link to={`/recibo/${encodeURIComponent(order.order_code)}`}>Ver detalhes do pedido</Link></Button>
         </Card>;
       })}

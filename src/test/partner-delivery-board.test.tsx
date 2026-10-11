@@ -14,7 +14,7 @@ vi.mock("@/components/partners/PartnerCourierControls", () => ({
 afterEach(cleanup);
 const store = { id: "store-1", name: "Loja parceira", status: "approved", is_open: true, lat: -22.58, lng: -47.51 };
 const request: PartnerRequest = {
-  id: "request-1", store_id: store.id, status: "paid", payment_status: "paid",
+  id: "request-1", store_id: store.id, status: "paid", payment_status: "paid", accepted_at: "2026-10-11T12:00:00Z",
   order_code: "PEDIDO-1", lat: -22.59, lng: -47.52, items: [{ name: "Produto", qty: 2 }],
   customer: { name: "Cliente de teste", street: "Rua Teste", number: "10", city: "Iracemápolis" },
 };
@@ -32,7 +32,7 @@ describe("Partner delivery map", () => {
   it("keeps new offers off the map until they are assigned", () => {
     const command = vi.fn(async () => {});
     render(<PartnerDeliveryBoard {...base} requests={[]} offers={[{ id: "new", items: [{ name: "Produto", qty: 1 }], city: "Limeira", distance_km: 4, subtotal: 20, partner_merchandise: 18 }]} onCommand={command} />);
-    expect(screen.getByText(/destino aparece no mapa após o aceite/)).toBeInTheDocument();
+    expect(screen.getByText(/cliente já pagou/i)).toBeInTheDocument();
     expect(within(screen.getByTestId("map")).queryByText("Limeira")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Aceitar pedido" }));
     expect(command).toHaveBeenCalledWith("accept", { request_id: "new" }, "Pedido aceito.");
@@ -60,7 +60,7 @@ describe("Partner delivery map", () => {
   });
   it("uses automatic route pricing and leaves final delivery confirmation to the courier flow", () => {
     const command = vi.fn(async () => {});
-    const view = render(<PartnerDeliveryBoard {...base} requests={[{ ...request, status: "accepted", payment_status: null, route_km: 4, shipping: 9, eta_minutes: 30 }]} onCommand={command} />);
+    const view = render(<PartnerDeliveryBoard {...base} requests={[{ ...request, status: "paid", payment_status: "paid", route_km: 4, shipping: 9, eta_minutes: 30 }]} onCommand={command} />);
     selectOrder();
     expect(screen.queryByLabelText("Trajeto (km)")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Peso (kg)")).not.toBeInTheDocument();

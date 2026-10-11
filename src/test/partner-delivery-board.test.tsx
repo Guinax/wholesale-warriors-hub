@@ -55,18 +55,18 @@ describe("Partner delivery map", () => {
     render(<PartnerDeliveryBoard {...base} />);
     selectOrder();
     expect(screen.getByTestId("partner-courier-controls")).toHaveTextContent("request-1:store-1");
-    const link = screen.getByRole("link", { name: "Consultar trajeto" });
+    const link = screen.getByRole("link", { name: "Abrir rota no mapa" });
     expect(link.getAttribute("href")).toContain("origin=-22.58%2C-47.51");
   });
-  it("sends quote values and requires the delivery code and age confirmation", () => {
+  it("uses automatic route pricing and requires the delivery code and age confirmation", () => {
     const command = vi.fn(async () => {});
-    const view = render(<PartnerDeliveryBoard {...base} requests={[{ ...request, status: "accepted", payment_status: null }]} onCommand={command} />);
+    const view = render(<PartnerDeliveryBoard {...base} requests={[{ ...request, status: "accepted", payment_status: null, route_km: 4, shipping: 9, eta_minutes: 30 }]} onCommand={command} />);
     selectOrder();
-    fireEvent.change(screen.getByLabelText("Trajeto (km)"), { target: { value: "4" } });
-    fireEvent.change(screen.getByLabelText("Peso (kg)"), { target: { value: "2" } });
-    fireEvent.change(screen.getByLabelText("Prazo (min)"), { target: { value: "30" } });
-    fireEvent.submit(screen.getByRole("button", { name: "Enviar cotação" }).closest("form")!);
-    expect(command).toHaveBeenCalledWith("quote", { request_id: request.id, route_km: 4, weight_kg: 2, eta_minutes: 30 }, "Cotação enviada ao cliente.");
+    expect(screen.queryByLabelText("Trajeto (km)")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Peso (kg)")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Prazo (min)")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Enviar cotação" })).not.toBeInTheDocument();
+    expect(screen.getByText(/Trajeto calculado:/)).toBeInTheDocument();
     view.rerender(<PartnerDeliveryBoard {...base} requests={[{ ...request, status: "delivering" }]} onCommand={command} />);
     expect(screen.getByLabelText("Código informado pelo cliente")).toBeRequired();
     expect(screen.getByRole("checkbox")).toBeRequired();

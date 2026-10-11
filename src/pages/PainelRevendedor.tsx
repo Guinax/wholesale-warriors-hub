@@ -194,7 +194,11 @@ export default function PainelRevendedor() {
       if (error) { toast.error(error.message); return; }
       const result = data as unknown as { error?: string };
       if (result?.error) { toast.error(result.error); return; }
-      toast.success(success);
+      if (action === "accept") {
+        const { data: route, error: routeError } = await supabase.functions.invoke("partner-auto-route", { body: { request_id: payload.request_id } });
+        if (routeError || route?.error) toast.warning("Pedido aceito, mas o cálculo automático do frete falhou.");
+        else toast.success("Pedido aceito e frete calculado automaticamente.");
+      } else toast.success(success);
       await load();
     } catch {
       toast.error("Não foi possível atualizar o pedido. Confira sua conexão e tente novamente.");

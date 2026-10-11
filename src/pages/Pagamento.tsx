@@ -400,9 +400,15 @@ const Pagamento = () => {
             return;
           }
         }
-        setSubmitting(false);
-        toast({ title: "Entrega local indisponível", description: routeError?.message || "Nenhuma loja parceira com estoque foi encontrada. Nenhuma cobrança foi criada.", variant: "destructive" });
-        return;
+        // Fall back to the central warehouse only for an explicit no-store result.
+        // Do not mask authentication, inventory or infrastructure errors.
+        const noPartnerAvailable = !routeError || /nenhuma loja parceira (disponível|com estoque|aberta)|nenhuma loja disponível/i.test(routeError.message);
+        if (!noPartnerAvailable) {
+          setSubmitting(false);
+          toast({ title: "Erro ao localizar loja", description: routeError.message, variant: "destructive" });
+          return;
+        }
+        toast({ title: "Atendimento pela central", description: "Nenhuma loja parceira disponível. Seu pedido será encaminhado à central." });
       }
       setSubmitting(false);
       toast({ title: "Produto indisponível para entrega local", variant: "destructive" });

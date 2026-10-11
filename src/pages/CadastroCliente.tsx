@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { isStrongPassword, STRONG_PASSWORD_MESSAGE } from "@/lib/passwordPolicy";
+import { lookupCep } from "@/lib/shipping";
 
 const digits = (value: string) => value.replace(/\D/g, "");
 const countries = [
@@ -43,12 +44,34 @@ export default function CadastroCliente() {
   const [customDialCode, setCustomDialCode] = useState("");
   const dialCode = country === "OTHER" ? digits(customDialCode) : countries.find(([code]) => code === country)?.[2] ?? "55";
   const [email, setEmail] = useState("");
+  const [zip, setZip] = useState("");
+  const [street, setStreet] = useState("");
+  const [number, setNumber] = useState("");
+  const [complement, setComplement] = useState("");
+  const [neighborhood, setNeighborhood] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [lookingUpZip, setLookingUpZip] = useState(false);
   const [secret, setSecret] = useState("");
   const [confirmSecret, setConfirmSecret] = useState("");
   const [loading, setLoading] = useState(false);
   const [sentTo, setSentTo] = useState("");
   const [resending, setResending] = useState(false);
   const [resendAfter, setResendAfter] = useState(0);
+
+  const fillZip = async () => {
+    if (digits(zip).length !== 8) return;
+    setLookingUpZip(true);
+    try {
+      const address = await lookupCep(zip);
+      if (!address) { toast.error("CEP não encontrado. Confira o número."); return; }
+      setStreet(address.street || "");
+      setNeighborhood(address.neighborhood || "");
+      setCity(address.city || "");
+      setState(address.state || "");
+    } catch { toast.error("Não foi possível consultar o CEP. Preencha o endereço manualmente."); }
+    finally { setLookingUpZip(false); }
+  };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -58,6 +81,7 @@ export default function CadastroCliente() {
     if (nationalPhone.length < 4 || nationalPhone.length > 14 || (dialCode + nationalPhone).length > 15) return toast.error("Informe um WhatsApp válido para o país escolhido.");
     const internationalPhone = `+${dialCode}${nationalPhone}`;
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) return toast.error("E-mail inválido.");
+    if (digits(zip).length !== 8 || !street.trim() || !number.trim() || !neighborhood.trim() || !city.trim() || !/^[A-Za-z]{2}$/.test(state.trim())) return toast.error("Preencha o endereço de entrega completo, incluindo CEP, número e bairro.");
     if (!isStrongPassword(secret)) return toast.error(STRONG_PASSWORD_MESSAGE);
     if (secret !== confirmSecret) return toast.error("As senhas não coincidem.");
 
@@ -69,7 +93,7 @@ export default function CadastroCliente() {
         password: secret,
         options: {
           emailRedirectTo: `${window.location.origin}${nextPath}`,
-          data: { full_name: name.trim(), phone: internationalPhone, phone_country: country },
+          data: { full_name: name.trim(), phone: internationalPhone, phone_country: country, address_zip: digits(zip), address_street: street.trim(), address_number: number.trim(), address_complement: complement.trim(), address_neighborhood: neighborhood.trim(), address_city: city.trim(), address_state: state.trim().toUpperCase() },
         },
       });
       if (error) throw error;
@@ -157,6 +181,14 @@ export default function CadastroCliente() {
             <div className="flex items-center gap-2"><span className="shrink-0 rounded-md border border-input bg-muted px-3 py-2 text-sm">+{dialCode}</span><Input id="signup-phone" value={phone} onChange={(e) => setPhone(digits(e.target.value).slice(0, 14))} inputMode="tel" autoComplete="tel-national" placeholder={country === "BR" ? "11999999999" : "Número com código de área"} required /></div>
           </div>
           <div><Label>E-mail</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required /></div>
+          <div className="space-y-3 rounded-xl border border-border p-3">
+            <p className="text-sm font-bold">Endereço de entrega</p>
+            <div><Label htmlFor="signup-zip">CEP *</Label><Input id="signup-zip" inputMode="numeric" autoComplete="postal-code" placeholder="00000-000" value={zip} onChange={e=>setZip(digits(e.target.value).slice(0,8).replace(/^(\\d{5})(\\d)/,"$1-$2"))} onBlur={()=>void fillZip()} required /><p className="text-xs text-muted-foreground">{lookingUpZip ? "Consultando CEP..." : "O endereço ficará salvo para suas próximas compras."}</p></div>
+            <div><Label htmlFor="signup-street">Rua / Avenida *</Label><Input id="signup-street" value={street} onChange={e=>setStreet(e.target.value)} autoComplete="address-line1" required /></div>
+            <div className="grid grid-cols-2 gap-3"><div><Label htmlFor="signup-number">Número *</Label><Input id="signup-number" value={number} onChange={e=>setNumber(e.target.value)} required /></div><div><Label htmlFor="signup-complement">Complemento</Label><Input id="signup-complement" value={complement} onChange={e=>setComplement(e.target.value)} /></div></div>
+            <div><Label htmlFor="signup-neighborhood">Bairro *</Label><Input id="signup-neighborhood" value={neighborhood} onChange={e=>setNeighborhood(e.target.value)} required /></div>
+            <div className="grid grid-cols-2 gap-3"><div><Label htmlFor="signup-city">Cidade *</Label><Input id="signup-city" value={city} onChange={e=>setCity(e.target.value)} autoComplete="address-level2" required /></div><div><Label htmlFor="signup-state">UF *</Label><Input id="signup-state" value={state} onChange={e=>setState(e.target.value.toUpperCase().slice(0,2))} autoComplete="address-level1" maxLength={2} required /></div></div>
+          </div>
           <div><Label>Senha</Label><Input type="password" value={secret} onChange={(e) => setSecret(e.target.value)} autoComplete="new-password" minLength={10} required /></div>
           <div><Label>Confirmar senha</Label><Input type="password" value={confirmSecret} onChange={(e) => setConfirmSecret(e.target.value)} autoComplete="new-password" minLength={10} required /></div>
           <Button type="submit" className="w-full font-heading font-black" disabled={loading}>

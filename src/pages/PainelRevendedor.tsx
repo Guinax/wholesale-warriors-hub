@@ -453,7 +453,7 @@ export default function PainelRevendedor() {
             <div className="flex items-center justify-between gap-3">
               <button type="button" onClick={()=>navigate("/")} className="text-left font-heading text-base font-black leading-tight text-[#e5c66c]" aria-label="Voltar à Home">MANSÃO<br className="sm:hidden"/> MAROMBA</button>
               {hasApprovedStore && <nav className="hidden items-center gap-1 md:flex" aria-label="Painel do parceiro">
-                {([{id:"inicio",label:"Entregas",icon:MapPin},{id:"pedidos",label:"Pedidos",icon:Package},{id:"estoque",label:"Estoque",icon:Boxes},{id:"repasses",label:"Repasses",icon:WalletCards},{id:"loja",label:"Minha loja",icon:StoreIcon}] as const).map(item=><button key={item.id} type="button" onClick={()=>switchTab(item.id)} aria-current={activeTab===item.id?"page":undefined} className={"flex items-center gap-2 rounded-lg px-3 py-3 text-xs font-semibold transition "+(activeTab===item.id?"bg-white/10 text-[#e5c66c]":"text-slate-300 hover:bg-white/5")}><item.icon className="h-4 w-4"/>{item.label}</button>)}
+                {([{id:"inicio",label:"Visão geral",icon:Grid2X2},{id:"pedidos",label:"Pedidos",icon:Package},{id:"estoque",label:"Estoque",icon:Boxes},{id:"repasses",label:"Repasses",icon:WalletCards},{id:"loja",label:"Minha loja",icon:StoreIcon}] as const).map(item=><button key={item.id} type="button" onClick={()=>switchTab(item.id)} aria-current={activeTab===item.id?"page":undefined} className={"flex items-center gap-2 rounded-lg px-3 py-3 text-xs font-semibold transition "+(activeTab===item.id?"bg-white/10 text-[#e5c66c]":"text-slate-300 hover:bg-white/5")}><item.icon className="h-4 w-4"/>{item.label}</button>)}
               </nav>}
               <div className="flex items-center gap-2">
                 {hasApprovedStore && <button type="button" onClick={()=>switchTab("loja")} className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs"><span className={"h-2 w-2 rounded-full "+(openStore?.is_open?"bg-emerald-400":"bg-slate-500")}/>{openStore?.is_open?"Loja aberta":"Loja fechada"}</button>}
@@ -527,6 +527,18 @@ export default function PainelRevendedor() {
               </div>
             </section>}
 
+            {hasApprovedStore && activeTab==="inicio" && <section aria-label="Resumo operacional da loja" className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-400/20 bg-[#1c2029] p-4 shadow-xl">
+                <div className="flex items-center gap-3"><span className="rounded-xl bg-amber-400/10 p-3 text-amber-300"><StoreIcon className="h-6 w-6"/></span><div><p className="text-xs font-bold uppercase tracking-widest text-amber-300">Portal do lojista · Mansão Maromba</p><h2 className="text-lg font-black">{openStore?.name ?? "Minha loja"}</h2><p className="text-xs text-zinc-400">Pedidos, estoque e repasses atualizados pelo sistema</p></div></div>
+                <button type="button" onClick={()=>switchTab("loja")} className="flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-4 py-2 text-xs font-bold"><span className={`h-2.5 w-2.5 rounded-full ${openStore?.is_open?"bg-emerald-400":"bg-rose-400"}`}/>{openStore?.is_open?"Aberta":"Fechada"} · Configurar</button>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <button type="button" onClick={()=>switchTab("pedidos")} className="rounded-2xl bg-[#1c2029] p-4 text-left shadow-lg"><Bell className="mb-3 h-5 w-5 text-orange-400"/><p className="text-2xl font-black">{offers.length}</p><p className="text-xs text-zinc-400">Novos pedidos</p></button>
+                <button type="button" onClick={()=>switchTab("estoque")} className="rounded-2xl bg-[#1c2029] p-4 text-left shadow-lg"><Boxes className="mb-3 h-5 w-5 text-amber-300"/><p className="text-2xl font-black">{totalAvailable}</p><p className="text-xs text-zinc-400">Unidades disponíveis</p></button>
+                <button type="button" onClick={()=>switchTab("repasses")} className="rounded-2xl bg-[#1c2029] p-4 text-left shadow-lg"><WalletCards className="mb-3 h-5 w-5 text-emerald-300"/><p className="text-lg font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p><p className="text-xs text-zinc-400">Saldo liberado</p></button>
+                <button type="button" onClick={()=>switchTab("loja")} className="rounded-2xl bg-[#1c2029] p-4 text-left shadow-lg"><StoreIcon className="mb-3 h-5 w-5 text-amber-300"/><p className="text-lg font-black">{approvedStores.length}</p><p className="text-xs text-zinc-400">Lojas aprovadas</p></button>
+              </div>
+            </section>}
             {hasApprovedStore && <>
               {(activeTab==="inicio" || activeTab==="pedidos") && <Suspense fallback={<p role="status" className="p-8 text-slate-500">Carregando mapa e pedidos...</p>}><PartnerDeliveryBoard
                 stores={approvedStores} offers={offers} requests={requests} saving={saving}
@@ -750,7 +762,7 @@ export default function PainelRevendedor() {
 
       <nav className={`fixed inset-x-0 bottom-0 z-30 grid ${hasApprovedStore?"grid-cols-6":"grid-cols-2"} border-t border-[#d4af37]/20 bg-[#090b0c]/95 px-2 py-2.5 shadow-[0_-12px_35px_rgba(0,0,0,0.45)] backdrop-blur md:hidden`}>
         {hasApprovedStore ? <>
-          <button type="button" onClick={()=>switchTab("inicio")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="inicio"?"text-[#e5c66c]":"text-zinc-400"}`}><MapPin className="h-5 w-5"/><span>Mapa</span></button>
+          <button type="button" onClick={()=>switchTab("inicio")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="inicio"?"text-[#e5c66c]":"text-zinc-400"}`}><MapPin className="h-5 w-5"/><span>Início</span></button>
           <button type="button" onClick={()=>switchTab("pedidos")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="pedidos"?"text-[#e5c66c]":"text-zinc-400"}`}><Package className="h-5 w-5"/><span>Pedidos</span></button>
           <button type="button" onClick={()=>navigate("/")} className="mx-1 flex flex-col items-center gap-1 rounded-xl bg-[#d4af37] px-2 py-1 text-[10px] font-black text-black hover:bg-[#e8c65a]" aria-label="Voltar para a Home"><Home className="h-5 w-5"/><span>Home</span></button>
           <button type="button" onClick={()=>switchTab("estoque")} className={`flex flex-col items-center gap-1 rounded-xl py-1 text-[10px] ${activeTab==="estoque"?"text-[#e5c66c]":"text-zinc-400"}`}><Boxes className="h-5 w-5"/><span>Estoque</span></button>

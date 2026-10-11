@@ -527,6 +527,18 @@ export default function PainelRevendedor() {
               </div>
             </section>}
 
+            {hasApprovedStore && activeTab==="inicio" && <section aria-label="Resumo operacional da loja" className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-400/20 bg-[#1c2029] p-4 shadow-xl">
+                <div className="flex items-center gap-3"><span className="rounded-xl bg-amber-400/10 p-3 text-amber-300"><StoreIcon className="h-6 w-6"/></span><div><p className="text-xs font-bold uppercase tracking-widest text-amber-300">Portal do lojista · Mansão Maromba</p><h2 className="text-lg font-black">{openStore?.name ?? "Minha loja"}</h2><p className="text-xs text-zinc-400">Painel operacional conectado à sua loja</p></div></div>
+                <button type="button" onClick={()=>switchTab("loja")} className="flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-4 py-2 text-xs font-bold"><span className={`h-2.5 w-2.5 rounded-full ${openStore?.is_open?"bg-emerald-400":"bg-rose-400"}`}/>{openStore?.is_open?"Aberta":"Fechada"} · Configurar</button>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <button type="button" onClick={()=>switchTab("pedidos")} className="rounded-2xl bg-[#1c2029] p-4 text-left shadow-lg"><Bell className="mb-3 h-5 w-5 text-orange-400"/><p className="text-2xl font-black">{offers.length}</p><p className="text-xs text-zinc-400">Novos pedidos</p></button>
+                <button type="button" onClick={()=>switchTab("estoque")} className="rounded-2xl bg-[#1c2029] p-4 text-left shadow-lg"><Boxes className="mb-3 h-5 w-5 text-amber-300"/><p className="text-2xl font-black">{totalAvailable}</p><p className="text-xs text-zinc-400">Unidades disponíveis</p></button>
+                <button type="button" onClick={()=>switchTab("repasses")} className="rounded-2xl bg-[#1c2029] p-4 text-left shadow-lg"><WalletCards className="mb-3 h-5 w-5 text-emerald-300"/><p className="text-lg font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p><p className="text-xs text-zinc-400">Saldo liberado</p></button>
+                <button type="button" onClick={()=>switchTab("loja")} className="rounded-2xl bg-[#1c2029] p-4 text-left shadow-lg"><StoreIcon className="mb-3 h-5 w-5 text-amber-300"/><p className="text-lg font-black">{approvedStores.length}</p><p className="text-xs text-zinc-400">Lojas aprovadas</p></button>
+              </div>
+            </section>}
             {hasApprovedStore && <>
               {(activeTab==="inicio" || activeTab==="pedidos") && <Suspense fallback={<p role="status" className="p-8 text-slate-500">Carregando mapa e pedidos...</p>}><PartnerDeliveryBoard
                 stores={approvedStores} offers={offers} requests={requests} saving={saving}

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Boxes, CheckCircle2, ChevronDown, MapPin, Navigation, Package, Search, Store, Truck, WalletCards } from "lucide-react";
+import { Boxes, ChevronDown, MapPin, Navigation, Package, Search, Store, Truck, WalletCards } from "lucide-react";
 import PartnerMap, { type MapPoint } from "./PartnerMap";
 import PartnerCourierControls from "./PartnerCourierControls";
 import {
@@ -27,19 +27,10 @@ const filters: Array<{ id: DeliveryFilter; label: string }> = [
 const money = (n: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
 
 function OrderActions({ request, saving, onCommand }: { request: PartnerRequest; saving: string | null; onCommand: Command }) {
-  const [code, setCode] = useState("");
-  const [adult, setAdult] = useState(false);
   const busy = saving !== null;
   if (["accepted", "quoted"].includes(request.status)) return <p className="delivery-payment-note">{request.status === "quoted" ? "Frete calculado automaticamente. Aguardando pagamento do cliente." : "Calculando trajeto automaticamente. Se persistir, entre em contato com o suporte."}</p>;
   if (canDispatch(request)) return <button className="delivery-button delivery-button-primary" disabled={busy} onClick={() => void onCommand("dispatch", { request_id: request.id }, "Pedido saiu para entrega.")}><Truck size={16} /> Saiu para entrega</button>;
-  if (request.status === "delivering" && request.payment_status === "paid") return <form className="delivery-action-form" onSubmit={e => {
-    e.preventDefault();
-    void onCommand("deliver", { request_id: request.id, code: code.trim().toUpperCase(), adult_verified: adult }, "Entrega confirmada.");
-  }}>
-    <label>Código informado pelo cliente<input required value={code} maxLength={8} minLength={8} autoComplete="off" onChange={e => setCode(e.target.value)} /></label>
-    <label className="delivery-checkbox"><input required type="checkbox" checked={adult} onChange={e => setAdult(e.target.checked)} /> Conferi a maioridade do recebedor</label>
-    <button className="delivery-button delivery-button-primary" disabled={busy} type="submit"><CheckCircle2 size={16} /> Confirmar entrega</button>
-  </form>;
+  if (request.status === "delivering" && request.payment_status === "paid") return <p className="delivery-payment-note">Pedido despachado. O motoqueiro confirma a entrega com o código informado pelo cliente.</p>;
   if (request.status === "payment_pending" || request.status === "paid") return <p className="delivery-payment-note">A saída para entrega será liberada com o pagamento confirmado.</p>;
   return null;
 }

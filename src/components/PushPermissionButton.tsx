@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { enablePush, pushSupport, type PushRole } from "@/lib/pushNotifications";
 
-export default function PushPermissionButton({ role, automatic = true }: { role: PushRole; automatic?: boolean }) {
+export default function PushPermissionButton({ role, automatic = true, onUserGesture }: { role: PushRole; automatic?: boolean; onUserGesture?: () => void }) {
   const [busy, setBusy] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const attemptedRef = useRef(false);
@@ -12,6 +12,10 @@ export default function PushPermissionButton({ role, automatic = true }: { role:
 
   const activate = async (showErrors = true) => {
     if (busy || enabled || !support.ok) return;
+    if (typeof Notification !== "undefined" && Notification.permission === "denied") {
+      if (showErrors) toast.error("As notificações estão bloqueadas neste aparelho. Libere as notificações do app nas configurações do Android e tente novamente.");
+      return;
+    }
     setBusy(true);
     try {
       await enablePush(role);
@@ -45,7 +49,7 @@ export default function PushPermissionButton({ role, automatic = true }: { role:
 
   return (
     <div className="flex flex-col items-start gap-2">
-      <Button type="button" variant="outline" disabled={busy} onClick={() => void activate(true)}>
+      <Button type="button" variant="outline" disabled={busy} onClick={() => { onUserGesture?.(); void activate(true); }}>
         <BellRing className="mr-2 h-4 w-4" />
         {busy ? "Ativando..." : "Permitir avisos de pedidos"}
       </Button>

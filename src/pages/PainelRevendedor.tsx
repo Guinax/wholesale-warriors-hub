@@ -225,16 +225,18 @@ export default function PainelRevendedor() {
   };
 
   const saveStoreSettings = async (store: Store) => {
+    if (store.is_open) {
+      unlockSound();
+      try {
+        await enablePush("partner");
+      } catch {
+        toast.warning("Loja será aberta, mas ative as notificações para receber avisos em segundo plano.");
+      }
+    }
     setSaving("settings-"+store.id);
     const { error } = await supabase.rpc("partner_command" as never,{p_action:"settings",p_payload:{store_id:store.id,is_open:store.is_open,delivery_base:Number(store.delivery_base),delivery_per_km:Number(store.delivery_per_km),delivery_per_kg:Number(store.delivery_per_kg)}} as never);
     setSaving(null);
     if(error) return toast.error(error.message);
-    if (store.is_open) {
-      unlockSound();
-      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-        void enablePush("partner").catch(() => toast.warning("Ative os avisos de pedidos pelo botão de notificações."));
-      }
-    }
     toast.success(store.is_open ? "Loja aberta para receber pedidos." : "Operação da loja atualizada.");
     void load();
   };

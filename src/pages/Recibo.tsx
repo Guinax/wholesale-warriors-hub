@@ -481,8 +481,8 @@ const Recibo = () => {
           </button>
         </div>
 
-        <Link to="/" className="block text-center text-xs text-muted-foreground hover:text-primary underline pt-2">
-          Voltar para a loja
+        <Link to="/" replace className="block text-center bg-primary text-primary-foreground font-heading font-black text-sm tracking-wider py-3.5 rounded-lg hover:opacity-90 transition-opacity">
+          CONTINUAR — VOLTAR À HOME
         </Link>
       </main>
     </div>

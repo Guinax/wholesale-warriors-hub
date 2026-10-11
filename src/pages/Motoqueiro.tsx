@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import CourierMap, { type CourierMapPoint } from "@/components/courier/CourierMap";
 import PushPermissionButton from "@/components/PushPermissionButton";
+import { enablePush } from "@/lib/pushNotifications";
 
 type CourierProfile = {
   id: string;
@@ -577,7 +578,7 @@ export default function Motoqueiro() {
 
   return (
     <div className="contents">
-      {dashboard.profile?.status === "approved" && <div className="fixed bottom-20 right-3 z-40 rounded-xl bg-black/90 p-2 shadow-lg"><PushPermissionButton role="courier" /></div>}
+      {dashboard.profile?.status === "approved" && <div className="fixed bottom-20 right-3 z-40 rounded-xl bg-black/90 p-2 shadow-lg"><PushPermissionButton role="courier" onUserGesture={unlockOpportunityAudio} /></div>}
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,#2a2108_0%,#0b0b0b_28%,#050505_70%)] pb-24 text-white">
       <div className="mx-auto max-w-7xl px-3 py-4 sm:px-5 lg:px-7">
         <header className="overflow-hidden rounded-[28px] border border-yellow-400/20 bg-black/80 shadow-[0_0_45px_rgba(234,179,8,0.08)] backdrop-blur">
@@ -616,7 +617,17 @@ export default function Motoqueiro() {
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-white/10 bg-white/[0.03] hover:bg-white/[0.08]" onClick={() => void load()}><RefreshCw className="h-5 w-5" /></Button>
-              <Button disabled={saving || profile.status !== "approved"} onClick={() => { unlockOpportunityAudio(); void command("toggle_online", { online: !profile.is_online }, profile.is_online ? "Você ficou offline." : "Você está online e pode receber corridas."); }} className={`h-12 min-w-40 rounded-2xl border px-5 text-base font-black shadow-lg transition ${profile.is_online ? "border-emerald-300/40 bg-emerald-500 text-black shadow-emerald-500/20 hover:bg-emerald-400" : "border-white/10 bg-zinc-900 text-zinc-200 hover:bg-zinc-800"}`}>
+              <Button disabled={saving || profile.status !== "approved"} onClick={async () => {
+                unlockOpportunityAudio();
+                if (!profile.is_online) {
+                  try {
+                    await enablePush("courier");
+                  } catch {
+                    toast.warning("Você ficará online, mas ative as notificações para receber corridas em segundo plano.");
+                  }
+                }
+                void command("toggle_online", { online: !profile.is_online }, profile.is_online ? "Você ficou offline." : "Você está online e pode receber corridas.");
+              }} className={`h-12 min-w-40 rounded-2xl border px-5 text-base font-black shadow-lg transition ${profile.is_online ? "border-emerald-300/40 bg-emerald-500 text-black shadow-emerald-500/20 hover:bg-emerald-400" : "border-white/10 bg-zinc-900 text-zinc-200 hover:bg-zinc-800"}`}>
                 <Power className="mr-2 h-5 w-5" /> {profile.is_online ? "ONLINE" : "OFFLINE"}
               </Button>
             </div>

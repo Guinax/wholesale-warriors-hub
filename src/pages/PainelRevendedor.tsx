@@ -441,7 +441,6 @@ export default function PainelRevendedor() {
   const paidPayout = walletPayouts.reduce((sum,p)=>sum+Number(p.paid_amount||0),0);
   const openStore = approvedStores.find((s) => s.is_open) ?? approvedStores[0] ?? null;
   const totalAvailable = inventory.filter(i => approvedStores.some(s => s.id === i.store_id)).reduce((sum, item) => sum + Math.max(0, Number(item.on_hand) - Number(item.reserved)), 0);
-  const pendingOrdersCount = offers.length;
   const activeDeliveriesCount = requests.filter(r => approvedStores.some(s => s.id === r.store_id) && r.status === "delivering").length;
   const openStoreCount = approvedStores.filter(s => s.is_open).length;
   const pendingContractStore = approvedStores.find((s) => s.accepted_terms_version !== s.terms_version) ?? null;
@@ -467,7 +466,6 @@ export default function PainelRevendedor() {
           </header>
 
           <div className="space-y-6 p-4 md:p-7">
-            {hasApprovedStore && <section aria-label="Resumo operacional" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><div className="rounded-2xl border border-white/10 bg-[#1c2029] p-4"><p className="text-xs font-semibold uppercase tracking-wider text-[#d8c3ad]">Pedidos novos</p><p className="mt-2 text-3xl font-extrabold text-[#ffc174]">{pendingOrdersCount}</p><button type="button" onClick={()=>switchTab("pedidos")} className="mt-2 text-sm font-semibold text-[#ffc174]">Ver pedidos →</button></div><div className="rounded-2xl border border-white/10 bg-[#1c2029] p-4"><p className="text-xs font-semibold uppercase tracking-wider text-[#d8c3ad]">Unidades disponíveis</p><p className="mt-2 text-3xl font-extrabold">{totalAvailable}</p><button type="button" onClick={()=>switchTab("estoque")} className="mt-2 text-sm font-semibold text-[#ffc174]">Gerenciar estoque →</button></div><div className="rounded-2xl border border-white/10 bg-[#1c2029] p-4"><p className="text-xs font-semibold uppercase tracking-wider text-[#d8c3ad]">Entregas em andamento</p><p className="mt-2 text-3xl font-extrabold">{activeDeliveriesCount}</p><p className="mt-2 text-sm text-[#d8c3ad]">{openStoreCount} {openStoreCount === 1 ? "loja aberta" : "lojas abertas"}</p><button type="button" onClick={()=>switchTab("pedidos")} className="mt-2 text-sm font-semibold text-[#ffc174]">Acompanhar →</button></div><div className="rounded-2xl border border-white/10 bg-[#1c2029] p-4"><p className="text-xs font-semibold uppercase tracking-wider text-[#d8c3ad]">Repasses pendentes</p><p className="mt-2 text-2xl font-extrabold">R$ {waitingPayout.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}</p><button type="button" onClick={()=>switchTab("repasses")} className="mt-2 text-sm font-semibold text-[#ffc174]">Ver repasses →</button></div></section>}
             {pendingContractStore && <section role="alert" className="rounded-2xl border border-[#d4af37]/30 bg-[#d4af37]/10 p-4 shadow-lg">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -539,8 +537,8 @@ export default function PainelRevendedor() {
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <button type="button" onClick={()=>switchTab("pedidos")} className="rounded-2xl bg-[#1c2029] p-4 text-left shadow-lg"><Bell className="mb-3 h-5 w-5 text-orange-400"/><p className="text-2xl font-black">{offers.length}</p><p className="text-xs text-zinc-400">Novos pedidos</p></button>
                 <button type="button" onClick={()=>switchTab("estoque")} className="rounded-2xl bg-[#1c2029] p-4 text-left shadow-lg"><Boxes className="mb-3 h-5 w-5 text-amber-300"/><p className="text-2xl font-black">{totalAvailable}</p><p className="text-xs text-zinc-400">Unidades disponíveis</p></button>
-                <button type="button" onClick={()=>switchTab("repasses")} className="rounded-2xl bg-[#1c2029] p-4 text-left shadow-lg"><WalletCards className="mb-3 h-5 w-5 text-emerald-300"/><p className="text-lg font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p><p className="text-xs text-zinc-400">Saldo liberado</p></button>
-                <button type="button" onClick={()=>switchTab("loja")} className="rounded-2xl bg-[#1c2029] p-4 text-left shadow-lg"><StoreIcon className="mb-3 h-5 w-5 text-amber-300"/><p className="text-lg font-black">{approvedStores.length}</p><p className="text-xs text-zinc-400">Lojas aprovadas</p></button>
+                <button type="button" onClick={()=>switchTab("repasses")} className="rounded-2xl bg-[#1c2029] p-4 text-left shadow-lg"><WalletCards className="mb-3 h-5 w-5 text-emerald-300"/><p className="text-lg font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p><p className="text-xs text-zinc-400">Repasses pendentes</p></button>
+                <button type="button" onClick={()=>switchTab("loja")} className="rounded-2xl bg-[#1c2029] p-4 text-left shadow-lg"><StoreIcon className="mb-3 h-5 w-5 text-amber-300"/><p className="text-lg font-black">{activeDeliveriesCount}</p><p className="text-xs text-zinc-400">Entregas em andamento · {openStoreCount} {openStoreCount === 1 ? "loja aberta" : "lojas abertas"}</p></button>
               </div>
             </section>}
             {hasApprovedStore && <>

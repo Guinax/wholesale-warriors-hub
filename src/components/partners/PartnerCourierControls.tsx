@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bike, UserPlus } from "lucide-react";
+import { Bike } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -28,7 +28,6 @@ type Job = {
 export default function PartnerCourierControls({ requestId, storeId }: { requestId: string; storeId: string }) {
   const [couriers, setCouriers] = useState<Courier[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [code, setCode] = useState("");
   const [saving, setSaving] = useState(false);
   const autoRequestedRef = useRef(false);
 
@@ -66,17 +65,6 @@ export default function PartnerCourierControls({ requestId, storeId }: { request
       void load();
     });
   }, [current, requestId, load]);
-
-  const linkCourier = async () => {
-    if (code.trim().length < 4) return toast.error("Informe o ID do entregador.");
-    setSaving(true);
-    const { error } = await supabase.rpc("partner_link_courier_by_code" as never, { p_store_id: storeId, p_courier_code: code.trim().toUpperCase() } as never);
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    setCode("");
-    toast.success("Entregador vinculado à loja.");
-    await load();
-  };
 
   const command = async (action: string, payload: Record<string, unknown>, success: string) => {
     setSaving(true);
@@ -118,8 +106,8 @@ export default function PartnerCourierControls({ requestId, storeId }: { request
   const available = couriers.filter((item) => item.status === "approved" && item.is_online);
 
   return <div className="delivery-action-form">
-    <p className="delivery-form-title">Buscando entregador</p>
-    <p className="delivery-hint">A rede é acionada automaticamente e continua procurando até algum entregador online aceitar.</p>
+    <p className="delivery-form-title">Entrega própria ou rede de parceiros</p>
+    <p className="delivery-hint">Selecione um motoqueiro próprio disponível ou aguarde o aceite de um entregador da rede. Não é necessário informar ID.</p>
 
     {available.length > 0 && <div className="delivery-form-grid">
       {available.map((courier) => <button
@@ -131,11 +119,9 @@ export default function PartnerCourierControls({ requestId, storeId }: { request
       ><Bike size={16} /> {courier.full_name} · {courier.courier_code}</button>)}
     </div>}
 
-    <div className="delivery-form-grid">
-      <label>ID de um entregador para vincular à loja
-        <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="Ex.: MM-AB12CD34" />
-      </label>
-      <button type="button" className="delivery-button delivery-button-outline" disabled={saving} onClick={() => void linkCourier()}><UserPlus size={16} /> Vincular entregador</button>
-    </div>
+    {available.length === 0 && (
+      <p className="delivery-hint">Nenhum motoqueiro próprio aprovado está online. A busca pela rede continua ativa.</p>
+    )}
+
   </div>;
 }

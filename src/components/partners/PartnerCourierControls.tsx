@@ -29,11 +29,13 @@ export default function PartnerCourierControls({ requestId, storeId }: { request
   const [couriers, setCouriers] = useState<Courier[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [saving, setSaving] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const autoRequestedRef = useRef(false);
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.rpc("partner_courier_command" as never, { p_action: "dashboard", p_payload: {} } as never);
     if (error) return;
+    setLoaded(true);
     const d = (data ?? {}) as { couriers?: Courier[]; jobs?: Job[] };
     setCouriers((d.couriers ?? []).filter((item) => item.store_id === storeId));
     setJobs(d.jobs ?? []);
@@ -51,7 +53,7 @@ export default function PartnerCourierControls({ requestId, storeId }: { request
   const current = jobs.find((job) => job.request_id === requestId && job.status !== "cancelled");
 
   useEffect(() => {
-    if (current || autoRequestedRef.current) return;
+    if (!loaded || current || autoRequestedRef.current) return;
     autoRequestedRef.current = true;
     void supabase.rpc("partner_courier_command" as never, {
       p_action: "request_network",
@@ -64,7 +66,7 @@ export default function PartnerCourierControls({ requestId, storeId }: { request
       }
       void load();
     });
-  }, [current, requestId, load]);
+  }, [loaded, current, requestId, load]);
 
   const command = async (action: string, payload: Record<string, unknown>, success: string) => {
     setSaving(true);
@@ -78,7 +80,8 @@ export default function PartnerCourierControls({ requestId, storeId }: { request
   if (current) {
     const courier = couriers.find((item) => item.id === current.courier_id);
     return <div className="delivery-action-form">
-      <p className="delivery-form-title">Entrega atribuída</p>
+      <p className="delivery-form-title">Vínculo automático da corrida</p>
+      <p className="delivery-hint">Pedido vinculado à loja. O ID do entregador é associado automaticamente quando ele aceita a corrida.</p>
       <p className="delivery-hint">
         {current.source === "network" && !current.courier_id
           ? "Procurando entregador online próximo da loja."
@@ -90,6 +93,7 @@ export default function PartnerCourierControls({ requestId, storeId }: { request
                 ? "Entregador da rede atribuído."
                 : "Aguardando aceite da rede."}
       </p>
+      {current.courier_id && <p className="delivery-hint"><strong>ID do entregador vinculado:</strong> {current.courier_id}</p>}
       {current.courier_lat != null && current.courier_lng != null && (
         <a
           className="delivery-button delivery-button-outline"
@@ -107,7 +111,7 @@ export default function PartnerCourierControls({ requestId, storeId }: { request
 
   return <div className="delivery-action-form">
     <p className="delivery-form-title">Entrega própria ou rede de parceiros</p>
-    <p className="delivery-hint">Selecione um motoqueiro próprio disponível ou aguarde o aceite de um entregador da rede. Não é necessário informar ID.</p>
+    <p className="delivery-hint">Selecione um motoqueiro próprio disponível ou aguarde o aceite de um entregador da rede. O sistema identifica o entregador autenticado e vincula seu ID à corrida, sem digitação.</p>
 
     {available.length > 0 && <div className="delivery-form-grid">
       {available.map((courier) => <button

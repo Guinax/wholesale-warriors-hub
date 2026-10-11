@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { ArrowLeft, Building2, User, MapPin, Phone, FileText } from "lucide-react";
+import { ArrowLeft, Building2, User, MapPin, Phone, FileText, Eye, EyeOff } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,6 +67,8 @@ const formatCEP = (value: string) => {
 
 const CadastroCNPJ = () => {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [params] = useSearchParams();
   const rawNext = params.get("next") ?? "";
   const nextPath = rawNext.startsWith("/") && !rawNext.startsWith("//") && !rawNext.includes("\\") ? rawNext : "/minha-conta";
@@ -281,14 +284,26 @@ const CadastroCNPJ = () => {
             <h2 className="font-heading font-bold text-sm text-primary tracking-wider">ACESSO À CONTA</h2>
             <div>
               <Label htmlFor="password">Senha *</Label>
-              <Input id="password" type="password" autoComplete="new-password"
-                {...register("password", { required: "Crie uma senha", validate: value => isStrongPassword(value) || STRONG_PASSWORD_MESSAGE })} />
+              <div className="relative">
+                <Input id="password" type={showPassword ? "text" : "password"} autoComplete="new-password" className="pr-11"
+                  {...register("password", { required: "Crie uma senha", validate: value => isStrongPassword(value) || STRONG_PASSWORD_MESSAGE })} />
+                <button type="button" onClick={() => setShowPassword(value => !value)} aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"} aria-pressed={showPassword}
+                  className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
               {errors.password && <p className="text-destructive text-xs mt-1">{errors.password.message}</p>}
             </div>
             <div>
               <Label htmlFor="confirmPassword">Confirme a senha *</Label>
-              <Input id="confirmPassword" type="password" autoComplete="new-password"
-                {...register("confirmPassword", { required: "Confirme sua senha", validate: value => value === watch("password") || "As senhas não coincidem" })} />
+              <div className="relative">
+                <Input id="confirmPassword" type={showConfirmPassword ? "text" : "password"} autoComplete="new-password" className="pr-11"
+                  {...register("confirmPassword", { required: "Confirme sua senha", validate: value => value === watch("password") || "As senhas não coincidem" })} />
+                <button type="button" onClick={() => setShowConfirmPassword(value => !value)} aria-label={showConfirmPassword ? "Ocultar confirmação de senha" : "Mostrar confirmação de senha"} aria-pressed={showConfirmPassword}
+                  className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
               {errors.confirmPassword && <p className="text-destructive text-xs mt-1">{errors.confirmPassword.message}</p>}
             </div>
           </section>

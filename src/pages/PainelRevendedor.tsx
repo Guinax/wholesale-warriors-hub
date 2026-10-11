@@ -120,6 +120,22 @@ export default function PainelRevendedor() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const pending = requests.filter(r => r.status === "accepted" && r.shipping == null);
+    if (!pending.length) return;
+    let cancelled = false;
+    const retry = async () => {
+      for (const request of pending) {
+        if (cancelled) return;
+        const { error } = await supabase.functions.invoke("partner-auto-route", { body: { request_id: request.id } });
+        if (!error && !cancelled) await load();
+      }
+    };
+    void retry();
+    const timer = window.setInterval(() => void retry(), 30000);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, [requests, load]);
+
 
   useEffect(() => {
     const heartbeat = () => { void supabase.rpc("partner_heartbeat" as never); };

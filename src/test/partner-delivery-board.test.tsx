@@ -71,7 +71,7 @@ describe("Partner delivery map", () => {
     view.rerender(<PartnerDeliveryBoard {...base} requests={[{ ...request, status: "delivering" }]} onCommand={command} />);
     expect(screen.queryByLabelText("Código informado pelo cliente")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Confirmar entrega" })).not.toBeInTheDocument();
-    expect(screen.getByTestId("partner-courier-controls")).toHaveTextContent("request-1:store-1");
+    expect(screen.getByText(/O motoqueiro confirma a entrega com o código informado pelo cliente/)).toBeInTheDocument();
   });
   it("does not fabricate coordinates for missing or invalid positions", () => {
     expect(coordinates({ lat: null, lng: null })).toBeNull();

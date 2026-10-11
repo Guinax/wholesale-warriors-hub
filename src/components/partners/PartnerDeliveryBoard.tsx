@@ -75,11 +75,11 @@ export default function PartnerDeliveryBoard({ stores, offers, requests, saving,
         </div>
         <div className="delivery-cards">
           {visibleOffers.map(o => <article key={o.id} className="delivery-order delivery-order-new">
-            <div className="delivery-order-title"><h3>Nova solicitação</h3><span className="delivery-badge delivery-badge-new">Novo</span></div>
+            <div className="delivery-order-title"><h3>Pedido pago</h3><span className="delivery-badge delivery-badge-new">Pagamento confirmado</span></div>
             <p className="delivery-address"><MapPin size={14} />{o.city} · {Number(o.distance_km).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} km</p>
             <p className="delivery-items">{o.items.map(i => i.qty + "× " + i.name).join(" · ")}</p>
             <p className="delivery-offer-value">Mercadorias para a loja <strong>{money(Number(o.partner_merchandise))}</strong></p>
-            <p className="delivery-hint">O destino aparece no mapa após o aceite.</p>
+            <p className="delivery-hint">O cliente já pagou. Ao aceitar, a venda entra como crédito retido e os entregadores disponíveis são acionados.</p>
             <div className="delivery-order-buttons"><button className="delivery-button delivery-button-outline" disabled={saving !== null} onClick={() => void onCommand("decline", { request_id: o.id }, "Oferta recusada.")}>Recusar</button><button className="delivery-button delivery-button-primary" disabled={saving !== null} onClick={() => void onCommand("accept", { request_id: o.id }, "Pedido aceito.")}>Aceitar pedido</button></div>
           </article>)}
           {visible.map(r => {

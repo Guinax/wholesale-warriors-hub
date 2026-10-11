@@ -1,11 +1,9 @@
-import { ArrowRight, BadgeDollarSign, Bike, CarFront, Truck, Route, ShieldCheck } from "lucide-react";
+import { ArrowRight, BadgeDollarSign, Bike, CarFront, Route, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const modes = [
-  { label: "Moto", icon: Bike, detail: "Entregas rápidas na cidade" },
-  { label: "Bicicleta", icon: Bike, detail: "Rotas curtas e leves" },
-  { label: "Utilitário", icon: CarFront, detail: "Mais volume por corrida" },
-  { label: "Caminhão leve", icon: Truck, detail: "Pedidos maiores e abastecimento" },
+  { label: "Moto", icon: Bike, detail: "Agilidade para entregas rápidas e rotas urbanas." },
+  { label: "Veículo utilitário", icon: CarFront, detail: "Mais capacidade para pedidos maiores e rotas com volume." },
 ];
 
 export default function CourierRecruitmentBanner() {
@@ -29,7 +27,7 @@ export default function CourierRecruitmentBanner() {
               </h2>
 
               <p className="mt-3 max-w-xl text-sm leading-6 text-zinc-300 sm:text-base">
-                Se você trabalha de moto, bicicleta, utilitário ou caminhão leve, pode receber oportunidades de entrega da nossa rede e escolher as corridas que fazem sentido para você.
+                Se você trabalha de moto ou veículo utilitário, pode receber oportunidades de entrega da nossa rede e escolher as corridas que fazem sentido para você.
               </p>
 
               <div className="mt-5 flex flex-wrap gap-3 text-xs text-zinc-400">
@@ -55,7 +53,7 @@ export default function CourierRecruitmentBanner() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               {modes.map(({ label, icon: Icon, detail }) => (
                 <button
                   key={label}

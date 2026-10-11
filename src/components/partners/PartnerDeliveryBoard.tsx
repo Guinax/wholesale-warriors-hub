@@ -103,8 +103,8 @@ export default function PartnerDeliveryBoard({ stores, offers, requests, saving,
                 <span className="delivery-details-label">{selected ? "Fechar detalhes" : "Ver pedido"}<ChevronDown size={16} /></span>
               </button>
               {selected && <div className="delivery-order-details">
-                {url ? <a className="delivery-button delivery-button-outline" href={url} target="_blank" rel="noopener noreferrer"><Navigation size={16} /> Consultar trajeto</a> : <p className="delivery-hint">Este pedido ainda não tem coordenadas válidas. Confira o endereço informado.</p>}
-                {r.shipping != null && <p className="delivery-hint">Entrega: {money(Number(r.shipping))}{r.eta_minutes ? " · prazo informado: " + r.eta_minutes + " min" : ""}</p>}
+                {url ? <a className="delivery-button delivery-button-outline" href={url} target="_blank" rel="noopener noreferrer"><Navigation size={16} /> Abrir rota no mapa</a> : <p className="delivery-hint">Este pedido ainda não tem coordenadas válidas. Confira o endereço informado.</p>}
+                {r.route_km != null && r.shipping != null && <p className="delivery-hint"><strong>Trajeto calculado:</strong> {Number(r.route_km).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} km · <strong>Frete:</strong> {money(Number(r.shipping))}{r.eta_minutes ? " · Previsão: " + r.eta_minutes + " min" : ""}</p>}
                 {r.status === "paid" && r.store_id ? <PartnerCourierControls requestId={r.id} storeId={r.store_id} /> : <OrderActions key={r.id + r.status} request={r} saving={saving} onCommand={onCommand} />}
               </div>}
             </article>;

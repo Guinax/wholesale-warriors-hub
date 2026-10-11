@@ -50,8 +50,15 @@ const Recibo = () => {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
+  const [customerCode, setCustomerCode] = useState<string | null>(null);
   const [receiptError, setReceiptError] = useState<"auth" | "not_found" | "network" | null>(null);
   const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    void supabase.auth.getUser().then(({ data: { user } }) => {
+      setCustomerCode(user ? `CLI-${user.id.replace(/-/g, "").slice(0, 12).toUpperCase()}` : null);
+    });
+  }, []);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -322,6 +329,13 @@ const Recibo = () => {
             </button>
           )}
 
+          {paid && customerCode && (
+            <div className="rounded-xl border border-primary/40 bg-primary/10 p-4 space-y-1">
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Seu código de cliente</p>
+              <p className="font-mono text-xl font-black tracking-wider text-foreground select-all">{customerCode}</p>
+              <p className="text-xs text-muted-foreground">Identificação da sua conta para atendimento e futuras compras.</p>
+            </div>
+          )}
           <p className="text-xs text-muted-foreground">
             Pedido <strong className="text-foreground">{order.order_code}</strong> registrado em{" "}
             {dateTimeBR(order.created_at)}

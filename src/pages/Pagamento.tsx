@@ -68,6 +68,7 @@ const Pagamento = () => {
   const pendingOrder = useRef<{ code: string; snapshot: string } | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [editing, setEditing] = useState(false);
+  const savedAddress = useRef<typeof customer | null>(null);
   const [shippingCost, setShippingCost] = useState(0);
   const [shippingEta, setShippingEta] = useState("");
   const [checkingCep, setCheckingCep] = useState(false);
@@ -131,6 +132,7 @@ const Pagamento = () => {
           zip: data.address_zip ?? "",
         };
         setCustomer(filled);
+        savedAddress.current = filled;
         setDocType(filled.cnpj && !filled.cpf ? "cnpj" : "cpf");
         const complete = filled.name && filled.email && filled.phone && filled.street && filled.number && filled.city && filled.state && filled.zip;
         if (!complete) setEditing(true);
@@ -230,6 +232,7 @@ const Pagamento = () => {
         address_state: customer.state.trim(),
         address_zip: customer.zip,
       }).eq("user_id", user.id);
+      if (!error && !cancelled) savedAddress.current = { ...customer };
       if (error && !cancelled) {
         toast({ title: "Não foi possível salvar o endereço", description: "Confira seus dados e tente novamente.", variant: "destructive" });
       }
@@ -511,8 +514,11 @@ const Pagamento = () => {
             <div className="flex items-center justify-between gap-3">
               <h2 className="font-heading font-black text-sm tracking-wider text-foreground">DADOS DE ENTREGA</h2>
               {!loadingProfile && (
-                <button onClick={() => setEditing((e) => !e)} className="text-[11px] font-heading font-bold tracking-wider text-primary hover:underline">
-                  {editing ? "USAR ENDEREÇO CADASTRADO" : "ENTREGAR EM OUTRO ENDEREÇO"}
+                <button onClick={() => {
+                  if (editing && savedAddress.current) setCustomer(savedAddress.current);
+                  setEditing((e) => !e);
+                }} className="text-[11px] font-heading font-bold tracking-wider text-primary hover:underline">
+                  {editing ? "USAR ENDEREÇO CADASTRADO" : "ALTERAR ENDEREÇO DE ENTREGA"}
                 </button>
               )}
             </div>
@@ -526,7 +532,7 @@ const Pagamento = () => {
                 <p>{customer.email} · {customer.phone}</p>
                 <p>{customer.street}, {customer.number}{customer.complement ? ` — ${customer.complement}` : ""}</p>
                 <p>{customer.city}/{customer.state} · CEP {customer.zip}</p>
-                <p className="text-[10px] pt-1">Dados salvos no seu cadastro. Aceite as condições abaixo para finalizar o pagamento.</p>
+                <p className="text-[10px] pt-1">Confira o endereço acima. Se estiver correto, aceite as condições abaixo e finalize o pedido.</p>
               </div>
             ) : (
               <div className="grid sm:grid-cols-2 gap-3">

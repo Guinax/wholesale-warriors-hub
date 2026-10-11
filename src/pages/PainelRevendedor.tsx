@@ -682,18 +682,16 @@ export default function PainelRevendedor() {
 
               {activeTab==="estoque" && <div id="estoque" className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div><h2 className="text-lg font-black">Estoque da minha loja</h2><p className="text-xs text-zinc-500">Os produtos e fotos vêm do catálogo oficial. Informe somente a quantidade física disponível na sua loja.</p></div>
+                  <div><h2 className="text-lg font-black">Cadastro de produtos e quantidades</h2><p className="text-xs text-zinc-500">Cadastre seus produtos e informe a quantidade disponível de cada item.</p></div>
                   <div className="flex items-center gap-2"><div className="flex rounded-lg border border-white/10 bg-black/20 p-1"><Button type="button" size="sm" variant="ghost" onClick={()=>setStockView("grid")} className={stockView==="grid"?"bg-[#d4af37]/15 text-yellow-200":"text-zinc-400"}><Grid2X2 className="h-4 w-4"/>Grade</Button><Button type="button" size="sm" variant="ghost" onClick={()=>setStockView("list")} className={stockView==="list"?"bg-[#d4af37]/15 text-yellow-200":"text-zinc-400"}><List className="h-4 w-4"/>Lista</Button></div><Boxes className="h-5 w-5 text-[#e5c66c]"/></div>
                 </div>
                 <div className="mt-4 rounded-2xl border border-[#d4af37]/20 bg-[#d4af37]/5 p-4">
                   <div className="flex items-center gap-2"><Plus className="h-4 w-4 text-[#e5c66c]"/><h3 className="font-bold">Cadastrar produto da minha loja</h3></div>
-                  <p className="mt-1 text-xs text-zinc-500">Produto próprio do parceiro. Você pode cadastrar, atualizar o estoque e excluir quando não houver reserva.</p>
+                  <p className="mt-1 text-xs text-zinc-500">Informe o nome, preço e quantidade. O preço é necessário para disponibilizar o produto à venda.</p>
                   {(()=>{const d=customDraft[store.id]??{name:"",description:"",price:"",on_hand:"0",file:null};return <div className="mt-3 grid gap-2 md:grid-cols-2">
                     <input className="h-10 rounded-lg border border-white/10 bg-black/30 px-3" placeholder="Nome do produto" value={d.name} onChange={(e)=>setCustomDraft(x=>({...x,[store.id]:{...d,name:e.target.value}}))}/>
                     <input className="h-10 rounded-lg border border-white/10 bg-black/30 px-3" inputMode="decimal" placeholder="Preço de venda (R$)" value={d.price} onChange={(e)=>setCustomDraft(x=>({...x,[store.id]:{...d,price:e.target.value}}))}/>
                     <input className="h-10 rounded-lg border border-white/10 bg-black/30 px-3" type="number" min="0" step="1" placeholder="Quantidade" value={d.on_hand} onChange={(e)=>setCustomDraft(x=>({...x,[store.id]:{...d,on_hand:e.target.value}}))}/>
-                    <label className="flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 text-xs text-zinc-400"><ImagePlus className="h-4 w-4"/><span className="truncate">{d.file?.name??"Adicionar foto"}</span><input type="file" accept="image/*" className="hidden" onChange={(e)=>setCustomDraft(x=>({...x,[store.id]:{...d,file:e.target.files?.[0]??null}}))}/></label>
-                    <textarea className="min-h-20 rounded-lg border border-white/10 bg-black/30 p-3 text-sm md:col-span-2" placeholder="Descrição (opcional)" value={d.description} onChange={(e)=>setCustomDraft(x=>({...x,[store.id]:{...d,description:e.target.value}}))}/>
                     <Button className="md:col-span-2 bg-[#d4af37] font-black text-black hover:bg-[#e8c65a]" disabled={saving==="custom-create-"+store.id} onClick={()=>void createCustomProduct(store.id)}>{saving==="custom-create-"+store.id?"Cadastrando...":"Cadastrar produto próprio"}</Button>
                   </div>})()}
                 </div>
@@ -711,7 +709,7 @@ export default function PainelRevendedor() {
                   </div>
                 </div>}
 
-                <div className="mt-5 mb-2 flex items-center justify-between"><div><h3 className="font-black">Produtos oficiais da plataforma</h3><p className="text-xs text-zinc-500">O parceiro altera somente a quantidade. Exclusão e cadastro ficam sob controle do admin.</p></div><span className="rounded-full border border-[#d4af37]/20 bg-[#d4af37]/5 px-2 py-1 text-[10px] font-bold text-yellow-200">OFICIAIS</span></div>
+                <div className="mt-5 mb-2 flex items-center justify-between"><div><h3 className="font-black">Produtos do catálogo — informar quantidade</h3><p className="text-xs text-zinc-500">O parceiro altera somente a quantidade. Exclusão e cadastro ficam sob controle do admin.</p></div><span className="rounded-full border border-[#d4af37]/20 bg-[#d4af37]/5 px-2 py-1 text-[10px] font-bold text-yellow-200">OFICIAIS</span></div>
                 {catalogProducts.length===0?<p className="mt-3 text-sm text-zinc-500">Nenhum produto ativo no catálogo.</p>:<div className={stockView==="grid"?"mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3":"mt-4 space-y-2"}>
                   {catalogProducts.map((p)=>{const i=inventory.find((x)=>x.store_id===store.id&&x.product_id===p.id)??{store_id:store.id,product_id:p.id,on_hand:0,reserved:0,name:p.name};const key=i.store_id+":"+i.product_id;return <div key={key} className={`rounded-2xl border border-white/10 bg-black/20 p-3 ${stockView==="list"?"md:flex md:items-center md:justify-between md:gap-4":""}`}>
                     <div className="flex items-start gap-3">

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, Link, useSearchParams } from "react-router-dom";
+import { useCart } from "@/contexts/CartContext";
 import { CheckCircle2, Download, Package, Truck, MapPin, Home, MessageCircle, RefreshCw } from "lucide-react";
 import jsPDF from "jspdf";
 import PageHeader from "@/components/PageHeader";
@@ -47,6 +48,7 @@ const Recibo = () => {
   const { code } = useParams<{ code: string }>();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { clearCart } = useCart();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
@@ -138,6 +140,10 @@ const Recibo = () => {
   );
 
   const paymentStatus = order?.payment_status;
+
+  useEffect(() => {
+    if (paymentStatus === "paid") clearCart();
+  }, [paymentStatus, clearCart]);
   const paymentDueAt = order?.due_at;
 
   // Verificação automática enquanto o pagamento estiver pendente

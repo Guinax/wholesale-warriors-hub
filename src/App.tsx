@@ -11,7 +11,6 @@ import CadastroCNPJ from "./pages/CadastroCNPJ.tsx";
 import CadastroCliente from "./pages/CadastroCliente.tsx";
 import MaisVendidos from "./pages/MaisVendidos.tsx";
 import Avaliacoes from "./pages/Avaliacoes.tsx";
-import Comissoes from "./pages/Comissoes.tsx";
 import Pagamento from "./pages/Pagamento.tsx";
 import Recibo from "./pages/Recibo.tsx";
 import Auth from "./pages/Auth.tsx";
@@ -58,7 +57,6 @@ const App = () => (
             <Route path="/cadastro-cliente" element={<CadastroCliente />} />
             <Route path="/mais-vendidos" element={<MaisVendidos />} />
             <Route path="/avaliacoes" element={<Avaliacoes />} />
-            <Route path="/comissoes" element={<Comissoes />} />
             <Route path="/pagamento" element={<ProtectedRoute><Pagamento /></ProtectedRoute>} />
             <Route path="/recibo/:code" element={<ProtectedRoute><Recibo /></ProtectedRoute>} />
             <Route path="/meus-pedidos" element={<ProtectedRoute><MeusPedidos /></ProtectedRoute>} />

@@ -13,7 +13,6 @@ import PushPermissionButton from "@/components/PushPermissionButton";
 import { enablePush } from "@/lib/pushNotifications";
 
 const PartnerDeliveryBoard = lazy(() => import("@/components/partners/PartnerDeliveryBoard"));
-const PartnerRestockRequest = lazy(() => import("@/components/partners/PartnerRestockRequest"));
 
 type Offer = PartnerOffer;
 type Request = PartnerRequest;
@@ -601,10 +600,9 @@ export default function PainelRevendedor() {
 
               {activeTab==="estoque" && <div id="estoque" className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div><h2 className="text-lg font-black">Meu estoque</h2><p className="text-xs text-zinc-500">Disponível = físico menos reservado.</p></div>
+                  <div><h2 className="text-lg font-black">Estoque da minha loja</h2><p className="text-xs text-zinc-500">Os produtos e fotos vêm do catálogo oficial. Informe somente a quantidade física disponível na sua loja.</p></div>
                   <div className="flex items-center gap-2"><div className="flex rounded-lg border border-white/10 bg-black/20 p-1"><Button type="button" size="sm" variant="ghost" onClick={()=>setStockView("grid")} className={stockView==="grid"?"bg-[#d4af37]/15 text-yellow-200":"text-zinc-400"}><Grid2X2 className="h-4 w-4"/>Grade</Button><Button type="button" size="sm" variant="ghost" onClick={()=>setStockView("list")} className={stockView==="list"?"bg-[#d4af37]/15 text-yellow-200":"text-zinc-400"}><List className="h-4 w-4"/>Lista</Button></div><Boxes className="h-5 w-5 text-[#e5c66c]"/></div>
                 </div>
-                <Suspense fallback={<div className="mt-4 rounded-xl border border-white/10 p-4 text-sm text-zinc-500">Carregando reposição...</div>}><PartnerRestockRequest storeId={store.id} products={catalogProducts}/></Suspense>
                 {catalogProducts.length===0?<p className="mt-3 text-sm text-zinc-500">Nenhum produto ativo no catálogo.</p>:<div className={stockView==="grid"?"mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3":"mt-4 space-y-2"}>
                   {catalogProducts.map((p)=>{const i=inventory.find((x)=>x.store_id===store.id&&x.product_id===p.id)??{store_id:store.id,product_id:p.id,on_hand:0,reserved:0,name:p.name};const key=i.store_id+":"+i.product_id;return <div key={key} className={`rounded-2xl border border-white/10 bg-black/20 p-3 ${stockView==="list"?"md:flex md:items-center md:justify-between md:gap-4":""}`}>
                     <div className="flex items-start gap-3">
@@ -614,13 +612,13 @@ export default function PainelRevendedor() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="line-clamp-2 text-sm font-bold">{i.name}</p>
-                        <p className="mt-1 text-xs text-zinc-500">Físico {i.on_hand} · reservado {i.reserved}</p>
-                        <p className="mt-1 text-xs font-semibold text-[#e5c66c]">Disponível {i.on_hand-i.reserved}</p>
+                        <p className="mt-1 text-xs text-zinc-500">Em estoque: {i.on_hand} · reservado em pedidos: {i.reserved}</p>
+                        <p className="mt-1 text-xs font-semibold text-[#e5c66c]">Livre para venda: {Math.max(0,i.on_hand-i.reserved)}</p>
                       </div>
                     </div>
                     <div className={`mt-3 grid gap-2 ${stockView==="list"?"md:mt-0 md:min-w-[360px] md:grid-cols-[100px_1fr_auto]":""}`}>
-                      <input className="h-9 rounded-lg border border-white/10 bg-black/30 px-2" type="number" min="0" step="1" placeholder={String(i.on_hand)} value={stockDraft[key]??""} onChange={(e)=>setStockDraft((x)=>({...x,[key]:e.target.value}))}/>
-                      <Button size="sm" variant="outline" className="border-[#d4af37]/25 bg-[#d4af37]/5 text-yellow-200 hover:bg-[#d4af37]/10" disabled={saving==="stock-"+key} onClick={()=>void saveStock(i.store_id,i.product_id,i.on_hand)}>Atualizar estoque</Button>
+                      <label className="space-y-1"><span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Quantidade física</span><input aria-label={`Quantidade de ${p.name}`} className="h-9 w-full rounded-lg border border-white/10 bg-black/30 px-2" type="number" min="0" max="1000000" step="1" placeholder={String(i.on_hand)} value={stockDraft[key]??""} onChange={(e)=>setStockDraft((x)=>({...x,[key]:e.target.value}))}/></label>
+                      <Button size="sm" variant="outline" className="border-[#d4af37]/25 bg-[#d4af37]/5 text-yellow-200 hover:bg-[#d4af37]/10" disabled={saving==="stock-"+key} onClick={()=>void saveStock(i.store_id,i.product_id,i.on_hand)}>Salvar quantidade</Button>
                     </div>
                   </div>})}
                 </div>}

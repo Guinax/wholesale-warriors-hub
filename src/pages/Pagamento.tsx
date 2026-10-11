@@ -361,13 +361,26 @@ const Pagamento = () => {
         } as never);
         const requestId = (routed as {request_id?:string}|null)?.request_id;
         if (requestId) {
-          setSubmitting(false);
-          toast({ title: "Pedido encaminhado para loja próxima", description: "Estamos buscando uma loja com estoque para calcular a entrega local." });
-          navigate(`/pedido-local/${requestId}`);
-          return;
+          const { data: prepared, error: prepareError } = await supabase.rpc("partner_prepare_payment" as never, { p_request_id: requestId } as never);
+          const preparedOrder = prepared as { order_code?: string; shipping?: number; total?: number } | null;
+          if (prepareError || !preparedOrder?.order_code) {
+            setSubmitting(false);
+            toast({ title: "Não foi possível preparar o pagamento", description: prepareError?.message || "Tente novamente.", variant: "destructive" });
+            return;
+          }
+          try {
+            const checkoutUrl = await createPaymentLink(preparedOrder.order_code, `${window.location.origin}/recibo/${preparedOrder.order_code}`);
+            toast({ title: "Frete calculado", description: `Entrega ${formatCurrency(Number(preparedOrder.shipping || 0))}. Finalize o pagamento para liberar o pedido à loja.` });
+            window.location.href = checkoutUrl;
+            return;
+          } catch (error) {
+            setSubmitting(false);
+            toast({ title: "Pagamento indisponível", description: error instanceof Error ? error.message : "Tente novamente.", variant: "destructive" });
+            return;
+          }
         }
         setSubmitting(false);
-        toast({ title: "Entrega local indisponível", description: routeError?.message || "Nenhuma loja parceira aceitou a solicitação. Nenhuma cobrança foi criada.", variant: "destructive" });
+        toast({ title: "Entrega local indisponível", description: routeError?.message || "Nenhuma loja parceira com estoque foi encontrada. Nenhuma cobrança foi criada.", variant: "destructive" });
         return;
       }
       setSubmitting(false);

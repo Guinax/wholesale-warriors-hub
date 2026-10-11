@@ -10,6 +10,9 @@ self.addEventListener("push", (event) => {
     icon: "/icon-192-maromba-v2.png",
     badge: "/favicon-maromba-v2.png",
     tag: typeof payload.tag === "string" ? payload.tag.slice(0, 120) : undefined,
+    renotify: true,
+    requireInteraction: true,
+    vibrate: [250, 100, 250, 100, 350],
     data: { path: target },
   }));
 });

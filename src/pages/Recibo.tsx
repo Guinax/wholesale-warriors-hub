@@ -51,6 +51,7 @@ const Recibo = () => {
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
   const [customerCode, setCustomerCode] = useState<string | null>(null);
+  const [deliveryCode, setDeliveryCode] = useState<string | null>(null);
   const [receiptError, setReceiptError] = useState<"auth" | "not_found" | "network" | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
@@ -75,6 +76,10 @@ const Recibo = () => {
     const data = Array.isArray(rows) ? rows[0] : rows;
     const next = (data as unknown as Order) ?? null;
     setOrder(next);
+    if (next?.payment_status === "paid") {
+      const { data: codeData, error: codeError } = await supabase.rpc("get_my_delivery_code" as never, { p_order_code: next.order_code } as never);
+      setDeliveryCode(!codeError && typeof codeData === "string" ? codeData : null);
+    } else setDeliveryCode(null);
     if (!next) {
       const { data: { user } } = await supabase.auth.getUser();
       setReceiptError(user ? "not_found" : "auth");
@@ -329,6 +334,23 @@ const Recibo = () => {
             </button>
           )}
 
+          {paid && (
+            <div className="rounded-xl border-2 border-primary bg-primary/10 p-5 space-y-2" aria-live="polite">
+              <p className="font-heading font-black text-sm tracking-wide text-foreground">CÓDIGO PARA CONFIRMAR A ENTREGA</p>
+              {deliveryCode ? (
+                <>
+                  <p className="font-mono text-3xl font-black tracking-[0.2em] text-primary select-all">{deliveryCode}</p>
+                  <p className="text-sm text-foreground">Guarde este código e informe ao motoqueiro somente quando receber seu pedido. Ele será necessário para finalizar a entrega.</p>
+                  <button type="button" onClick={() => void navigator.clipboard?.writeText(deliveryCode)} className="text-sm font-bold underline text-primary">Copiar código</button>
+                </>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">O código de entrega ainda não está disponível. Atualize para consultar novamente.</p>
+                  <button type="button" onClick={() => void fetchOrder()} className="text-sm font-bold underline text-primary">Atualizar código</button>
+                </div>
+              )}
+            </div>
+          )}
           {paid && customerCode && (
             <div className="rounded-xl border border-primary/40 bg-primary/10 p-4 space-y-1">
               <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Seu código de cliente</p>

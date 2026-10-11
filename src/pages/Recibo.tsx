@@ -29,11 +29,15 @@ interface Order {
   items: Array<{ name: string; qty: number; unit_price: number; subtotal: number }>;
   total_amount: number;
   created_at: string;
+  payment_checked_at?: string | null;
   due_at?: string | null;
   expires_at?: string | null;
 }
 
+const dateTimeBR = (value: string) => new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date(value));
+
 const PAYMENT_LABEL: Record<string, string> = {
+  infinitepay: "InfinitePay",
   pix: "PIX",
   cartao: "Cartão de Crédito",
   cripto: "Criptomoeda",
@@ -46,6 +50,7 @@ const Recibo = () => {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
+  const [receiptError, setReceiptError] = useState<"auth" | "not_found" | "network" | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -55,10 +60,18 @@ const Recibo = () => {
 
   const fetchOrder = useCallback(async () => {
     if (!code) return null;
-    const { data: rows } = await supabase.rpc("get_order_by_code", { _order_code: code });
+    const { data: rows, error } = await supabase.rpc("get_order_by_code", { _order_code: code });
+    if (error) {
+      setReceiptError("network");
+      return null;
+    }
     const data = Array.isArray(rows) ? rows[0] : rows;
     const next = (data as unknown as Order) ?? null;
     setOrder(next);
+    if (!next) {
+      const { data: { user } } = await supabase.auth.getUser();
+      setReceiptError(user ? "not_found" : "auth");
+    } else setReceiptError(null);
     return next;
   }, [code]);
 
@@ -133,7 +146,7 @@ const Recibo = () => {
 
     doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
-    doc.text("MANSÃO MAROMBA", 105, y, { align: "center" });
+    doc.text("ADEGA MAROMBA", 105, y, { align: "center" });
     y += 7;
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
@@ -146,13 +159,19 @@ const Recibo = () => {
 
     doc.setFont("helvetica", "bold");
     doc.text(`Pedido: ${order.order_code}`, 15, y);
-    doc.text(`Data: ${new Date(order.created_at).toLocaleString("pt-BR")}`, 195, y, { align: "right" });
+    doc.text(`Data: ${dateTimeBR(order.created_at)}`, 195, y, { align: "right" });
     y += lh;
     doc.text(`Rastreio: ${trackingLabel(order.tracking_code)}`, 15, y);
     doc.text(`Pagamento: ${PAYMENT_LABEL[order.payment_method] ?? order.payment_method}`, 195, y, { align: "right" });
     y += lh;
     doc.text(`Status: ${order.payment_status.toUpperCase()}`, 15, y);
-    y += 10;
+    y += lh;
+    if (order.payment_status === "paid" && order.payment_checked_at) {
+      doc.setFont("helvetica", "normal");
+      doc.text(`Pagamento confirmado: ${dateTimeBR(order.payment_checked_at)}`, 15, y);
+      y += lh;
+    }
+    y += 5;
 
     doc.setFont("helvetica", "bold");
     doc.text("CLIENTE", 15, y);
@@ -218,8 +237,10 @@ const Recibo = () => {
   if (!order) {
     return (
       <div className="min-h-screen bg-background">
-        <PageHeader title="RECIBO NÃO ENCONTRADO" subtitle="O código informado não foi localizado." />
+        <PageHeader title={receiptError === "auth" ? "ENTRE NA SUA CONTA" : receiptError === "network" ? "RECIBO TEMPORARIAMENTE INDISPONÍVEL" : "RECIBO NÃO ENCONTRADO"} subtitle={receiptError === "auth" ? "Entre com a mesma conta utilizada na compra para consultar o comprovante." : receiptError === "network" ? "Não foi possível consultar o pedido. Tente novamente." : "Verifique se está na mesma conta da compra e tente novamente."} />
         <div className="container py-10 text-center">
+          {receiptError === "auth" && <Link to="/login" className="block mb-5 text-primary underline font-heading font-bold">Entrar na minha conta</Link>}
+          <button onClick={() => void fetchOrder()} className="block mx-auto mb-5 text-primary underline font-heading font-bold">Tentar novamente</button>
           <Link to="/" className="text-primary underline font-heading font-bold">
             Voltar para a loja
           </Link>
@@ -303,8 +324,9 @@ const Recibo = () => {
 
           <p className="text-xs text-muted-foreground">
             Pedido <strong className="text-foreground">{order.order_code}</strong> registrado em{" "}
-            {new Date(order.created_at).toLocaleString("pt-BR")}
+            {dateTimeBR(order.created_at)}
           </p>
+          {paid && order.payment_checked_at && <p className="text-xs text-muted-foreground">Pagamento confirmado em <strong className="text-foreground">{dateTimeBR(order.payment_checked_at)}</strong> (horário de Brasília)</p>}
         </div>
 
         {/* Rastreio: exibido somente após pagamento confirmado */}

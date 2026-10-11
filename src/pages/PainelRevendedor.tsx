@@ -7,10 +7,11 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { lookupCep, maskCepValue, onlyDigitsCep } from "@/lib/shipping";
-import { Bell, Boxes, CheckCircle2, Clock3, Home, MapPin, Package, Settings2, ShieldCheck, Sparkles, Store as StoreIcon, Truck, WalletCards, Grid2X2, List } from "lucide-react";
+import { Bell, Boxes, CheckCircle2, Clock3, Home, MapPin, Package, Settings2, ShieldCheck, Sparkles, Store as StoreIcon, Truck, WalletCards, Grid2X2, List, Plus, Trash2, ImagePlus } from "lucide-react";
 import type { PartnerOffer, PartnerRequest } from "@/lib/partnerDelivery";
 import PushPermissionButton from "@/components/PushPermissionButton";
 import { enablePush } from "@/lib/pushNotifications";
+import { uploadMedia, MEDIA_BUCKET } from "@/lib/mediaUpload";
 
 const PartnerDeliveryBoard = lazy(() => import("@/components/partners/PartnerDeliveryBoard"));
 
@@ -39,6 +40,7 @@ type Store = {
 
 type InventoryItem = { store_id:string; product_id:string; on_hand:number; reserved:number; name:string };
 type CatalogProduct = { id:string; name:string; image_url:string|null };
+type CustomProduct = { id:string; store_id:string; name:string; description:string|null; price:number; image_url:string|null; on_hand:number; reserved:number; active:boolean; created_at:string };
 
 export default function PainelRevendedor() {
   const navigate = useNavigate();
@@ -102,6 +104,9 @@ export default function PainelRevendedor() {
   const [stockDraft, setStockDraft] = useState<Record<string,string>>({});
   const [stockView, setStockView] = useState<"grid"|"list">("grid");
   const [catalogProducts,setCatalogProducts]=useState<CatalogProduct[]>([]);
+  const [customProducts,setCustomProducts]=useState<CustomProduct[]>([]);
+  const [customStockDraft,setCustomStockDraft]=useState<Record<string,string>>({});
+  const [customDraft,setCustomDraft]=useState<Record<string,{name:string;description:string;price:string;on_hand:string;file:File|null}>>({});
   const [requests, setRequests] = useState<Request[]>([]);
   const [registering, setRegistering] = useState(false);
   const [newStore, setNewStore] = useState({ name:"", document:"", phone:"", cep:"", address:"", city:"", state:"", lat:"", lng:"", radius_km:"15", terms:false });
@@ -149,8 +154,12 @@ export default function PainelRevendedor() {
         setInventory([]);
       }
 
-      const {data:catalog}=await supabase.from("products").select("id,name,image_url").eq("active",true).order("name");
+      const [{data:catalog},{data:custom}]=await Promise.all([
+        supabase.from("products").select("id,name,image_url").eq("active",true).order("name"),
+        supabase.from("partner_store_products" as never).select("id,store_id,name,description,price,image_url,on_hand,reserved,active,created_at").eq("active",true).order("created_at",{ascending:false})
+      ]);
       setCatalogProducts((catalog??[]) as CatalogProduct[]);
+      setCustomProducts((custom??[]) as unknown as CustomProduct[]);
 
       if (loadedStores.length) {
         const { data: accounts } = await supabase.from("partner_payout_accounts" as never).select("store_id,pix_key_type,pix_key,holder_name,holder_document");
@@ -205,6 +214,7 @@ export default function PainelRevendedor() {
     const channel = supabase.channel("partner-operations-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "partner_stores" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "partner_inventory" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "partner_store_products" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "partner_requests" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "partner_offers" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "partner_payouts" }, () => void load())
@@ -248,6 +258,66 @@ export default function PainelRevendedor() {
     const {error}=await supabase.rpc("partner_command" as never,{p_action:"stock",p_payload:{store_id:storeId,product_id:productId,on_hand:qty,reason}} as never);
     setSaving(null); if(error) return toast.error(error.message);
     toast.success(`Estoque atualizado de ${current} para ${qty}.`); setStockDraft(x=>({...x,[key]:""})); await load();
+  };
+
+  const createCustomProduct = async (storeId:string) => {
+    const draft=customDraft[storeId]??{name:"",description:"",price:"",on_hand:"0",file:null};
+    const price=Number(draft.price.replace(",","."));
+    const qty=Number(draft.on_hand);
+    if(draft.name.trim().length<2) return toast.error("Informe o nome do produto.");
+    if(!Number.isFinite(price)||price<=0) return toast.error("Informe um preço válido.");
+    if(!Number.isInteger(qty)||qty<0||qty>1000000) return toast.error("Informe uma quantidade válida.");
+
+    setSaving("custom-create-"+storeId);
+    let uploadedPath:string|null=null;
+    try{
+      let imageUrl:string|null=null;
+      if(draft.file){
+        if(!draft.file.type.startsWith("image/")||draft.file.size>5*1024*1024) throw new Error("A foto deve ser uma imagem de até 5 MB.");
+        const uploaded=await uploadMedia(draft.file,`partner-products/${storeId}`);
+        uploadedPath=uploaded.path;
+        imageUrl=uploaded.url;
+      }
+      const {error}=await supabase.rpc("partner_custom_product_create" as never,{
+        p_store_id:storeId,
+        p_name:draft.name.trim(),
+        p_description:draft.description.trim()||null,
+        p_price:price,
+        p_image_url:imageUrl,
+        p_on_hand:qty,
+      } as never);
+      if(error) throw error;
+      setCustomDraft(x=>({...x,[storeId]:{name:"",description:"",price:"",on_hand:"0",file:null}}));
+      toast.success("Produto da loja cadastrado.");
+      await load();
+    }catch(error){
+      if(uploadedPath) await supabase.storage.from(MEDIA_BUCKET).remove([uploadedPath]);
+      toast.error(error instanceof Error?error.message:"Não foi possível cadastrar o produto.");
+    }finally{
+      setSaving(null);
+    }
+  };
+
+  const saveCustomStock = async (product:CustomProduct) => {
+    const qty=Number(customStockDraft[product.id]);
+    if(!Number.isInteger(qty)||qty<0||qty>1000000) return toast.error("Informe uma quantidade válida.");
+    setSaving("custom-stock-"+product.id);
+    const {error}=await supabase.rpc("partner_custom_product_update_stock" as never,{p_product_id:product.id,p_on_hand:qty} as never);
+    setSaving(null);
+    if(error) return toast.error(error.message);
+    setCustomStockDraft(x=>({...x,[product.id]:""}));
+    toast.success("Estoque do produto atualizado.");
+    await load();
+  };
+
+  const deleteCustomProduct = async (product:CustomProduct) => {
+    if(!window.confirm(`Excluir "${product.name}" da sua loja?`)) return;
+    setSaving("custom-delete-"+product.id);
+    const {error}=await supabase.rpc("partner_custom_product_delete" as never,{p_product_id:product.id} as never);
+    setSaving(null);
+    if(error) return toast.error(error.message);
+    toast.success("Produto próprio excluído.");
+    await load();
   };
 
   const saveDelivery = async (store: Store) => {
@@ -603,6 +673,33 @@ export default function PainelRevendedor() {
                   <div><h2 className="text-lg font-black">Estoque da minha loja</h2><p className="text-xs text-zinc-500">Os produtos e fotos vêm do catálogo oficial. Informe somente a quantidade física disponível na sua loja.</p></div>
                   <div className="flex items-center gap-2"><div className="flex rounded-lg border border-white/10 bg-black/20 p-1"><Button type="button" size="sm" variant="ghost" onClick={()=>setStockView("grid")} className={stockView==="grid"?"bg-[#d4af37]/15 text-yellow-200":"text-zinc-400"}><Grid2X2 className="h-4 w-4"/>Grade</Button><Button type="button" size="sm" variant="ghost" onClick={()=>setStockView("list")} className={stockView==="list"?"bg-[#d4af37]/15 text-yellow-200":"text-zinc-400"}><List className="h-4 w-4"/>Lista</Button></div><Boxes className="h-5 w-5 text-[#e5c66c]"/></div>
                 </div>
+                <div className="mt-4 rounded-2xl border border-[#d4af37]/20 bg-[#d4af37]/5 p-4">
+                  <div className="flex items-center gap-2"><Plus className="h-4 w-4 text-[#e5c66c]"/><h3 className="font-bold">Cadastrar produto da minha loja</h3></div>
+                  <p className="mt-1 text-xs text-zinc-500">Produto próprio do parceiro. Você pode cadastrar, atualizar o estoque e excluir quando não houver reserva.</p>
+                  {(()=>{const d=customDraft[store.id]??{name:"",description:"",price:"",on_hand:"0",file:null};return <div className="mt-3 grid gap-2 md:grid-cols-2">
+                    <input className="h-10 rounded-lg border border-white/10 bg-black/30 px-3" placeholder="Nome do produto" value={d.name} onChange={(e)=>setCustomDraft(x=>({...x,[store.id]:{...d,name:e.target.value}}))}/>
+                    <input className="h-10 rounded-lg border border-white/10 bg-black/30 px-3" inputMode="decimal" placeholder="Preço de venda (R$)" value={d.price} onChange={(e)=>setCustomDraft(x=>({...x,[store.id]:{...d,price:e.target.value}}))}/>
+                    <input className="h-10 rounded-lg border border-white/10 bg-black/30 px-3" type="number" min="0" step="1" placeholder="Quantidade" value={d.on_hand} onChange={(e)=>setCustomDraft(x=>({...x,[store.id]:{...d,on_hand:e.target.value}}))}/>
+                    <label className="flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 text-xs text-zinc-400"><ImagePlus className="h-4 w-4"/><span className="truncate">{d.file?.name??"Adicionar foto"}</span><input type="file" accept="image/*" className="hidden" onChange={(e)=>setCustomDraft(x=>({...x,[store.id]:{...d,file:e.target.files?.[0]??null}}))}/></label>
+                    <textarea className="min-h-20 rounded-lg border border-white/10 bg-black/30 p-3 text-sm md:col-span-2" placeholder="Descrição (opcional)" value={d.description} onChange={(e)=>setCustomDraft(x=>({...x,[store.id]:{...d,description:e.target.value}}))}/>
+                    <Button className="md:col-span-2 bg-[#d4af37] font-black text-black hover:bg-[#e8c65a]" disabled={saving==="custom-create-"+store.id} onClick={()=>void createCustomProduct(store.id)}>{saving==="custom-create-"+store.id?"Cadastrando...":"Cadastrar produto próprio"}</Button>
+                  </div>})()}
+                </div>
+
+                {customProducts.filter(p=>p.store_id===store.id).length>0&&<div className="mt-5">
+                  <div className="mb-2 flex items-center justify-between"><div><h3 className="font-black">Produtos da minha loja</h3><p className="text-xs text-zinc-500">Estes produtos foram cadastrados por você e podem ser excluídos.</p></div><span className="rounded-full border border-emerald-400/20 bg-emerald-400/5 px-2 py-1 text-[10px] font-bold text-emerald-300">PRÓPRIOS</span></div>
+                  <div className={stockView==="grid"?"grid gap-3 sm:grid-cols-2 xl:grid-cols-3":"space-y-2"}>
+                    {customProducts.filter(p=>p.store_id===store.id).map((p)=><div key={p.id} className="rounded-2xl border border-emerald-400/15 bg-black/20 p-3">
+                      <div className="flex items-start gap-3">
+                        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]"><Package className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-zinc-600"/>{p.image_url&&<img src={p.image_url} alt={p.name} className="relative h-full w-full object-cover" onError={(e)=>{e.currentTarget.style.display="none";}}/>}</div>
+                        <div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><p className="font-bold">{p.name}</p><button type="button" className="rounded-lg p-1.5 text-rose-300 hover:bg-rose-500/10" aria-label={`Excluir ${p.name}`} disabled={saving==="custom-delete-"+p.id} onClick={()=>void deleteCustomProduct(p)}><Trash2 className="h-4 w-4"/></button></div><p className="mt-1 text-sm font-black text-[#e5c66c]">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(Number(p.price))}</p><p className="mt-1 text-xs text-zinc-500">Em estoque {p.on_hand} · reservado {p.reserved}</p><p className="text-xs font-semibold text-emerald-300">Livre para venda {Math.max(0,p.on_hand-p.reserved)}</p></div>
+                      </div>
+                      <div className="mt-3 flex gap-2"><input className="h-9 min-w-0 flex-1 rounded-lg border border-white/10 bg-black/30 px-2" type="number" min="0" step="1" placeholder={String(p.on_hand)} value={customStockDraft[p.id]??""} onChange={(e)=>setCustomStockDraft(x=>({...x,[p.id]:e.target.value}))}/><Button size="sm" variant="outline" disabled={saving==="custom-stock-"+p.id} onClick={()=>void saveCustomStock(p)}>Salvar quantidade</Button></div>
+                    </div>)}
+                  </div>
+                </div>}
+
+                <div className="mt-5 mb-2 flex items-center justify-between"><div><h3 className="font-black">Produtos oficiais da plataforma</h3><p className="text-xs text-zinc-500">O parceiro altera somente a quantidade. Exclusão e cadastro ficam sob controle do admin.</p></div><span className="rounded-full border border-[#d4af37]/20 bg-[#d4af37]/5 px-2 py-1 text-[10px] font-bold text-yellow-200">OFICIAIS</span></div>
                 {catalogProducts.length===0?<p className="mt-3 text-sm text-zinc-500">Nenhum produto ativo no catálogo.</p>:<div className={stockView==="grid"?"mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3":"mt-4 space-y-2"}>
                   {catalogProducts.map((p)=>{const i=inventory.find((x)=>x.store_id===store.id&&x.product_id===p.id)??{store_id:store.id,product_id:p.id,on_hand:0,reserved:0,name:p.name};const key=i.store_id+":"+i.product_id;return <div key={key} className={`rounded-2xl border border-white/10 bg-black/20 p-3 ${stockView==="list"?"md:flex md:items-center md:justify-between md:gap-4":""}`}>
                     <div className="flex items-start gap-3">

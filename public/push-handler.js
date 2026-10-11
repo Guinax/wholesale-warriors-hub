@@ -8,7 +8,7 @@ self.addEventListener("push", (event) => {
   event.waitUntil(self.registration.showNotification(title, {
     body,
     icon: "/icon-192-maromba-v2.png",
-    badge: "/icon-192-maromba-v2.png",
+    badge: "/favicon-maromba-v2.png",
     tag: typeof payload.tag === "string" ? payload.tag.slice(0, 120) : undefined,
     data: { path: target },
   }));

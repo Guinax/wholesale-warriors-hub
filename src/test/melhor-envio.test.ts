@@ -62,12 +62,11 @@ describe("Melhor Envio integration contracts", () => {
     expect(source).toContain("weight_kg,width_cm,height_cm,length_cm");
   });
 
-  it("invalidates a live cart quote when cart quantities change", () => {
-    const context = read("src/contexts/CartContext.tsx");
+  it("keeps Melhor Envio out of the active cart checkout UI", () => {
     const drawer = read("src/components/CartDrawer.tsx");
-    expect(context).toContain('shipping.source === "melhor_envio" && shipping.itemsKey === currentItemsKey');
-    expect(drawer).toContain('source = "melhor_envio"');
-    expect(drawer).toContain("itemsKey");
+    expect(drawer).not.toContain('source = "melhor_envio"');
+    expect(drawer).not.toContain("itemsKey");
+    expect(drawer).not.toContain("melhor-envio-quote");
   });
 
   it("keeps provider credentials out of the browser integration client", () => {

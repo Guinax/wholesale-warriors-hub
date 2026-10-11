@@ -267,10 +267,6 @@ export default function PainelRevendedor() {
   const command = async (action: string, payload: Record<string, unknown>, success: string): Promise<void> => {
     setSaving(String(payload.request_id ?? action));
     try {
-      const { data, error } = await supabase.rpc("partner_command" as never, { p_action: action, p_payload: payload } as never);
-      if (error) { toast.error(error.message); return; }
-      const result = data as unknown as { error?: string };
-      if (result?.error) { toast.error(result.error); return; }
       if (action === "accept" || action === "decline") {
         const { data: paidAction, error: paidActionError } = await supabase.rpc("partner_accept_paid_order" as never, {
           p_request_id: payload.request_id,
@@ -284,7 +280,13 @@ export default function PainelRevendedor() {
         } else {
           toast.info("Pedido pago recusado. A administração foi avisada para reencaminhamento.");
         }
-      } else toast.success(success);
+      } else {
+        const { data, error } = await supabase.rpc("partner_command" as never, { p_action: action, p_payload: payload } as never);
+        if (error) { toast.error(error.message); return; }
+        const result = data as unknown as { error?: string };
+        if (result?.error) { toast.error(result.error); return; }
+        toast.success(success);
+      }
       await load();
     } catch {
       toast.error("Não foi possível atualizar o pedido. Confira sua conexão e tente novamente.");

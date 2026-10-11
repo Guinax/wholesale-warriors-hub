@@ -123,6 +123,36 @@ export default function Motoqueiro() {
   const [currentPosition, setCurrentPosition] = useState<{ lat: number; lng: number } | null>(null);
   const watchRef = useRef<number | null>(null);
   const lastLocationRefreshRef = useRef(0);
+  const opportunityAudioRef = useRef<AudioContext | null>(null);
+  const lastOpportunityAlertRef = useRef(0);
+
+  const unlockOpportunityAudio = useCallback(() => {
+    try {
+      const AudioContextClass = window.AudioContext;
+      if (!AudioContextClass) return;
+      opportunityAudioRef.current ??= new AudioContextClass();
+      void opportunityAudioRef.current.resume();
+    } catch { /* Device may block audio until another user gesture. */ }
+  }, []);
+
+  const playOpportunityAlert = useCallback(() => {
+    const context = opportunityAudioRef.current;
+    if (context && context.state === "running") {
+      [0, 0.18, 0.36].forEach((offset, index) => {
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.type = "sine";
+        oscillator.frequency.value = index % 2 === 0 ? 988 : 1175;
+        gain.gain.setValueAtTime(0.0001, context.currentTime + offset);
+        gain.gain.exponentialRampToValueAtTime(0.22, context.currentTime + offset + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + offset + 0.16);
+        oscillator.connect(gain).connect(context.destination);
+        oscillator.start(context.currentTime + offset);
+        oscillator.stop(context.currentTime + offset + 0.17);
+      });
+    }
+    if ("vibrate" in navigator) navigator.vibrate([220, 100, 220]);
+  }, []);
 
   const load = useCallback(async () => {
     const { data: auth } = await supabase.auth.getUser();
@@ -192,6 +222,22 @@ export default function Motoqueiro() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    if (!dashboard.profile?.is_online) return;
+    const poll = window.setInterval(() => void load(), 5000);
+    return () => window.clearInterval(poll);
+  }, [dashboard.profile?.is_online, load]);
+
+  useEffect(() => {
+    if (!dashboard.profile?.is_online) return;
+    const searching = (dashboard.jobs ?? []).some((job) => job.status === "searching");
+    if (!searching) return;
+    const now = Date.now();
+    if (now - lastOpportunityAlertRef.current < 4500) return;
+    lastOpportunityAlertRef.current = now;
+    playOpportunityAlert();
+  }, [dashboard.profile?.is_online, dashboard.jobs, playOpportunityAlert]);
 
   useEffect(() => {
     const p = dashboard.profile;
@@ -570,7 +616,7 @@ export default function Motoqueiro() {
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-white/10 bg-white/[0.03] hover:bg-white/[0.08]" onClick={() => void load()}><RefreshCw className="h-5 w-5" /></Button>
-              <Button disabled={saving || profile.status !== "approved"} onClick={() => void command("toggle_online", { online: !profile.is_online }, profile.is_online ? "Você ficou offline." : "Você está online e pode receber corridas.")} className={`h-12 min-w-40 rounded-2xl border px-5 text-base font-black shadow-lg transition ${profile.is_online ? "border-emerald-300/40 bg-emerald-500 text-black shadow-emerald-500/20 hover:bg-emerald-400" : "border-white/10 bg-zinc-900 text-zinc-200 hover:bg-zinc-800"}`}>
+              <Button disabled={saving || profile.status !== "approved"} onClick={() => { unlockOpportunityAudio(); void command("toggle_online", { online: !profile.is_online }, profile.is_online ? "Você ficou offline." : "Você está online e pode receber corridas."); }} className={`h-12 min-w-40 rounded-2xl border px-5 text-base font-black shadow-lg transition ${profile.is_online ? "border-emerald-300/40 bg-emerald-500 text-black shadow-emerald-500/20 hover:bg-emerald-400" : "border-white/10 bg-zinc-900 text-zinc-200 hover:bg-zinc-800"}`}>
                 <Power className="mr-2 h-5 w-5" /> {profile.is_online ? "ONLINE" : "OFFLINE"}
               </Button>
             </div>

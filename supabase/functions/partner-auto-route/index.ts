@@ -24,7 +24,7 @@ Deno.serve(async(req)=>{
   // Identical pickup/dropoff coordinates are valid (same building or CEP centroid).
   // Google Routes may omit a driving route for a zero-distance trip.
   if(Number(store.lat)===Number(request.lat)&&Number(store.lng)===Number(request.lng)){
-   const {error:quoteError}=await supabase.rpc("partner_command",{p_action:"quote",p_payload:{request_id,route_km:0,weight_kg:1,eta_minutes:10}});
+   const {error:quoteError}=await supabase.rpc("partner_command",{p_action:"quote",p_payload:{request_id,route_km:0,eta_minutes:10}});
    if(quoteError)return json({error:quoteError.message},422);
    return json({ok:true,route_km:0,eta_minutes:10});
   }
@@ -38,7 +38,7 @@ Deno.serve(async(req)=>{
   const km=Math.ceil(meters/100)/10; // round road distance up to 0.1 km
   const seconds=Number(String(body.routes[0].duration??"0s").replace("s",""));
   const minutes=Math.max(10,Math.ceil(seconds/60)||10);
-  const {error:quoteError}=await supabase.rpc("partner_command",{p_action:"quote",p_payload:{request_id,route_km:km,weight_kg:1,eta_minutes:minutes}});
+  const {error:quoteError}=await supabase.rpc("partner_command",{p_action:"quote",p_payload:{request_id,route_km:km,eta_minutes:minutes}});
   if(quoteError)return json({error:quoteError.message},422);
   return json({ok:true,route_km:km,eta_minutes:minutes});
  }catch{return json({error:"Não foi possível calcular o frete"},500)}

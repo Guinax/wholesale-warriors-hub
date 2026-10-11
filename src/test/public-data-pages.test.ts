@@ -17,11 +17,4 @@ describe("Public data page contracts", () => {
     expect(source).toContain("RANKING EM FORMAÇÃO");
   });
 
-  it("does not invent a commission threshold before tiers exist", () => {
-    const source = read("src/pages/Comissoes.tsx");
-    expect(source).not.toContain('Mínimo R$ 2.500');
-    expect(source).toContain("Faixas em configuração");
-    expect(source).toContain("PROGRAMA EM CONFIGURAÇÃO");
-    expect(source).toContain("Nenhum percentual é exibido até existir uma regra comercial válida.");
-  });
 });

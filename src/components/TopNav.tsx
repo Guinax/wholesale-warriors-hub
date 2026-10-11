@@ -86,7 +86,6 @@ const TopNav = () => {
         <div className="hidden md:flex items-center gap-6 text-xs font-heading font-semibold tracking-widest text-muted-foreground">
           <button onClick={() => navigate("/suplementos")} className="hover:text-primary transition-colors">SUPLEMENTOS</button>
           <button onClick={() => navigate("/mais-vendidos")} className="hover:text-primary transition-colors">MAIS VENDIDOS</button>
-          <button onClick={() => navigate("/comissoes")} className="hover:text-primary transition-colors">COMISSÕES</button>
           <button onClick={() => navigate("/avaliacoes")} className="hover:text-primary transition-colors">AVALIAÇÕES</button>
           <button onClick={() => navigate("/compartilhar")} className="hover:text-primary transition-colors">COMPARTILHAR</button>
           <button onClick={() => navigate("/parceiros")} className="hover:text-primary transition-colors">PARCEIROS</button>
@@ -102,7 +101,6 @@ const TopNav = () => {
               <DropdownMenuItem onClick={() => navigate("/")}>Início</DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/suplementos")}>Suplementos</DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/mais-vendidos")}>Mais vendidos</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/comissoes")}>Comissões</DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/avaliacoes")}>Avaliações</DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/compartilhar")}>Compartilhar</DropdownMenuItem>
               <DropdownMenuSeparator />

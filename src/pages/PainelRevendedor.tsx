@@ -441,7 +441,7 @@ export default function PainelRevendedor() {
   const paidPayout = walletPayouts.reduce((sum,p)=>sum+Number(p.paid_amount||0),0);
   const openStore = approvedStores.find((s) => s.is_open) ?? approvedStores[0] ?? null;
   const totalAvailable = inventory.filter(i => approvedStores.some(s => s.id === i.store_id)).reduce((sum, item) => sum + Math.max(0, Number(item.on_hand) - Number(item.reserved)), 0);
-  const pendingOrdersCount = offers.filter(o => approvedStores.some(s => s.id === o.store_id)).length;
+  const pendingOrdersCount = offers.length;
   const pendingContractStore = approvedStores.find((s) => s.accepted_terms_version !== s.terms_version) ?? null;
 
   return (

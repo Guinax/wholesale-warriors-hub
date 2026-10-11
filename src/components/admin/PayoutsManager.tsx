@@ -158,6 +158,7 @@ export default function PayoutsManager() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="text-sm font-semibold">{stores[storeId]?.name ?? "Loja parceira"}</div>
+                <div className="text-xs text-muted-foreground">ID único do parceiro: <code className="select-all break-all">{storeId}</code></div>
                 <div className="mt-1 text-2xl font-black">{formatCurrency(available)}</div>
                 <div className="text-xs text-muted-foreground">Saldo disponível para PIX</div>
               </div>
@@ -232,6 +233,8 @@ export default function PayoutsManager() {
                   <div key={payment.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3 text-sm">
                     <div>
                       <strong>{formatCurrency(Number(payment.amount))}</strong>
+                      <div className="text-xs text-muted-foreground">ID único do parceiro: <code className="select-all break-all">{payment.store_id}</code></div>
+                      <div className="text-xs text-muted-foreground">ID do pagamento: <code className="select-all break-all">{payment.id}</code></div>
                       <div className="text-xs text-muted-foreground">
                         {new Date(payment.paid_at).toLocaleString("pt-BR")}
                         {payment.receipt_reference ? ` • ${payment.receipt_reference}` : ""}

@@ -18,7 +18,7 @@ const PartnerRestockRequest = lazy(() => import("@/components/partners/PartnerRe
 type Offer = PartnerOffer;
 type Request = PartnerRequest;
 
-type Payout = { id:string; store_id:string; amount:number; paid_amount:number; status:string; approved_at:string|null; paid_at:string|null; receipt_reference:string|null };
+type Payout = { id:string; store_id:string; amount:number; paid_amount:number; status:string; created_at:string|null; credited_at:string|null; available_at:string|null; approved_at:string|null; paid_at:string|null; receipt_reference:string|null };
 type WalletPayment = { id:string; store_id:string; amount:number; receipt_url:string; receipt_reference:string|null; paid_at:string };
 
 type Store = {
@@ -126,7 +126,8 @@ export default function PainelRevendedor() {
         const d = dashboard as unknown as { stores?: Store[]; offers?: Offer[]; requests?: Request[]; inventory?: InventoryItem[] };
         loadedStores = d.stores ?? [];
         setStores(loadedStores);
-        setOffers(d.offers ?? []);
+        const { data: paidOffers } = await supabase.rpc("partner_paid_offers" as never);
+        setOffers(((paidOffers ?? []) as unknown as Offer[]));
         setRequests(d.requests ?? []);
         setInventory(d.inventory ?? []);
       } else {
@@ -157,7 +158,7 @@ export default function PainelRevendedor() {
         const mapped: typeof pix = {};
         ((accounts ?? []) as unknown as Array<{store_id:string;pix_key_type:string;pix_key:string;holder_name:string;holder_document:string}>).forEach(a=>{ mapped[a.store_id]={pix_key_type:a.pix_key_type,pix_key:a.pix_key,holder_name:a.holder_name,holder_document:a.holder_document}; });
         setPix(mapped);
-        const [{ data: payoutRows }, { data: walletRows }] = await Promise.all([supabase.from("partner_payouts" as never).select("id,store_id,amount,paid_amount,status,approved_at,paid_at,receipt_reference").order("created_at",{ascending:false}),supabase.from("partner_wallet_payments" as never).select("id,store_id,amount,receipt_url,receipt_reference,paid_at").order("paid_at",{ascending:false})]);
+        const [{ data: payoutRows }, { data: walletRows }] = await Promise.all([supabase.from("partner_payouts" as never).select("id,store_id,amount,paid_amount,status,created_at,credited_at,available_at,approved_at,paid_at,receipt_reference").order("created_at",{ascending:false}),supabase.from("partner_wallet_payments" as never).select("id,store_id,amount,receipt_url,receipt_reference,paid_at").order("paid_at",{ascending:false})]);
         setPayouts((payoutRows ?? []) as unknown as Payout[]);
         setWalletPayments((walletRows ?? []) as unknown as WalletPayment[]);
       } else {
@@ -270,10 +271,19 @@ export default function PainelRevendedor() {
       if (error) { toast.error(error.message); return; }
       const result = data as unknown as { error?: string };
       if (result?.error) { toast.error(result.error); return; }
-      if (action === "accept") {
-        const { data: route, error: routeError } = await supabase.functions.invoke("partner-auto-route", { body: { request_id: payload.request_id } });
-        if (routeError || route?.error) toast.warning("Pedido aceito, mas o cálculo automático do frete falhou.");
-        else toast.success("Pedido aceito e frete calculado automaticamente.");
+      if (action === "accept" || action === "decline") {
+        const { data: paidAction, error: paidActionError } = await supabase.rpc("partner_accept_paid_order" as never, {
+          p_request_id: payload.request_id,
+          p_accept: action === "accept",
+        } as never);
+        if (paidActionError) { toast.error(paidActionError.message); return; }
+        const paidResult = paidAction as { credit?: number; available_at?: string; review?: boolean } | null;
+        if (action === "accept") {
+          const release = paidResult?.available_at ? new Date(paidResult.available_at).toLocaleString("pt-BR") : "no próximo dia";
+          toast.success(`Pedido aceito. Venda creditada como retida e prevista para liberação em ${release}.`);
+        } else {
+          toast.info("Pedido pago recusado. A administração foi avisada para reencaminhamento.");
+        }
       } else toast.success(success);
       await load();
     } catch {
@@ -353,8 +363,10 @@ export default function PainelRevendedor() {
   const approvedStores = stores.filter((s) => s.status === "approved");
   const pendingStores = stores.filter((s) => s.status !== "approved");
   const hasApprovedStore = approvedStores.length > 0;
-  const walletPayouts = payouts.filter((p) => p.status !== "cancelled" && p.status !== "pending");
-  const waitingPayout = walletPayouts.reduce((sum,p)=>sum+Math.max(0,Number(p.amount||0)-Number(p.paid_amount||0)),0);
+  const walletPayouts = payouts.filter((p) => p.status !== "cancelled");
+  const nowMs = Date.now();
+  const heldPayout = walletPayouts.filter((p) => p.available_at && new Date(p.available_at).getTime() > nowMs).reduce((sum,p)=>sum+Math.max(0,Number(p.amount||0)-Number(p.paid_amount||0)),0);
+  const waitingPayout = walletPayouts.filter((p) => !p.available_at || new Date(p.available_at).getTime() <= nowMs).reduce((sum,p)=>sum+Math.max(0,Number(p.amount||0)-Number(p.paid_amount||0)),0);
   const paidPayout = walletPayouts.reduce((sum,p)=>sum+Number(p.paid_amount||0),0);
   const openStore = approvedStores.find((s) => s.is_open) ?? approvedStores[0] ?? null;
   const totalAvailable = inventory.filter(i => approvedStores.some(s => s.id === i.store_id)).reduce((sum, item) => sum + Math.max(0, Number(item.on_hand) - Number(item.reserved)), 0);
@@ -614,7 +626,7 @@ export default function PainelRevendedor() {
 
               {activeTab==="repasses" && <div id="repasses" className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
                 <div className="flex items-center justify-between"><div><h2 className="text-lg font-black">Minha carteira</h2><p className="text-xs text-zinc-500">Cada entrega concluída acumula crédito. Os pagamentos via PIX baixam apenas o valor efetivamente pago.</p></div><WalletCards className="h-5 w-5 text-[#e5c66c]"/></div>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2"><div className="rounded-xl border border-[#d4af37]/25 bg-[#d4af37]/5 p-3"><p className="text-xs text-zinc-500">Saldo disponível</p><p className="mt-1 text-xl font-black text-[#e5c66c]">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p><p className="mt-1 text-[11px] text-zinc-500">Acumula até o próximo PIX.</p></div><div className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs text-zinc-500">Total já pago</p><p className="mt-1 text-xl font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(paidPayout)}</p><p className="mt-1 text-[11px] text-zinc-500">Baixas registradas com data, hora e comprovante.</p></div></div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-3"><div className="rounded-xl border border-amber-400/25 bg-amber-400/5 p-3"><p className="text-xs text-zinc-500">Saldo retido</p><p className="mt-1 text-xl font-black text-amber-300">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(heldPayout)}</p><p className="mt-1 text-[11px] text-zinc-500">Vendas aceitas hoje. Liberação prevista para o dia seguinte.</p></div><div className="rounded-xl border border-[#d4af37]/25 bg-[#d4af37]/5 p-3"><p className="text-xs text-zinc-500">Saldo liberado</p><p className="mt-1 text-xl font-black text-[#e5c66c]">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p><p className="mt-1 text-[11px] text-zinc-500">Disponível para o próximo PIX.</p></div><div className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs text-zinc-500">Total já pago</p><p className="mt-1 text-xl font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(paidPayout)}</p><p className="mt-1 text-[11px] text-zinc-500">Baixas registradas com data, hora e comprovante.</p></div></div>
                 <div className="mt-4 grid gap-2 md:grid-cols-2">
                   <Select value={pix[store.id]?.pix_key_type??"cnpj"} onValueChange={(v)=>setPix((x)=>({...x,[store.id]:{...(x[store.id]??{pix_key:"",holder_name:"",holder_document:""}),pix_key_type:v}}))}><SelectTrigger className="border-white/10 bg-black/20"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="cpf">CPF</SelectItem><SelectItem value="cnpj">CNPJ</SelectItem><SelectItem value="email">E-mail</SelectItem><SelectItem value="phone">Telefone</SelectItem><SelectItem value="random">Aleatória</SelectItem></SelectContent></Select>
                   <input className="h-10 rounded-lg border border-white/10 bg-black/20 px-3" placeholder="Chave PIX" value={pix[store.id]?.pix_key??""} onChange={(e)=>setPix((x)=>({...x,[store.id]:{...(x[store.id]??{pix_key_type:"cnpj",holder_name:"",holder_document:""}),pix_key:e.target.value}}))}/>

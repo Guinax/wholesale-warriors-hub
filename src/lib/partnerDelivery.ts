@@ -22,6 +22,7 @@ export type PartnerRequest = {
   store_name?: string | null;
   order_code?: string | null;
   payment_status?: string | null;
+  accepted_at?: string | null;
   shipping?: number | null;
   route_km?: number | null;
   eta_minutes?: number | null;
@@ -48,7 +49,7 @@ export function deliveryStage(status: string): DeliveryFilter | null {
 export function assignedRequests(requests: PartnerRequest[], stores: PartnerMapStore[]): PartnerRequest[] {
   const ids = new Set(stores.filter(s => s.status === "approved").map(s => s.id));
   // The dashboard also returns the current user's purchases. Those are not store work.
-  return requests.filter(r => r.store_id && ids.has(r.store_id) && deliveryStage(r.status));
+  return requests.filter(r => r.store_id && ids.has(r.store_id) && deliveryStage(r.status) && (r.status !== "paid" || Boolean(r.accepted_at)));
 }
 
 export function canDispatch(request: PartnerRequest): boolean {

@@ -15,6 +15,9 @@ type Payout = {
   amount: number;
   paid_amount: number;
   status: string;
+  created_at: string | null;
+  credited_at: string | null;
+  available_at: string | null;
   approved_at: string | null;
   paid_at: string | null;
 };
@@ -47,7 +50,7 @@ export default function PayoutsManager() {
     const [{ data, error }, { data: sd }, { data: ad }, { data: wp }] = await Promise.all([
       supabase
         .from("partner_payouts" as never)
-        .select("id,request_id,store_id,amount,paid_amount,status,approved_at,paid_at")
+        .select("id,request_id,store_id,amount,paid_amount,status,created_at,credited_at,available_at,approved_at,paid_at")
         .order("created_at", { ascending: true }),
       supabase.from("partner_stores" as never).select("id,name"),
       supabase.from("partner_payout_accounts" as never).select("store_id,pix_key_type,pix_key,holder_name,holder_document"),
@@ -72,11 +75,17 @@ export default function PayoutsManager() {
   const walletRows = useMemo(() => {
     const ids = new Set(rows.map((p) => p.store_id));
     return [...ids].map((storeId) => {
-      const credits = rows.filter((p) => p.store_id === storeId);
+      const credits = rows.filter((p) => p.store_id === storeId && p.status !== "cancelled");
       const earned = credits.reduce((sum, p) => sum + Number(p.amount || 0), 0);
       const paid = credits.reduce((sum, p) => sum + Number(p.paid_amount || 0), 0);
-      const available = Math.max(0, earned - paid);
-      return { storeId, earned, paid, available, credits };
+      const now = Date.now();
+      const held = credits
+        .filter((p) => p.available_at && new Date(p.available_at).getTime() > now)
+        .reduce((sum, p) => sum + Math.max(0, Number(p.amount || 0) - Number(p.paid_amount || 0)), 0);
+      const available = credits
+        .filter((p) => !p.available_at || new Date(p.available_at).getTime() <= now)
+        .reduce((sum, p) => sum + Math.max(0, Number(p.amount || 0) - Number(p.paid_amount || 0)), 0);
+      return { storeId, earned, paid, held, available, credits };
     }).sort((a, b) => b.available - a.available);
   }, [rows]);
 
@@ -140,7 +149,7 @@ export default function PayoutsManager() {
       <div>
         <h2 className="flex items-center gap-2 text-xl font-bold"><WalletCards className="h-5 w-5" /> Carteiras dos parceiros</h2>
         <p className="text-sm text-muted-foreground">
-          Cada entrega concluída acumula saldo. Faça o PIX manualmente, anexe o comprovante e confirme a baixa no saldo.
+          As vendas aceitas entram como crédito retido e ficam liberadas para PIX somente no dia seguinte. O pagamento continua sob confirmação administrativa.
         </p>
       </div>
 
@@ -148,7 +157,7 @@ export default function PayoutsManager() {
         <Card className="p-8 text-center text-sm text-muted-foreground">Nenhum saldo de parceiro disponível.</Card>
       )}
 
-      {walletRows.map(({ storeId, earned, paid, available }) => {
+      {walletRows.map(({ storeId, earned, paid, held, available }) => {
         const account = accounts[storeId];
         const draft = drafts[storeId] ?? { amount: "", receipt: null, reference: "" };
         const history = payments.filter((payment) => payment.store_id === storeId);
@@ -165,10 +174,11 @@ export default function PayoutsManager() {
               <Badge variant={available > 0 ? "default" : "outline"}>{available > 0 ? "COM SALDO" : "QUITADO"}</Badge>
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-3">
+            <div className="grid gap-2 sm:grid-cols-4">
               <div className="rounded-md border p-3"><div className="text-xs text-muted-foreground">Total gerado</div><strong>{formatCurrency(earned)}</strong></div>
+              <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3"><div className="text-xs text-muted-foreground">Retido até amanhã</div><strong>{formatCurrency(held)}</strong></div>
+              <div className="rounded-md border p-3"><div className="text-xs text-muted-foreground">Liberado para PIX</div><strong>{formatCurrency(available)}</strong></div>
               <div className="rounded-md border p-3"><div className="text-xs text-muted-foreground">Total pago</div><strong>{formatCurrency(paid)}</strong></div>
-              <div className="rounded-md border p-3"><div className="text-xs text-muted-foreground">A pagar</div><strong>{formatCurrency(available)}</strong></div>
             </div>
 
             {account ? (

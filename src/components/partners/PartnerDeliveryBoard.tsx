@@ -27,24 +27,10 @@ const filters: Array<{ id: DeliveryFilter; label: string }> = [
 const money = (n: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
 
 function OrderActions({ request, saving, onCommand }: { request: PartnerRequest; saving: string | null; onCommand: Command }) {
-  const [km, setKm] = useState(String(request.route_km ?? ""));
-  const [kg, setKg] = useState("");
-  const [eta, setEta] = useState(String(request.eta_minutes ?? ""));
   const [code, setCode] = useState("");
   const [adult, setAdult] = useState(false);
   const busy = saving !== null;
-  if (["accepted", "quoted"].includes(request.status)) return <form className="delivery-action-form" onSubmit={e => {
-    e.preventDefault();
-    void onCommand("quote", { request_id: request.id, route_km: Number(km), weight_kg: Number(kg), eta_minutes: Number(eta) }, "Cotação enviada ao cliente.");
-  }}>
-    <p className="delivery-form-title">Calcular entrega</p>
-    <div className="delivery-form-grid">
-      <label>Trajeto (km)<input required type="number" min="0.1" max="250" step="0.1" value={km} onChange={e => setKm(e.target.value)} /></label>
-      <label>Peso (kg)<input required type="number" min="0.01" max="1000" step="0.01" value={kg} onChange={e => setKg(e.target.value)} /></label>
-      <label>Prazo (min)<input required type="number" min="10" max="1440" step="1" value={eta} onChange={e => setEta(e.target.value)} /></label>
-    </div>
-    <button type="submit" className="delivery-button delivery-button-primary" disabled={busy}>{busy ? "Aguarde..." : "Enviar cotação"}</button>
-  </form>;
+  if (["accepted", "quoted"].includes(request.status)) return <p className="delivery-payment-note">{request.status === "quoted" ? "Frete calculado automaticamente. Aguardando pagamento do cliente." : "Calculando trajeto automaticamente. Se persistir, entre em contato com o suporte."}</p>;
   if (canDispatch(request)) return <button className="delivery-button delivery-button-primary" disabled={busy} onClick={() => void onCommand("dispatch", { request_id: request.id }, "Pedido saiu para entrega.")}><Truck size={16} /> Saiu para entrega</button>;
   if (request.status === "delivering" && request.payment_status === "paid") return <form className="delivery-action-form" onSubmit={e => {
     e.preventDefault();

@@ -366,18 +366,6 @@ const Pagamento = () => {
           navigate(`/pedido-local/${requestId}`);
           return;
         }
-        if (routeError?.message && /solicita[çc][ãa]o em andamento|pedido em andamento|solicita[çc][ãa]o ativa|já existe.*solicita[çc][ãa]o/i.test(routeError.message)) {
-          const {data:existing}=await supabase.rpc("partner_command" as never,{p_action:"dashboard",p_payload:{}} as never);
-          const active=((existing as {requests?:Array<{id:string;status:string;created_at?:string}>}|null)?.requests??[])
-            .filter(r=>["searching","accepted","quoted","payment_pending"].includes(r.status))
-            .sort((a,b)=>String(b.created_at??"").localeCompare(String(a.created_at??"")));
-          if(active[0]?.id){
-            setSubmitting(false);
-            toast({title:"Solicitação encontrada",description:"Vamos continuar seu pedido existente, sem criar outra cobrança."});
-            navigate(`/pedido-local/${active[0].id}`);
-            return;
-          }
-        }
         setSubmitting(false);
         toast({ title: "Entrega local indisponível", description: routeError?.message || "Nenhuma loja parceira aceitou a solicitação. Nenhuma cobrança foi criada.", variant: "destructive" });
         return;

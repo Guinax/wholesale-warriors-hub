@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+import { isStrongPassword, STRONG_PASSWORD_MESSAGE } from "@/lib/passwordPolicy";
 
 const digits = (value: string) => value.replace(/\D/g, "");
 const countries = [
@@ -57,7 +58,7 @@ export default function CadastroCliente() {
     if (nationalPhone.length < 4 || nationalPhone.length > 14 || (dialCode + nationalPhone).length > 15) return toast.error("Informe um WhatsApp válido para o país escolhido.");
     const internationalPhone = `+${dialCode}${nationalPhone}`;
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) return toast.error("E-mail inválido.");
-    if (secret.length < 8) return toast.error("Use uma senha com pelo menos 8 caracteres.");
+    if (!isStrongPassword(secret)) return toast.error(STRONG_PASSWORD_MESSAGE);
     if (secret !== confirmSecret) return toast.error("As senhas não coincidem.");
 
     setLoading(true);
@@ -156,8 +157,8 @@ export default function CadastroCliente() {
             <div className="flex items-center gap-2"><span className="shrink-0 rounded-md border border-input bg-muted px-3 py-2 text-sm">+{dialCode}</span><Input id="signup-phone" value={phone} onChange={(e) => setPhone(digits(e.target.value).slice(0, 14))} inputMode="tel" autoComplete="tel-national" placeholder={country === "BR" ? "11999999999" : "Número com código de área"} required /></div>
           </div>
           <div><Label>E-mail</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required /></div>
-          <div><Label>Senha</Label><Input type="password" value={secret} onChange={(e) => setSecret(e.target.value)} autoComplete="new-password" minLength={8} required /></div>
-          <div><Label>Confirmar senha</Label><Input type="password" value={confirmSecret} onChange={(e) => setConfirmSecret(e.target.value)} autoComplete="new-password" minLength={8} required /></div>
+          <div><Label>Senha</Label><Input type="password" value={secret} onChange={(e) => setSecret(e.target.value)} autoComplete="new-password" minLength={10} required /></div>
+          <div><Label>Confirmar senha</Label><Input type="password" value={confirmSecret} onChange={(e) => setConfirmSecret(e.target.value)} autoComplete="new-password" minLength={10} required /></div>
           <Button type="submit" className="w-full font-heading font-black" disabled={loading}>
             {loading ? "CRIANDO..." : "CRIAR CONTA PARA COMPRAR"}
           </Button>

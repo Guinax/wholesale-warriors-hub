@@ -106,6 +106,7 @@ const normalizeWhatsAppPhone = (value: string) => {
 
 export default function Motoqueiro() {
   const navigate = useNavigate();
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [dashboard, setDashboard] = useState<Dashboard>({});
   const [saving, setSaving] = useState(false);
@@ -304,6 +305,7 @@ export default function Motoqueiro() {
     const cnhDigits = registration.cnh_number.replace(/\D/g, "");
     const motorized = registration.vehicle_type !== "bike";
     const whatsappPhone = normalizeWhatsAppPhone(registration.phone);
+    if (!termsAccepted) return toast.error("Leia e aceite o Termo Único antes de concluir o cadastro.");
     if (registration.full_name.trim().length < 3 || !whatsappPhone) return toast.error("Informe nome e celular com DDD válidos.");
     if (cpfDigits.length !== 11) return toast.error("Informe um CPF com 11 dígitos.");
     if (motorized && cnhDigits.length !== 11) return toast.error("Informe o número da CNH com 11 dígitos.");
@@ -558,7 +560,14 @@ export default function Motoqueiro() {
                 <Input type="date" className="border-white/10 bg-black/30" value={registration.cnh_expiry} onChange={(e) => setRegistration({ ...registration, cnh_expiry: e.target.value })} aria-label="Validade da CNH" />
               </div>
             </div>}
-            <Button disabled={saving} onClick={() => void register()} className="bg-yellow-400 font-black text-black hover:bg-yellow-300">{saving ? "Cadastrando..." : "Cadastrar como entregador"}</Button>
+            <label className="flex items-start gap-3 rounded-xl border border-yellow-400/20 bg-yellow-400/[0.04] p-3 text-sm text-zinc-300">
+              <input type="checkbox" className="mt-0.5 h-4 w-4 accent-yellow-400" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} />
+              <span>
+                <strong className="text-white">Li e aceito o Termo Único da Mansão Maromba.</strong><br/>
+                <a href="/termos" target="_blank" rel="noreferrer" className="text-xs font-bold text-yellow-300 underline">Ler o Termo Único completo</a>
+              </span>
+            </label>
+            <Button disabled={saving || !termsAccepted} onClick={() => void register()} className="bg-yellow-400 font-black text-black hover:bg-yellow-300 disabled:opacity-50">{saving ? "Cadastrando..." : "Cadastrar como entregador"}</Button>
           </div>
         </Card>
       </section>

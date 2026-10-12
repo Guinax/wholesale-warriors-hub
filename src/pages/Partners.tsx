@@ -39,7 +39,7 @@ export default function Partners() {
             </div>
             <p className="mt-4 text-sm leading-6 text-zinc-300">Entre para a rede, cadastre seu comércio e gerencie seu estoque individual pelo painel do parceiro.</p>
             <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">{benefits.slice(0,2).map(({icon:Icon,title,description})=><div key={title} className="rounded-2xl bg-[#181c25] p-3"><div className="flex items-center gap-2 font-bold text-emerald-300"><Icon className="h-4 w-4"/><span className="text-xs">{title}</span></div><p className="mt-1 text-xs leading-5 text-zinc-400">{description}</p></div>)}</div>
-            <button type="button" onClick={()=>navigate("/revendedor")} className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-4 font-black text-black transition hover:brightness-110">Quero cadastrar minha loja <ArrowRight className="h-4 w-4"/></button>
+            <button type="button" onClick={()=>navigate("/cadastro-parceiro")} className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-4 font-black text-black transition hover:brightness-110">Quero cadastrar minha loja <ArrowRight className="h-4 w-4"/></button>
             <button type="button" onClick={()=>navigate("/revendedor")} className="mt-2 min-h-11 w-full rounded-xl border border-white/10 bg-white/[.03] px-4 text-sm font-bold text-zinc-200">Já sou parceiro · acessar painel</button>
           </article>
 

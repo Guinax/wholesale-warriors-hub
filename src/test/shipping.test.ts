@@ -11,11 +11,13 @@ describe("frete operacional", () => {
   });
 
   it.each([
-    [1, 1, 12.6],
-    [6, 1, 12.6],
-    [7, 2, 25.2],
-    [12, 2, 25.2],
-    [13, 3, 37.8],
+    [1, 1, 2.2],
+    [6, 1, 13],
+    [7, 2, 15.2],
+    [8, 2, 17.3],
+    [12, 2, 26],
+    [13, 3, 28.2],
+    [18, 3, 39],
   ])("calcula %i unidades em %i caixa(s)", (units, boxes, kg) => {
     expect(shippingLoadFor(units)).toEqual({ units, boxes, estimatedWeightKg: kg });
   });

@@ -55,6 +55,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/cadastro" element={<Navigate to="/revendedor" replace />} />
             <Route path="/cadastro-cliente" element={<CadastroCliente />} />
+            <Route path="/e" element={<Navigate to="/cadastro-cliente?next=%2Fcadastro-entregador" replace />} />
             <Route path="/mais-vendidos" element={<MaisVendidos />} />
             <Route path="/avaliacoes" element={<Avaliacoes />} />
             <Route path="/pagamento" element={<ProtectedRoute><Pagamento /></ProtectedRoute>} />

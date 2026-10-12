@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Boxes, ChevronDown, MapPin, Navigation, Package, Search, Store, Truck, WalletCards } from "lucide-react";
 import PartnerMap, { type MapPoint } from "./PartnerMap";
 import PartnerCourierControls from "./PartnerCourierControls";
@@ -6,9 +6,19 @@ import {
   assignedRequests, canDispatch, coordinates, deliveryStage, requestAddress, requestStatus, routeUrl,
   type DeliveryFilter, type PartnerMapStore, type PartnerOffer, type PartnerRequest,
 } from "@/lib/partnerDelivery";
+import { supabase } from "@/integrations/supabase/client";
 import "./partner-delivery.css";
 
 type Command = (action: string, payload: Record<string, unknown>, success: string) => Promise<void>;
+type CourierJobMapState = {
+  id: string;
+  request_id: string;
+  status: string;
+  courier_name?: string | null;
+  courier_code?: string | null;
+  courier_lat?: number | null;
+  courier_lng?: number | null;
+};
 type Props = {
   stores: PartnerMapStore[];
   offers: PartnerOffer[];
@@ -39,6 +49,27 @@ export default function PartnerDeliveryBoard({ stores, offers, requests, saving,
   const [filter, setFilter] = useState<DeliveryFilter>("all");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [courierJobs, setCourierJobs] = useState<CourierJobMapState[]>([]);
+  const loadCourierJobs = useCallback(async () => {
+    const { data, error } = await supabase.rpc("partner_courier_command" as never, { p_action: "dashboard", p_payload: {} } as never);
+    if (error) return;
+    const dashboard = (data ?? {}) as { jobs?: CourierJobMapState[] };
+    setCourierJobs(dashboard.jobs ?? []);
+  }, []);
+
+  useEffect(() => {
+    if (!showMap) return;
+    void loadCourierJobs();
+    const channel = supabase.channel("partner-map-courier-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "courier_jobs" }, () => void loadCourierJobs())
+      .on("postgres_changes", { event: "*", schema: "public", table: "courier_locations" }, () => void loadCourierJobs())
+      .subscribe();
+    const fallback = window.setInterval(() => void loadCourierJobs(), 5000);
+    return () => {
+      window.clearInterval(fallback);
+      void supabase.removeChannel(channel);
+    };
+  }, [showMap, loadCourierJobs]);
   const owned = useMemo(() => assignedRequests(requests, stores), [requests, stores]);
   const uniqueOffers = useMemo(() => Array.from(new Map(offers.map(o => [o.id, o])).values()), [offers]);
   const matches = (value: string) => value.toLocaleLowerCase("pt-BR").includes(search.trim().toLocaleLowerCase("pt-BR"));
@@ -55,10 +86,28 @@ export default function PartnerDeliveryBoard({ stores, offers, requests, saving,
     owned.filter(r => (filter === "all" || deliveryStage(r.status) === filter) && [r.order_code, r.customer?.name, requestAddress(r), r.store_name].join(" ").toLocaleLowerCase("pt-BR").includes(search.trim().toLocaleLowerCase("pt-BR"))).forEach(r => {
       const location = coordinates(r);
       const stage = deliveryStage(r.status);
-      if (location && stage && stage !== "all" && stage !== "new") mapped.push({ ...location, id: r.id, label: r.order_code || "Pedido #" + r.id.slice(0, 8), kind: stage });
+      if (location && stage && stage !== "all" && stage !== "new") {
+        const kind: MapPoint["kind"] = stage === "delivering" ? "destination" : stage;
+        mapped.push({ ...location, id: r.id, label: (stage === "delivering" ? "Destino final · " : "") + (r.order_code || "Pedido #" + r.id.slice(0, 8)), kind });
+      }
+    });
+    const ownedIds = new Set(owned.map(r => r.id));
+    courierJobs.filter(job =>
+      ownedIds.has(job.request_id) &&
+      ["picked_up", "delivering"].includes(job.status) &&
+      typeof job.courier_lat === "number" &&
+      typeof job.courier_lng === "number"
+    ).forEach(job => {
+      mapped.push({
+        id: "courier:" + job.id,
+        lat: Number(job.courier_lat),
+        lng: Number(job.courier_lng),
+        label: "Motoqueiro em entrega · " + (job.courier_name || job.courier_code || "entregador"),
+        kind: "courier",
+      });
     });
     return mapped;
-  }, [stores, owned, filter, search]);
+  }, [stores, owned, filter, search, courierJobs]);
   const count = (id: DeliveryFilter) => id === "all" ? owned.length + uniqueOffers.length : id === "new" ? uniqueOffers.length : owned.filter(r => deliveryStage(r.status) === id).length;
   const delivering = owned.filter(r => r.status === "delivering").length;
   const approvedStoreNames = stores.filter(s => s.status === "approved").map(s => s.name);
@@ -108,9 +157,9 @@ export default function PartnerDeliveryBoard({ stores, offers, requests, saving,
       {showMap && <div className="delivery-map-section">
         <PartnerMap points={points} selectedId={activeSelection} onSelect={id => {
           setSelectedId(id);
-          if (!id.startsWith("store:")) document.getElementById("partner-request-" + id)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+          if (!id.startsWith("store:") && !id.startsWith("courier:")) document.getElementById("partner-request-" + id)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
         }} />
-        <div className="delivery-map-caption"><MapPin size={14} />Pontos de destino informados no pedido. Confira o endereço antes de sair.</div>
+        <div className="delivery-map-caption"><MapPin size={14} />A loja acompanha o motoqueiro no mesmo mapa operacional até o destino final. A posição é atualizada enquanto o entregador compartilha a localização.</div>
         <div className="delivery-metrics">
           <button onClick={() => onNavigate("estoque")}><span className="delivery-metric-icon"><Boxes size={20} /></span><span><small>Estoque disponível</small><strong>{availableStock.toLocaleString("pt-BR")} itens</strong></span></button>
           <button onClick={() => setFilter("delivering")}><span className="delivery-metric-icon"><Truck size={20} /></span><span><small>Em entrega</small><strong>{delivering} pedidos</strong></span></button>

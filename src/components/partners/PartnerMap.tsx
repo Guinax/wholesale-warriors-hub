@@ -4,7 +4,7 @@ import { LocateFixed, MapPin } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import type { Coordinates } from "@/lib/partnerDelivery";
 
-export type MapPoint = Coordinates & { id: string; label: string; kind: "store" | "preparing" | "delivering" | "delivered" };
+export type MapPoint = Coordinates & { id: string; label: string; kind: "store" | "preparing" | "destination" | "courier" | "delivered" };
 type Props = { points: MapPoint[]; selectedId: string | null; onSelect: (id: string) => void };
 
 export default function PartnerMap({ points, selectedId, onSelect }: Props) {
@@ -72,7 +72,7 @@ export default function PartnerMap({ points, selectedId, onSelect }: Props) {
     {hasPoints ? <>
       <div ref={container} className="partner-map-canvas" aria-label="Mapa das lojas e dos destinos dos pedidos" />
       <button className="partner-map-fit" type="button" onClick={fit}><LocateFixed size={16} /> Ver todos os pontos</button>
-      <div className="partner-map-legend"><span><i className="bg-yellow-400" /> Loja</span><span><i className="bg-blue-600" /> Em entrega</span><span><i className="bg-slate-500" /> Destino final</span></div>
+      <div className="partner-map-legend"><span><i className="legend-store" /> Loja</span><span><i className="legend-preparing" /> Em preparo</span><span><i className="legend-courier" /> Em entrega</span><span><i className="legend-destination" /> Destino final</span><span><i className="legend-delivered" /> Entregue</span></div>
       {tileError && <p className="partner-map-warning" role="status">O mapa não carregou por completo. Consulte o endereço ou abra o trajeto do pedido.</p>}
     </> : <div className="partner-map-empty"><MapPin size={38} /><h3>Localização indisponível</h3><p>O mapa aparecerá quando houver coordenadas válidas da loja ou de um pedido aceito.</p></div>}
   </div>;

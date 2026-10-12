@@ -60,7 +60,7 @@ const Pagamento = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const forceCentral = Boolean((location.state as { forceCentral?: boolean } | null)?.forceCentral);
-  const isLocalRetail = items.reduce((sum, item) => sum + item.qty, 0) <= 6;
+  const isLocalRetail = items.reduce((sum, item) => sum + item.qty, 0) < 6;
   const { toast } = useToast();
 
   const [method, setMethod] = useState<PaymentMethod>("pix");
@@ -182,7 +182,7 @@ const Pagamento = () => {
       }));
 
       const totalUnits = items.reduce((sum, item) => sum + item.qty, 0);
-      if (totalUnits <= 6) {
+      if (totalUnits < 6) {
         setShippingCost(0);
         setShippingEta("");
         setCheckingCep(false);

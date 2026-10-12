@@ -48,7 +48,11 @@ export const toCategoryProduct = (p: DbProduct) => ({
   name: p.name,
   unitPrice: formatBRL(p.unit_price),
   wholesalePrice: formatBRL(p.wholesale_price),
-  minQty: p.min_qty ?? (p.category === "bebidas_naturais" ? 10 : 6),
+  minQty: p.category === "bebidas_naturais"
+    ? 10
+    : Number.isSafeInteger(p.min_qty) && p.min_qty > 1
+      ? p.min_qty
+      : 6,
   stock: p.stock,
   image: p.image_url ?? undefined,
 });

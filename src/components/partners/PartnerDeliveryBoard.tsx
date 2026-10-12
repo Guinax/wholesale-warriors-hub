@@ -61,10 +61,12 @@ export default function PartnerDeliveryBoard({ stores, offers, requests, saving,
   }, [stores, owned, filter, search]);
   const count = (id: DeliveryFilter) => id === "all" ? owned.length + uniqueOffers.length : id === "new" ? uniqueOffers.length : owned.filter(r => deliveryStage(r.status) === id).length;
   const delivering = owned.filter(r => r.status === "delivering").length;
+  const approvedStoreNames = stores.filter(s => s.status === "approved").map(s => s.name);
+  const storeLabel = approvedStoreNames.length ? approvedStoreNames.join(" · ") : "Loja parceira";
 
   return <section className="partner-delivery-board" aria-label="Central de entregas">
     <header className="delivery-board-heading">
-      <div><p className="delivery-eyebrow">PAINEL DO PARCEIRO</p><h1>{showMap ? "Entregas no mapa" : "Seus pedidos"}</h1><p>Acompanhe os pedidos da sua loja, do aceite até a entrega.</p></div>
+      <div><p className="delivery-eyebrow">PAINEL DO PARCEIRO</p><p className="text-sm font-black text-amber-300">Loja: {storeLabel}</p><h1>{showMap ? "Entregas no mapa" : "Seus pedidos"}</h1><p>Acompanhe os pedidos da sua loja, do aceite até a entrega.</p></div>
       <button className="delivery-button delivery-button-outline" onClick={() => onNavigate(showMap ? "pedidos" : "inicio")}><MapPin size={16} />{showMap ? "Ver só a lista" : "Ver mapa"}</button>
     </header>
     <div className={showMap ? "delivery-workspace" : "delivery-workspace delivery-workspace-list"}>

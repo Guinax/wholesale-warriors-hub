@@ -76,6 +76,47 @@ export default function PainelRevendedor() {
       oscillator.stop(context.currentTime + offset + 0.21);
     });
   };
+
+  useEffect(() => {
+    const unlock = () => unlockSound();
+    window.addEventListener("pointerdown", unlock, { once: true });
+    window.addEventListener("keydown", unlock, { once: true });
+    window.addEventListener("touchstart", unlock, { once: true, passive: true });
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+      window.removeEventListener("touchstart", unlock);
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    const subscribe = async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user || cancelled) return;
+      channel = supabase.channel("partner-sound-test-" + auth.user.id)
+        .on("postgres_changes", {
+          event: "INSERT",
+          schema: "public",
+          table: "user_notifications",
+          filter: `user_id=eq.${auth.user.id}`,
+        }, (payload) => {
+          const row = payload.new as { type?: string };
+          if (row.type !== "test_partner_sound") return;
+          unlockSound();
+          playOrderAlert();
+          toast.info("Teste de som recebido no painel da loja.");
+        })
+        .subscribe();
+    };
+    void subscribe();
+    return () => {
+      cancelled = true;
+      if (channel) void supabase.removeChannel(channel);
+    };
+  }, []);
+
   useEffect(() => {
     const current = new Set(offers.map(offer => offer.id));
     if (previousOfferIds.current && offers.some(offer => !previousOfferIds.current!.has(offer.id)) && stores.some(store => store.status === "approved" && store.is_open)) {

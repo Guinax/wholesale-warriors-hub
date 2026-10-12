@@ -21,6 +21,10 @@ const CartDrawer = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [checkingStock, setCheckingStock] = useState(false);
+  const juiceQty = items.reduce(
+    (sum, item) => sum + (item.name.startsWith("Suco Natural") ? item.qty : 0),
+    0,
+  );
 
   const handleCheckout = async () => {
     const trackedItems = items.filter((item) => item.productId);
@@ -116,7 +120,13 @@ const CartDrawer = () => {
                         {formatCurrency(item.priceNum)} /un
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {item.qty >= 6 ? "Atacado aplicado" : `Faltam ${6 - item.qty} unidade(s) deste produto para atacado`}
+                        {item.name.startsWith("Suco Natural")
+                          ? juiceQty >= 10
+                            ? "Atacado aplicado"
+                            : `Venda avulsa · faltam ${10 - juiceQty} unidade(s) de suco para atacado`
+                          : item.qty >= 6
+                            ? "Atacado aplicado"
+                            : `Faltam ${6 - item.qty} unidade(s) deste produto para atacado`}
                       </p>
                       {item.stock !== undefined && (
                         <p className="text-[11px] text-muted-foreground mt-1">

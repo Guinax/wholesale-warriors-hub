@@ -65,11 +65,12 @@
 .partner-map-legend span { display: flex; align-items: center; gap: 4px; }
 .partner-map-legend i { width: 7px; height: 7px; display: inline-block; border-radius: 50%; }
 .partner-pin { display: grid; place-items: center; width: 36px; height: 36px; border: 3px solid #e8d9b1; border-radius: 50% 50% 50% 6px; box-shadow: 0 3px 9px #00000080; background: #b7ae9b; color: white; font-size: 15px; font-weight: 800; }
-.partner-pin--store { background: #d4af37; color: #15120a; }
-.partner-pin--store { overflow: hidden; padding: 3px; background: #111; }
+.partner-pin--store { overflow: hidden; padding: 3px; background: #16a34a; border-color: #dcfce7; color: #052e16; }
 .partner-pin-logo { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; display: block; }
-.partner-pin--delivering { background: #d4af37; }
-.partner-pin--delivered { background: #8b947a; }
+.partner-pin--preparing { background: #d4af37; color: #15120a; }
+.partner-pin--destination { background: #64748b; border-color: #e2e8f0; }
+.partner-pin--courier { background: #dc2626; border-color: #fee2e2; }
+.partner-pin--delivered { background: #16a34a; border-color: #dcfce7; }
 .partner-pin--selected { outline: 3px solid #f5efdf; outline-offset: 2px; }
 .partner-map-marker { background: transparent; border: 0; }
 .partner-map-warning { position: absolute; z-index: 2; bottom: 28px; left: 10px; right: 50px; padding: 10px; border-radius: 8px; background: #342b17; color: #f0d487; font-size: 11px; }
@@ -115,8 +116,10 @@
 .partner-map-canvas .leaflet-control-attribution { background: #171614ed; color: #c9bea8; }
 .partner-map-canvas .leaflet-control-attribution a { color: #e5c66c; }
 .partner-map-canvas .leaflet-tooltip { background: #191816; color: #f5efdf; border-color: #806a2e; }
-.partner-map-legend .bg-yellow-400 { background: #d4af37; }
-.partner-map-legend .bg-blue-600 { background: #d4af37; }
-.partner-map-legend .bg-slate-500 { background: #b7ae9b; }
+.partner-map-legend .legend-store { background: #16a34a; }
+.partner-map-legend .legend-preparing { background: #d4af37; }
+.partner-map-legend .legend-courier { background: #dc2626; }
+.partner-map-legend .legend-destination { background: #64748b; }
+.partner-map-legend .legend-delivered { background: #16a34a; }
 .delivery-eyebrow, .delivery-board-heading h1 { color: #e5c66c; }
 .delivery-search input::placeholder { color: #a79e8c; }

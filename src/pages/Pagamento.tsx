@@ -60,7 +60,16 @@ const Pagamento = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const forceCentral = Boolean((location.state as { forceCentral?: boolean } | null)?.forceCentral);
-  const isLocalRetail = items.reduce((sum, item) => sum + item.qty, 0) < 6;
+  const totalUnits = items.reduce((sum, item) => sum + item.qty, 0);
+  const juiceQty = items.reduce(
+    (sum, item) => sum + (item.name.startsWith("Suco Natural") ? item.qty : 0),
+    0,
+  );
+  const hasWholesaleBeverage = items.some(
+    (item) => !item.name.startsWith("Suco Natural") && item.qty >= 6,
+  );
+  const isWholesaleOrder = totalUnits >= 50 || juiceQty >= 10 || hasWholesaleBeverage;
+  const isLocalRetail = !forceCentral && !isWholesaleOrder;
   const { toast } = useToast();
 
   const [method, setMethod] = useState<PaymentMethod>("pix");
@@ -181,8 +190,7 @@ const Pagamento = () => {
         state: info.state,
       }));
 
-      const totalUnits = items.reduce((sum, item) => sum + item.qty, 0);
-      if (totalUnits < 6) {
+      if (isLocalRetail) {
         setShippingCost(0);
         setShippingEta("");
         setCheckingCep(false);
@@ -212,7 +220,7 @@ const Pagamento = () => {
       if (active) setCheckingCep(false);
     });
     return () => { active = false; };
-  }, [customer.zip, totalPrice, items]);
+  }, [customer.zip, totalPrice, items, isLocalRetail]);
 
   const addressConfirmed = validCep && !checkingCep && customer.state === validatedState &&
     Boolean(customer.street.trim() && customer.number.trim() && customer.city.trim());
@@ -336,10 +344,10 @@ const Pagamento = () => {
     const legacyNames = [...new Set(items.filter((item) => !item.productId).map((item) => item.name))];
     const [byId, byLegacyName] = await Promise.all([
       productIds.length
-        ? supabase.from("products").select("id,name,unit_price,wholesale_price,stock").eq("active", true).in("id", productIds)
+        ? supabase.from("products").select("id,name,category,min_qty,unit_price,wholesale_price,stock").eq("active", true).in("id", productIds)
         : Promise.resolve({ data: [], error: null }),
       legacyNames.length
-        ? supabase.from("products").select("id,name,unit_price,wholesale_price,stock").eq("active", true).in("name", legacyNames)
+        ? supabase.from("products").select("id,name,category,min_qty,unit_price,wholesale_price,stock").eq("active", true).in("name", legacyNames)
         : Promise.resolve({ data: [], error: null }),
     ]);
     if (byId.error || byLegacyName.error) {
@@ -350,7 +358,12 @@ const Pagamento = () => {
     const catalog = [...(byId.data ?? []), ...(byLegacyName.data ?? [])];
     const invalidItem = items.find(item => {
       const product = catalog?.find(product => item.productId ? product.id === item.productId : product.name === item.name);
-      const expectedPrice = product ? (item.qty >= 6 ? product.wholesale_price : product.unit_price) : 0;
+      const wholesaleApplies = product
+        ? product.category === "bebidas_naturais"
+          ? juiceQty >= 10
+          : item.qty >= (Number.isSafeInteger(Number(product.min_qty)) && Number(product.min_qty) > 1 ? Number(product.min_qty) : 6)
+        : false;
+      const expectedPrice = product ? (wholesaleApplies ? product.wholesale_price : product.unit_price) : 0;
       return !product || !Number.isInteger(item.qty) || item.qty < 1 || item.qty > product.stock ||
         Math.round(item.priceNum * 100) !== Math.round(expectedPrice * 100);
     });
@@ -629,7 +642,7 @@ const Pagamento = () => {
               <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{isLocalRetail && !freeShippingTestActive ? (localEstimate != null ? formatCurrency(localEstimate) : !addressConfirmed ? "Verificando endereço" : localEstimateLoading ? "Calculando..." : "Indisponível") : freeShippingTestActive ? "Grátis (teste admin)" : checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>
               {isLocalRetail && !freeShippingTestActive && <p className="text-[10px] text-muted-foreground">O frete é calculado pela distância da loja parceira até o endereço. O valor definitivo e o total serão confirmados antes do pagamento.</p>}
               {shippingEta && <p className="text-[10px] text-muted-foreground">Prazo estimado: {shippingEta}</p>}
-              {shippingEta && <p className="text-[10px] text-muted-foreground">{shippingLoad.boxes} caixa{shippingLoad.boxes > 1 ? "s" : ""} · peso estimado {shippingLoad.estimatedWeightKg.toFixed(1).replace(".", ",")} kg</p>}
+              {shippingEta && <p className="text-[10px] text-muted-foreground">{shippingLoad.units} unidade{shippingLoad.units > 1 ? "s" : ""} · peso estimado {shippingLoad.estimatedWeightKg.toFixed(1).replace(".", ",")} kg</p>}
               {isAdmin && (
                 <label className="mt-3 flex items-start gap-2 rounded-lg border border-border bg-secondary/50 p-3 cursor-pointer">
                   <input type="checkbox" checked={testWithoutShipping} onChange={(e) => setTestWithoutShipping(e.target.checked)} className="mt-0.5 h-4 w-4 accent-current" />

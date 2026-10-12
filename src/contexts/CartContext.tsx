@@ -24,7 +24,7 @@ function parsePrice(price: string): number {
 }
 
 function isNaturalJuice(item: { name: string }): boolean {
-  return item.name.startsWith("Suco Natural Larandelly");
+  return item.name.startsWith("Suco Natural");
 }
 
 function tierMinimum(item: { name: string; minQty?: number }): number {

@@ -1,6 +1,6 @@
 // Cálculo inicial de frete por CEP, peso e caixas.
 // Origem operacional: Iracemápolis/SP - CEP 13495-041.
-// Referência inicial: caixa padrão com até 6 unidades, ~12,6 kg carregada.
+// Referência inicial: fardo padrão com 6 unidades e 13 kg; peso de frete proporcional por unidade.
 // Estes parâmetros ficam centralizados para ajuste conforme os fretes reais da operação.
 
 export interface CepInfo {
@@ -24,7 +24,8 @@ const CENTRO_NORDESTE = ["GO", "MT", "MS", "DF", "BA", "SE", "AL", "PE", "PB", "
 
 export const SHIPPING_ORIGIN_CEP = "13495-041";
 export const UNITS_PER_BOX = 6;
-export const ESTIMATED_BOX_WEIGHT_KG = 12.6;
+export const ESTIMATED_BOX_WEIGHT_KG = 13;
+export const ESTIMATED_UNIT_WEIGHT_KG = ESTIMATED_BOX_WEIGHT_KG / UNITS_PER_BOX;
 export const MIN_BILLABLE_WEIGHT_KG = 1;
 
 export function shippingLoadFor(totalUnits: number): ShippingLoad {
@@ -32,7 +33,7 @@ export function shippingLoadFor(totalUnits: number): ShippingLoad {
   const boxes = Math.max(1, Math.ceil(units / UNITS_PER_BOX));
   const estimatedWeightKg = Math.max(
     MIN_BILLABLE_WEIGHT_KG,
-    Number((boxes * ESTIMATED_BOX_WEIGHT_KG).toFixed(1)),
+    Number((units * ESTIMATED_UNIT_WEIGHT_KG).toFixed(1)),
   );
   return { units, boxes, estimatedWeightKg };
 }

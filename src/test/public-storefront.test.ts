@@ -36,7 +36,8 @@ describe("Public storefront and auth routing contracts", () => {
     expect(panel).toContain('const approvedStores = stores.filter((s) => s.status === "approved");');
     expect(panel).toContain("{hasApprovedStore && <>");
     expect(panel).toContain("{approvedStores.map((store)=>");
-    expect(panel).toContain("liberados somente para lojas aprovadas");
+    expect(panel).toContain('const hasApprovedStore = approvedStores.length > 0;');
+    expect(panel).toContain('store.status === "approved"');
   });
 
   it("does not allow an external next redirect after login", () => {

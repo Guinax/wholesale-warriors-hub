@@ -486,19 +486,21 @@ export default function PainelRevendedor() {
   const paidPayout = walletPayouts.reduce((sum,p)=>sum+Number(p.paid_amount||0),0);
   const openStore = approvedStores.find((s) => s.is_open) ?? approvedStores[0] ?? null;
   const totalAvailable = inventory.filter(i => approvedStores.some(s => s.id === i.store_id)).reduce((sum, item) => sum + Math.max(0, Number(item.on_hand) - Number(item.reserved)), 0);
+  const activeDeliveriesCount = requests.filter(r => approvedStores.some(s => s.id === r.store_id) && r.status === "delivering").length;
+  const openStoreCount = approvedStores.filter(s => s.is_open).length;
   const pendingContractStore = approvedStores.find((s) => s.accepted_terms_version !== s.terms_version) ?? null;
 
   return (
     <div className="contents">
       {stores.some((s) => s.status === "approved") && <div className="fixed bottom-20 right-3 z-40 rounded-xl bg-black/90 p-2 shadow-lg"><PushPermissionButton role="partner" onUserGesture={unlockSound} /></div>}
-    <main className={hasApprovedStore && ["inicio", "pedidos"].includes(activeTab) ? "min-h-screen bg-[#0c0c0c] pb-24 text-[#f5efdf] md:pb-8" : "min-h-screen bg-[#0a0b0d] text-zinc-100 pb-24 md:pb-8"}>
+    <main className={hasApprovedStore && ["inicio", "pedidos"].includes(activeTab) ? "min-h-screen bg-[#0f131c] pb-24 text-[#dfe2ef] md:pb-8" : "min-h-screen bg-[#0f131c] text-[#dfe2ef] pb-24 md:pb-8"}>
       <div className="mx-auto min-h-screen max-w-[1600px]">
         <div className="min-w-0">
-          <header className="sticky top-0 z-20 border-b border-white/10 bg-[#11100e] px-4 py-3 text-white md:px-7">
+          <header className="sticky top-0 z-20 border-b border-white/10 bg-[#181c25] px-4 py-3 text-white md:px-7">
             <div className="flex items-center justify-between gap-3">
-              <button type="button" onClick={()=>navigate("/")} className="text-left font-heading text-base font-black leading-tight text-[#e5c66c]" aria-label="Voltar à Home">MANSÃO<br className="sm:hidden"/> MAROMBA</button>
+              <button type="button" onClick={()=>navigate("/")} className="text-left font-heading text-base font-black leading-tight text-[#ffc174]" aria-label="Voltar à Home">MANSÃO<br className="sm:hidden"/> MAROMBA</button>
               {hasApprovedStore && <nav className="hidden items-center gap-1 md:flex" aria-label="Painel do parceiro">
-                {([{id:"inicio",label:"Visão geral",icon:Grid2X2},{id:"pedidos",label:"Pedidos",icon:Package},{id:"estoque",label:"Estoque",icon:Boxes},{id:"repasses",label:"Repasses",icon:WalletCards},{id:"loja",label:"Minha loja",icon:StoreIcon}] as const).map(item=><button key={item.id} type="button" onClick={()=>switchTab(item.id)} aria-current={activeTab===item.id?"page":undefined} className={"flex items-center gap-2 rounded-lg px-3 py-3 text-xs font-semibold transition "+(activeTab===item.id?"bg-white/10 text-[#e5c66c]":"text-slate-300 hover:bg-white/5")}><item.icon className="h-4 w-4"/>{item.label}</button>)}
+                {([{id:"inicio",label:"Visão geral",icon:Grid2X2},{id:"pedidos",label:"Pedidos",icon:Package},{id:"estoque",label:"Estoque",icon:Boxes},{id:"repasses",label:"Repasses",icon:WalletCards},{id:"loja",label:"Minha loja",icon:StoreIcon}] as const).map(item=><button key={item.id} type="button" onClick={()=>switchTab(item.id)} aria-current={activeTab===item.id?"page":undefined} className={"flex items-center gap-2 rounded-lg px-3 py-3 text-xs font-semibold transition "+(activeTab===item.id?"bg-[#262a33] text-[#ffc174]":"text-slate-300 hover:bg-white/5")}><item.icon className="h-4 w-4"/>{item.label}</button>)}
               </nav>}
               <div className="flex items-center gap-2">
                 {hasApprovedStore && <button type="button" onClick={()=>switchTab("loja")} className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs"><span className={"h-2 w-2 rounded-full "+(openStore?.is_open?"bg-emerald-400":"bg-slate-500")}/>{openStore?.is_open?"Loja aberta":"Loja fechada"}</button>}
@@ -580,8 +582,8 @@ export default function PainelRevendedor() {
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <button type="button" onClick={()=>switchTab("pedidos")} className="rounded-2xl bg-[#1c2029] p-4 text-left shadow-lg"><Bell className="mb-3 h-5 w-5 text-orange-400"/><p className="text-2xl font-black">{offers.length}</p><p className="text-xs text-zinc-400">Novos pedidos</p></button>
                 <button type="button" onClick={()=>switchTab("estoque")} className="rounded-2xl bg-[#1c2029] p-4 text-left shadow-lg"><Boxes className="mb-3 h-5 w-5 text-amber-300"/><p className="text-2xl font-black">{totalAvailable}</p><p className="text-xs text-zinc-400">Unidades disponíveis</p></button>
-                <button type="button" onClick={()=>switchTab("repasses")} className="rounded-2xl bg-[#1c2029] p-4 text-left shadow-lg"><WalletCards className="mb-3 h-5 w-5 text-emerald-300"/><p className="text-lg font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p><p className="text-xs text-zinc-400">Saldo liberado</p></button>
-                <button type="button" onClick={()=>switchTab("loja")} className="rounded-2xl bg-[#1c2029] p-4 text-left shadow-lg"><StoreIcon className="mb-3 h-5 w-5 text-amber-300"/><p className="text-lg font-black">{approvedStores.length}</p><p className="text-xs text-zinc-400">Lojas aprovadas</p></button>
+                <button type="button" onClick={()=>switchTab("repasses")} className="rounded-2xl bg-[#1c2029] p-4 text-left shadow-lg"><WalletCards className="mb-3 h-5 w-5 text-emerald-300"/><p className="text-lg font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(waitingPayout)}</p><p className="text-xs text-zinc-400">Repasses pendentes</p></button>
+                <button type="button" onClick={()=>switchTab("loja")} className="rounded-2xl bg-[#1c2029] p-4 text-left shadow-lg"><StoreIcon className="mb-3 h-5 w-5 text-amber-300"/><p className="text-lg font-black">{activeDeliveriesCount}</p><p className="text-xs text-zinc-400">Entregas em andamento · {openStoreCount} {openStoreCount === 1 ? "loja aberta" : "lojas abertas"}</p></button>
               </div>
             </section>}
             {hasApprovedStore && <>

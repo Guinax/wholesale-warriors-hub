@@ -48,6 +48,7 @@ export default function PainelRevendedor() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [stores, setStores] = useState<Store[]>([]);
   const [saving, setSaving] = useState<string | null>(null);
+  const [confirmedTerms, setConfirmedTerms] = useState<Record<string, boolean>>({});
   const [offers, setOffers] = useState<Offer[]>([]);
   const previousOfferIds = useRef<Set<string> | null>(null);
   const soundContext = useRef<AudioContext | null>(null);
@@ -273,10 +274,12 @@ export default function PainelRevendedor() {
   }, [load, stores]);
 
   const acceptTerms = async (store: Store) => {
+    if (!confirmedTerms[store.id]) return toast.error("Leia e confirme o Termo Único antes de aceitar.");
     setSaving("terms-"+store.id);
     const {error}=await supabase.rpc("partner_command" as never,{p_action:"accept_terms",p_payload:{store_id:store.id,version:store.terms_version}} as never);
     setSaving(null); if(error) return toast.error(error.message);
-    toast.success("Condições vigentes aceitas."); await load();
+    setConfirmedTerms((current)=>({...current,[store.id]:false}));
+    toast.success("Termo Único vigente aceito."); await load();
   };
 
   const saveStoreSettings = async (store: Store) => {
@@ -664,7 +667,7 @@ export default function PainelRevendedor() {
 
                 <label className="mt-4 flex items-start gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-zinc-300">
                   <input type="checkbox" className="mt-0.5 h-4 w-4 accent-yellow-400" checked={newStore.terms} onChange={(e)=>setNewStore({...newStore,terms:e.target.checked})}/>
-                  <span><strong className="text-zinc-100">Aceito as condições da operação parceira.</strong><br/><span className="text-xs text-zinc-500">Pedidos, estoque, entregas e repasses são liberados somente para lojas aprovadas.</span></span>
+                  <span><strong className="text-zinc-100">Li e aceito o Termo Único da Mansão Maromba.</strong><br/><a href="/termos" target="_blank" rel="noreferrer" className="text-xs font-bold text-[#e5c66c] underline">Ler o Termo Único completo</a><span className="mt-1 block text-xs text-zinc-500">Produtos oficiais, preços padronizados, margem da rede, estoque, entregas, fechamento diário, repasses e privacidade.</span></span>
                 </label>
 
                 <Button className="mt-4 h-12 w-full rounded-xl bg-[#d4af37] text-sm font-black text-black shadow-[0_10px_30px_rgba(250,204,21,0.12)] hover:bg-[#e8c65a] sm:w-auto sm:px-6" disabled={registering} onClick={()=>void registerStore()}>{registering?"Enviando...":"Enviar loja para aprovação"}</Button>
@@ -678,7 +681,16 @@ export default function PainelRevendedor() {
                   <div><h2 className="text-lg font-black">{store.name}</h2><p className="text-xs text-zinc-500">Cadastro: {store.status}</p></div>
                   <Settings2 className="h-5 w-5 text-[#e5c66c]"/>
                 </div>
-                {store.status==="approved"&&store.accepted_terms_version!==store.terms_version&&<div className="mt-4 rounded-xl border border-[#d4af37]/20 bg-[#d4af37]/5 p-4"><p className="font-semibold text-yellow-200">Condições atualizadas</p><p className="mt-1 text-xs text-zinc-400">Aceite a versão {store.terms_version} para reabrir a operação.</p><Button className="mt-3 bg-[#d4af37] font-bold text-black hover:bg-[#e8c65a]" disabled={saving==="terms-"+store.id} onClick={()=>void acceptTerms(store)}>Aceitar condições</Button></div>}
+                {store.status==="approved"&&store.accepted_terms_version!==store.terms_version&&<div className="mt-4 rounded-xl border border-[#d4af37]/20 bg-[#d4af37]/5 p-4">
+    <p className="font-semibold text-yellow-200">Termo Único atualizado</p>
+    <p className="mt-1 text-xs text-zinc-400">Leia e aceite a versão {store.terms_version} para reabrir a operação.</p>
+    <a href="/termos" target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs font-bold text-[#e5c66c] underline">Ler o Termo Único completo</a>
+    <label className="mt-3 flex items-start gap-2 text-xs text-zinc-300">
+      <input type="checkbox" className="mt-0.5 h-4 w-4 accent-yellow-400" checked={Boolean(confirmedTerms[store.id])} onChange={(e)=>setConfirmedTerms((current)=>({...current,[store.id]:e.target.checked}))}/>
+      <span>Li e concordo com a versão vigente do Termo Único.</span>
+    </label>
+    <Button className="mt-3 bg-[#d4af37] font-bold text-black hover:bg-[#e8c65a]" disabled={saving==="terms-"+store.id||!confirmedTerms[store.id]} onClick={()=>void acceptTerms(store)}>Aceitar Termo Único</Button>
+  </div>}
                 <div className="mt-4 space-y-4">
                   <section className={`rounded-2xl border p-4 transition-colors ${store.is_open ? "border-amber-400/40 bg-[#1d1d21]" : "border-white/10 bg-[#18181b]"}`}>
                     <div className="flex items-center justify-between gap-4">

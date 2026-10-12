@@ -73,7 +73,7 @@ export default function PayoutsManager() {
   }, []);
 
   const walletRows = useMemo(() => {
-    const ids = new Set(rows.map((p) => p.store_id));
+    const ids = new Set(rows.map((p) => p.store_id).filter((id): id is string => typeof id === "string" && id.trim().length > 0));
     return [...ids].map((storeId) => {
       const credits = rows.filter((p) => p.store_id === storeId && p.status !== "cancelled");
       const earned = credits.reduce((sum, p) => sum + Number(p.amount || 0), 0);
@@ -159,6 +159,7 @@ export default function PayoutsManager() {
 
       {walletRows.map(({ storeId, earned, paid, held, available }) => {
         const account = accounts[storeId];
+        const store = stores[storeId];
         const draft = drafts[storeId] ?? { amount: "", receipt: null, reference: "" };
         const history = payments.filter((payment) => payment.store_id === storeId);
 
@@ -166,8 +167,9 @@ export default function PayoutsManager() {
           <Card key={storeId} className="space-y-4 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <div className="text-sm font-semibold">{stores[storeId]?.name ?? "Loja parceira"}</div>
+                <div className="text-sm font-semibold">{store?.name?.trim() || "Cadastro da loja não localizado"}</div>
                 <div className="text-xs text-muted-foreground">ID único do parceiro: <code className="select-all break-all">{storeId}</code></div>
+                {!store && <div className="mt-1 text-xs text-destructive">Vínculo com o cadastro da loja não encontrado. Verifique o ID antes de realizar repasses.</div>}
                 <div className="mt-1 text-2xl font-black">{formatCurrency(available)}</div>
                 <div className="text-xs text-muted-foreground">Saldo disponível para PIX</div>
               </div>
@@ -190,7 +192,7 @@ export default function PayoutsManager() {
               <p className="text-sm text-destructive">Conta PIX ainda não cadastrada pelo parceiro.</p>
             )}
 
-            {available > 0 && account && (
+            {available > 0 && account && store && (
               <div className="space-y-2 rounded-lg border p-3">
                 <div className="grid gap-2 md:grid-cols-[180px_1fr]">
                   <div>

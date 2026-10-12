@@ -104,9 +104,13 @@ export default function PainelRevendedor() {
         }, (payload) => {
           const row = payload.new as { type?: string };
           if (row.type !== "test_partner_sound") return;
-          unlockSound();
-          playOrderAlert();
-          toast.info("Teste de som recebido no painel da loja.");
+          void (async () => {
+            unlockSound();
+            const context = soundContext.current;
+            if (context && context.state !== "running") await context.resume();
+            playOrderAlert();
+            toast.info("Teste de som recebido no painel da loja.");
+          })();
         })
         .subscribe();
     };

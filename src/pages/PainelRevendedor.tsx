@@ -727,34 +727,10 @@ export default function PainelRevendedor() {
 
               {activeTab==="estoque" && <div id="estoque" className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div><h2 className="text-lg font-black">Cadastro de produtos e quantidades</h2><p className="text-xs text-zinc-500">Cadastre seus produtos e informe a quantidade disponível de cada item.</p></div>
+                  <div><h2 className="text-lg font-black">Estoque da loja</h2><p className="text-xs text-zinc-500">Informe somente a quantidade disponível dos produtos autorizados pelo admin.</p></div>
                   <div className="flex items-center gap-2"><div className="flex rounded-lg border border-white/10 bg-black/20 p-1"><Button type="button" size="sm" variant="ghost" onClick={()=>setStockView("grid")} className={stockView==="grid"?"bg-[#d4af37]/15 text-yellow-200":"text-zinc-400"}><Grid2X2 className="h-4 w-4"/>Grade</Button><Button type="button" size="sm" variant="ghost" onClick={()=>setStockView("list")} className={stockView==="list"?"bg-[#d4af37]/15 text-yellow-200":"text-zinc-400"}><List className="h-4 w-4"/>Lista</Button></div><Boxes className="h-5 w-5 text-[#e5c66c]"/></div>
                 </div>
-                <div className="mt-4 rounded-2xl border border-[#d4af37]/20 bg-[#d4af37]/5 p-4">
-                  <div className="flex items-center gap-2"><Plus className="h-4 w-4 text-[#e5c66c]"/><h3 className="font-bold">Cadastrar produto da minha loja</h3></div>
-                  <p className="mt-1 text-xs text-zinc-500">Informe o nome, preço e quantidade. O preço é necessário para disponibilizar o produto à venda.</p>
-                  {(()=>{const d=customDraft[store.id]??{name:"",description:"",price:"",on_hand:"0",file:null};return <div className="mt-3 grid gap-2 md:grid-cols-2">
-                    <input className="h-10 rounded-lg border border-white/10 bg-black/30 px-3" placeholder="Nome do produto" value={d.name} onChange={(e)=>setCustomDraft(x=>({...x,[store.id]:{...d,name:e.target.value}}))}/>
-                    <input className="h-10 rounded-lg border border-white/10 bg-black/30 px-3" inputMode="decimal" placeholder="Preço de venda (R$)" value={d.price} onChange={(e)=>setCustomDraft(x=>({...x,[store.id]:{...d,price:e.target.value}}))}/>
-                    <input className="h-10 rounded-lg border border-white/10 bg-black/30 px-3" type="number" min="0" step="1" placeholder="Quantidade" value={d.on_hand} onChange={(e)=>setCustomDraft(x=>({...x,[store.id]:{...d,on_hand:e.target.value}}))}/>
-                    <Button className="md:col-span-2 bg-[#d4af37] font-black text-black hover:bg-[#e8c65a]" disabled={saving==="custom-create-"+store.id} onClick={()=>void createCustomProduct(store.id)}>{saving==="custom-create-"+store.id?"Cadastrando...":"Cadastrar produto próprio"}</Button>
-                  </div>})()}
-                </div>
-
-                {customProducts.filter(p=>p.store_id===store.id).length>0&&<div className="mt-5">
-                  <div className="mb-2 flex items-center justify-between"><div><h3 className="font-black">Produtos da minha loja</h3><p className="text-xs text-zinc-500">Estes produtos foram cadastrados por você e podem ser excluídos.</p></div><span className="rounded-full border border-emerald-400/20 bg-emerald-400/5 px-2 py-1 text-[10px] font-bold text-emerald-300">PRÓPRIOS</span></div>
-                  <div className={stockView==="grid"?"grid gap-3 sm:grid-cols-2 xl:grid-cols-3":"space-y-2"}>
-                    {customProducts.filter(p=>p.store_id===store.id).map((p)=><div key={p.id} className="rounded-2xl border border-emerald-400/15 bg-black/20 p-3">
-                      <div className="flex items-start gap-3">
-                        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]"><Package className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-zinc-600"/>{p.image_url&&<img src={p.image_url} alt={p.name} className="relative h-full w-full object-cover" onError={(e)=>{e.currentTarget.style.display="none";}}/>}</div>
-                        <div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><p className="font-bold">{p.name}</p><button type="button" className="rounded-lg p-1.5 text-rose-300 hover:bg-rose-500/10" aria-label={`Excluir ${p.name}`} disabled={saving==="custom-delete-"+p.id} onClick={()=>void deleteCustomProduct(p)}><Trash2 className="h-4 w-4"/></button></div><p className="mt-1 text-sm font-black text-[#e5c66c]">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(Number(p.price))}</p><p className="mt-1 text-xs text-zinc-500">Em estoque {p.on_hand} · reservado {p.reserved}</p><p className="text-xs font-semibold text-emerald-300">Livre para venda {Math.max(0,p.on_hand-p.reserved)}</p></div>
-                      </div>
-                      <div className="mt-3 flex gap-2"><input className="h-9 min-w-0 flex-1 rounded-lg border border-white/10 bg-black/30 px-2" type="number" min="0" step="1" placeholder={String(p.on_hand)} value={customStockDraft[p.id]??""} onChange={(e)=>setCustomStockDraft(x=>({...x,[p.id]:e.target.value}))}/><Button size="sm" variant="outline" disabled={saving==="custom-stock-"+p.id} onClick={()=>void saveCustomStock(p)}>Salvar quantidade</Button></div>
-                    </div>)}
-                  </div>
-                </div>}
-
-                <div className="mt-5 mb-2 flex items-center justify-between"><div><h3 className="font-black">Produtos do catálogo — informar quantidade</h3><p className="text-xs text-zinc-500">O parceiro altera somente a quantidade. Exclusão e cadastro ficam sob controle do admin.</p></div><span className="rounded-full border border-[#d4af37]/20 bg-[#d4af37]/5 px-2 py-1 text-[10px] font-bold text-yellow-200">OFICIAIS</span></div>
+                <div className="mt-5 mb-2 flex items-center justify-between"><div><h3 className="font-black">Produtos disponíveis — informar quantidade</h3><p className="text-xs text-zinc-500">O parceiro altera somente a quantidade. Exclusão e cadastro ficam sob controle do admin.</p></div><span className="rounded-full border border-[#d4af37]/20 bg-[#d4af37]/5 px-2 py-1 text-[10px] font-bold text-yellow-200">OFICIAIS</span></div>
                 {catalogProducts.length===0?<p className="mt-3 text-sm text-zinc-500">Nenhum produto ativo no catálogo.</p>:<div className={stockView==="grid"?"mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3":"mt-4 space-y-2"}>
                   {catalogProducts.map((p)=>{const i=inventory.find((x)=>x.store_id===store.id&&x.product_id===p.id)??{store_id:store.id,product_id:p.id,on_hand:0,reserved:0,name:p.name};const key=i.store_id+":"+i.product_id;return <div key={key} className={`rounded-2xl border border-white/10 bg-black/20 p-3 ${stockView==="list"?"md:flex md:items-center md:justify-between md:gap-4":""}`}>
                     <div className="flex items-start gap-3">

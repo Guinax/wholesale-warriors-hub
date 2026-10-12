@@ -32,6 +32,58 @@ describe("Compra por unidade e atacado por produto", () => {
   });
 
 
+
+  it("mantém sete sucos como sete unidades no varejo", () => {
+    const juice = {
+      name: "Suco Natural Larandelly Laranja 500 ml",
+      unitPrice: "R$ 12,90",
+      wholesalePrice: "R$ 9,90",
+      minQty: 1,
+      qty: 7,
+    };
+    const { result } = renderHook(() => useCart(), { wrapper: CartProvider });
+    act(() => result.current.addItem(juice));
+    expect(result.current.items[0].qty).toBe(7);
+    expect(result.current.items[0].priceNum).toBe(12.9);
+    expect(result.current.totalPrice).toBeCloseTo(90.3);
+  });
+
+  it("aplica atacado de sucos somente ao atingir dez unidades somadas", () => {
+    const { result } = renderHook(() => useCart(), { wrapper: CartProvider });
+    act(() => {
+      result.current.addItem({
+        name: "Suco Natural Larandelly Laranja 500 ml",
+        unitPrice: "R$ 12,90",
+        wholesalePrice: "R$ 9,90",
+        minQty: 1,
+        qty: 6,
+      });
+      result.current.addItem({
+        name: "Suco Natural Larandelly Uva 500 ml",
+        unitPrice: "R$ 12,90",
+        wholesalePrice: "R$ 9,90",
+        minQty: 1,
+        qty: 4,
+      });
+    });
+    expect(result.current.totalItems).toBe(10);
+    expect(result.current.items.every((item) => item.priceNum === 9.9)).toBe(true);
+    expect(result.current.totalPrice).toBeCloseTo(99);
+  });
+
+  it("trata também o nome legado de suco como venda avulsa", () => {
+    const { result } = renderHook(() => useCart(), { wrapper: CartProvider });
+    act(() => result.current.addItem({
+      name: "Suco Natural Laranja Mansão Maromba 500 ml",
+      unitPrice: "R$ 12,90",
+      wholesalePrice: "R$ 9,90",
+      minQty: 1,
+      qty: 7,
+    }));
+    expect(result.current.items[0].qty).toBe(7);
+    expect(result.current.items[0].priceNum).toBe(12.9);
+  });
+
   it("preserva productId no carrinho e separa produtos pelo UUID", () => {
     const { result } = renderHook(() => useCart(), { wrapper: CartProvider });
     act(() => {

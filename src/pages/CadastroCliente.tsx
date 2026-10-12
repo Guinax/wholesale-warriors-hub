@@ -165,7 +165,7 @@ export default function CadastroCliente() {
         <div className="text-center">
           <img src={logo} alt="Família Maromba" className="w-20 h-20 object-contain mx-auto" />
           <h1 className="font-heading font-black text-2xl">CRIAR CONTA</h1>
-          <p className="text-sm text-muted-foreground mt-1">Pessoa física — compra a partir de 1 unidade.</p>
+          <p className="text-sm text-muted-foreground mt-1">{nextPath === "/motoqueiro" || nextPath === "/cadastro-entregador" ? "Cadastro inicial para trabalhar com entregas." : "Pessoa física — compra a partir de 1 unidade."}</p>
         </div>
 
         <form onSubmit={submit} className="space-y-4">
@@ -199,7 +199,7 @@ export default function CadastroCliente() {
         <div className="border-t pt-4 text-center space-y-2">
           <button onClick={() => navigate("/cadastro")} className="text-xs text-primary hover:underline">Sou empresa ou revendedor — cadastro CNPJ</button>
           <br />
-          <button onClick={() => navigate("/auth")} className="text-xs text-muted-foreground hover:text-foreground">Já tenho conta — entrar</button>
+          <button onClick={() => navigate(`/auth?next=${encodeURIComponent(nextPath)}`)} className="text-xs text-muted-foreground hover:text-foreground">Já tenho conta — entrar</button>
         </div>
       </Card>
     </div>

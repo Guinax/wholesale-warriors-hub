@@ -35,7 +35,17 @@ Deno.serve(async (req) => {
       !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.user_id)) {
     return json({ error: "Identificador inválido." }, 400);
   }
+  if (!("confirm_email" in body) || typeof body.confirm_email !== "string" || !("manual_confirmation" in body) || body.manual_confirmation !== true) {
+    return json({ error: "Exclusão bloqueada: confirmação manual do usuário é obrigatória." }, 400);
+  }
+
   const targetId = body.user_id;
+  const { data: targetProfile, error: targetProfileError } = await admin.from("profiles")
+    .select("email").eq("user_id", targetId).maybeSingle();
+  if (targetProfileError) return json({ error: "Não foi possível validar o cadastro do usuário." }, 500);
+  if (!targetProfile?.email || targetProfile.email.trim().toLowerCase() !== body.confirm_email.trim().toLowerCase()) {
+    return json({ error: "Exclusão bloqueada: o e-mail de confirmação não corresponde ao usuário selecionado." }, 409);
+  }
   if (targetId === user.id) return json({ error: "Sua conta administrativa é protegida." }, 403);
   const { data: targetRole, error: targetRoleError } = await admin.from("user_roles")
     .select("user_id").eq("user_id", targetId).eq("role", "admin").maybeSingle();

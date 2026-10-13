@@ -1,267 +1,141 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/orderUtils";
-import { ReceiptText, Upload, WalletCards } from "lucide-react";
+import { Bike, RefreshCw, Store as StoreIcon, WalletCards } from "lucide-react";
 
-type Payout = {
+type Store = { id: string; name: string; status: string };
+type Courier = { id: string; courier_code: string; full_name: string; status: string };
+type PartnerCredit = { store_id: string; amount: number; paid_amount: number; status: string; available_at: string | null };
+type CourierCredit = { courier_id: string; amount: number; paid_amount: number; status: string };
+
+type Wallet = {
+  key: string;
   id: string;
-  request_id: string;
-  store_id: string;
-  amount: number;
-  paid_amount: number;
+  label: string;
+  type: "store" | "courier";
   status: string;
-  created_at: string | null;
-  credited_at: string | null;
-  available_at: string | null;
-  approved_at: string | null;
-  paid_at: string | null;
+  earned: number;
+  paid: number;
+  held: number;
+  available: number;
+  courierCode?: string;
 };
-
-type Store = { id: string; name: string };
-type Account = { store_id: string; pix_key_type: string; pix_key: string; holder_name: string; holder_document: string };
-type WalletPayment = {
-  id: string;
-  store_id: string;
-  amount: number;
-  receipt_url: string;
-  receipt_reference: string | null;
-  paid_at: string;
-};
-
-type Draft = { amount: string; receipt: File | null; reference: string };
-
-const safeFileName = (name: string) =>
-  name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9._-]/g, "-").slice(-100);
 
 export default function PayoutsManager() {
-  const [rows, setRows] = useState<Payout[]>([]);
-  const [stores, setStores] = useState<Record<string, Store>>({});
-  const [accounts, setAccounts] = useState<Record<string, Account>>({});
-  const [payments, setPayments] = useState<WalletPayment[]>([]);
-  const [drafts, setDrafts] = useState<Record<string, Draft>>({});
-  const [busy, setBusy] = useState<string | null>(null);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [couriers, setCouriers] = useState<Courier[]>([]);
+  const [partnerCredits, setPartnerCredits] = useState<PartnerCredit[]>([]);
+  const [courierCredits, setCourierCredits] = useState<CourierCredit[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  const load = async () => {
-    const [{ data, error }, { data: sd }, { data: ad }, { data: wp }] = await Promise.all([
-      supabase
-        .from("partner_payouts" as never)
-        .select("id,request_id,store_id,amount,paid_amount,status,created_at,credited_at,available_at,approved_at,paid_at")
-        .order("created_at", { ascending: true }),
-      supabase.from("partner_stores" as never).select("id,name"),
-      supabase.from("partner_payout_accounts" as never).select("store_id,pix_key_type,pix_key,holder_name,holder_document"),
-      supabase
-        .from("partner_wallet_payments" as never)
-        .select("id,store_id,amount,receipt_url,receipt_reference,paid_at")
-        .order("paid_at", { ascending: false }),
+  const load = useCallback(async () => {
+    setLoading(true);
+    const [storesResult, couriersResult, partnerResult, courierResult] = await Promise.all([
+      supabase.from("partner_stores" as never).select("id,name,status"),
+      supabase.from("courier_profiles" as never).select("id,courier_code,full_name,status"),
+      supabase.from("partner_payouts" as never).select("store_id,amount,paid_amount,status,available_at"),
+      supabase.from("courier_payouts" as never).select("courier_id,amount,paid_amount,status"),
     ]);
-
-    if (error) toast.error("Erro ao carregar carteiras.");
-    else setRows((data ?? []) as unknown as Payout[]);
-
-    setStores(Object.fromEntries(((sd ?? []) as unknown as Store[]).map((x) => [x.id, x])));
-    setAccounts(Object.fromEntries(((ad ?? []) as unknown as Account[]).map((x) => [x.store_id, x])));
-    setPayments((wp ?? []) as unknown as WalletPayment[]);
-  };
-
-  useEffect(() => {
-    void load();
+    setLoading(false);
+    const failure = [storesResult, couriersResult, partnerResult, courierResult].find((result) => result.error)?.error;
+    if (failure) {
+      setError(true);
+      toast.error("Não foi possível carregar todas as carteiras.", { description: failure.message });
+      return;
+    }
+    setError(false);
+    setStores((storesResult.data ?? []) as unknown as Store[]);
+    setCouriers((couriersResult.data ?? []) as unknown as Courier[]);
+    setPartnerCredits((partnerResult.data ?? []) as unknown as PartnerCredit[]);
+    setCourierCredits((courierResult.data ?? []) as unknown as CourierCredit[]);
   }, []);
 
-  const walletRows = useMemo(() => {
-    const ids = new Set(rows.map((p) => p.store_id).filter((id): id is string => typeof id === "string" && id.trim().length > 0));
-    return [...ids].map((storeId) => {
-      const credits = rows.filter((p) => p.store_id === storeId && p.status !== "cancelled");
-      const earned = credits.reduce((sum, p) => sum + Number(p.amount || 0), 0);
-      const paid = credits.reduce((sum, p) => sum + Number(p.paid_amount || 0), 0);
-      const now = Date.now();
-      const held = credits
-        .filter((p) => p.available_at && new Date(p.available_at).getTime() > now)
-        .reduce((sum, p) => sum + Math.max(0, Number(p.amount || 0) - Number(p.paid_amount || 0)), 0);
-      const available = credits
-        .filter((p) => !p.available_at || new Date(p.available_at).getTime() <= now)
-        .reduce((sum, p) => sum + Math.max(0, Number(p.amount || 0) - Number(p.paid_amount || 0)), 0);
-      return { storeId, earned, paid, held, available, credits };
-    }).sort((a, b) => b.available - a.available);
-  }, [rows]);
+  useEffect(() => { void load(); }, [load]);
 
-  const setDraft = (storeId: string, patch: Partial<Draft>) => {
-    setDrafts((current) => ({
-      ...current,
-      [storeId]: { amount: "", receipt: null, reference: "", ...current[storeId], ...patch },
-    }));
-  };
-
-  const payWallet = async (storeId: string, available: number) => {
-    const draft = drafts[storeId] ?? { amount: "", receipt: null, reference: "" };
-    const amount = Number(draft.amount.replace(",", "."));
-    if (!Number.isFinite(amount) || amount <= 0) return toast.error("Informe o valor do PIX.");
-    if (amount > available + 0.001) return toast.error("O valor não pode ultrapassar o saldo disponível.");
-    if (!draft.receipt) return toast.error("Anexe a imagem ou PDF do comprovante PIX.");
-    if (draft.receipt.size > 8 * 1024 * 1024) return toast.error("O comprovante deve ter no máximo 8 MB.");
-    if (!["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(draft.receipt.type)) {
-      return toast.error("Use comprovante JPG, PNG, WebP ou PDF.");
-    }
-
-    setBusy(storeId);
-    let uploadedPath: string | null = null;
-    try {
-      const filename = safeFileName(draft.receipt.name || "comprovante");
-      uploadedPath = `wallet-receipts/${storeId}/${Date.now()}-${filename}`;
-      const { error: uploadError } = await supabase.storage
-        .from("media")
-        .upload(uploadedPath, draft.receipt, {
-          cacheControl: "3600",
-          upsert: false,
-          contentType: draft.receipt.type,
-        });
-      if (uploadError) throw uploadError;
-
-      const { data: publicData } = supabase.storage.from("media").getPublicUrl(uploadedPath);
-      const { data, error } = await supabase.rpc("admin_partner_wallet_pay" as never, {
-        p_store_id: storeId,
-        p_amount: Math.round(amount * 100) / 100,
-        p_receipt_url: publicData.publicUrl,
-        p_receipt_reference: draft.reference.trim() || filename,
-      } as never);
-
-      if (error) throw error;
-      const result = data as unknown as { available_balance?: number; paid_at?: string };
-      toast.success(
-        `PIX registrado. Saldo restante: ${formatCurrency(Number(result?.available_balance ?? Math.max(0, available - amount)))}.`
-      );
-      setDrafts((current) => ({ ...current, [storeId]: { amount: "", receipt: null, reference: "" } }));
-      await load();
-    } catch (error) {
-      if (uploadedPath) await supabase.storage.from("media").remove([uploadedPath]);
-      toast.error(error instanceof Error ? error.message : "Não foi possível registrar o pagamento.");
-    } finally {
-      setBusy(null);
-    }
-  };
+  const wallets = useMemo(() => {
+    const now = Date.now();
+    const storeWallets: Wallet[] = stores.map((store) => {
+      const credits = partnerCredits.filter((credit) => credit.store_id === store.id && credit.status !== "cancelled");
+      const earned = credits.reduce((sum, credit) => sum + Number(credit.amount || 0), 0);
+      const paid = credits.reduce((sum, credit) => sum + Number(credit.paid_amount || 0), 0);
+      const held = credits.reduce((sum, credit) => {
+        const due = credit.available_at ? new Date(credit.available_at).getTime() : 0;
+        return sum + (due > now ? Math.max(0, Number(credit.amount || 0) - Number(credit.paid_amount || 0)) : 0);
+      }, 0);
+      return {
+        key: `store:${store.id}`, id: store.id, label: store.name?.trim() || "Loja sem nome",
+        type: "store" as const, status: store.status, earned, paid, held,
+        available: Math.max(0, earned - paid - held),
+      };
+    });
+    const courierWallets: Wallet[] = couriers.map((courier) => {
+      const credits = courierCredits.filter((credit) => credit.courier_id === courier.id && credit.status !== "cancelled");
+      const earned = credits.reduce((sum, credit) => sum + Number(credit.amount || 0), 0);
+      const paid = credits.reduce((sum, credit) => sum + Number(credit.paid_amount || 0), 0);
+      return {
+        key: `courier:${courier.id}`, id: courier.id,
+        label: courier.full_name?.trim() || "Entregador sem nome",
+        type: "courier" as const, status: courier.status,
+        courierCode: courier.courier_code, earned, paid, held: 0,
+        available: Math.max(0, earned - paid),
+      };
+    });
+    return [...storeWallets, ...courierWallets].sort((a, b) =>
+      a.label.localeCompare(b.label, "pt-BR") || a.key.localeCompare(b.key)
+    );
+  }, [stores, couriers, partnerCredits, courierCredits]);
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="flex items-center gap-2 text-xl font-bold"><WalletCards className="h-5 w-5" /> Carteiras dos parceiros</h2>
-        <p className="text-sm text-muted-foreground">
-          As vendas aceitas entram como crédito retido e ficam liberadas para PIX somente no dia seguinte. O pagamento continua sob confirmação administrativa.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="flex items-center gap-2 text-xl font-bold"><WalletCards className="h-5 w-5" /> Carteiras de parceiros</h2>
+          <p className="text-sm text-muted-foreground">Carteiras individuais de lojas e motoqueiros, identificadas pelo cadastro. Consulta de saldos, sem repasses nesta página.</p>
+        </div>
+        <Button type="button" variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
+          <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Atualizar
+        </Button>
       </div>
-
-      {walletRows.length === 0 && (
-        <Card className="p-8 text-center text-sm text-muted-foreground">Nenhum saldo de parceiro disponível.</Card>
+      {!error && !loading && (
+        <p className="text-sm text-muted-foreground">{stores.length} loja(s) • {couriers.length} motoqueiro(s) • {wallets.length} carteira(s)</p>
       )}
-
-      {walletRows.map(({ storeId, earned, paid, held, available }) => {
-        const account = accounts[storeId];
-        const store = stores[storeId];
-        const draft = drafts[storeId] ?? { amount: "", receipt: null, reference: "" };
-        const history = payments.filter((payment) => payment.store_id === storeId);
-
-        return (
-          <Card key={storeId} className="space-y-4 p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
+      {error && <Card className="p-6 text-sm text-destructive">Falha ao consultar os cadastros ou saldos. Atualize para tentar novamente; nenhum saldo foi presumido como zero.</Card>}
+      {!error && loading && <Card className="p-6 text-center text-sm text-muted-foreground">Carregando carteiras...</Card>}
+      {!error && !loading && wallets.length === 0 && <Card className="p-8 text-center text-sm text-muted-foreground">Nenhuma loja ou motoqueiro cadastrado.</Card>}
+      {!error && !loading && (
+        <div className="grid gap-3 md:grid-cols-2">
+          {wallets.map((wallet) => (
+            <Card key={wallet.key} className="space-y-3 p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 font-semibold">
+                    {wallet.type === "store" ? <StoreIcon className="h-4 w-4 shrink-0" /> : <Bike className="h-4 w-4 shrink-0" />}
+                    <span className="break-words">{wallet.label}</span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">ID único: <code className="select-all break-all">{wallet.id}</code></p>
+                  {wallet.courierCode && <p className="text-xs text-muted-foreground">Código do entregador: {wallet.courierCode}</p>}
+                </div>
+                <Badge variant="outline">{wallet.type === "store" ? "Loja" : "Motoqueiro"}</Badge>
+              </div>
               <div>
-                <div className="text-sm font-semibold">{store?.name?.trim() || "Cadastro da loja não localizado"}</div>
-                <div className="text-xs text-muted-foreground">ID único do parceiro: <code className="select-all break-all">{storeId}</code></div>
-                {!store && <div className="mt-1 text-xs text-destructive">Vínculo com o cadastro da loja não encontrado. Verifique o ID antes de realizar repasses.</div>}
-                <div className="mt-1 text-2xl font-black">{formatCurrency(available)}</div>
-                <div className="text-xs text-muted-foreground">Saldo disponível para PIX</div>
+                <div className="text-xs text-muted-foreground">Saldo disponível</div>
+                <div className="text-2xl font-black">{formatCurrency(wallet.available)}</div>
               </div>
-              <Badge variant={available > 0 ? "default" : "outline"}>{available > 0 ? "COM SALDO" : "QUITADO"}</Badge>
-            </div>
-
-            <div className="grid gap-2 sm:grid-cols-4">
-              <div className="rounded-md border p-3"><div className="text-xs text-muted-foreground">Total gerado</div><strong>{formatCurrency(earned)}</strong></div>
-              <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3"><div className="text-xs text-muted-foreground">Retido até amanhã</div><strong>{formatCurrency(held)}</strong></div>
-              <div className="rounded-md border p-3"><div className="text-xs text-muted-foreground">Liberado para PIX</div><strong>{formatCurrency(available)}</strong></div>
-              <div className="rounded-md border p-3"><div className="text-xs text-muted-foreground">Total pago</div><strong>{formatCurrency(paid)}</strong></div>
-            </div>
-
-            {account ? (
-              <div className="rounded-md border p-3 text-sm">
-                <strong>Destino PIX:</strong> {account.pix_key_type.toUpperCase()} • {account.pix_key}<br />
-                <span className="text-muted-foreground">{account.holder_name} • {account.holder_document}</span>
+              <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
+                <div className="rounded-md border p-2"><span className="text-muted-foreground">Total gerado</span><div className="font-semibold">{formatCurrency(wallet.earned)}</div></div>
+                <div className="rounded-md border p-2"><span className="text-muted-foreground">Total pago</span><div className="font-semibold">{formatCurrency(wallet.paid)}</div></div>
+                <div className="rounded-md border p-2"><span className="text-muted-foreground">Retido</span><div className="font-semibold">{formatCurrency(wallet.held)}</div></div>
               </div>
-            ) : (
-              <p className="text-sm text-destructive">Conta PIX ainda não cadastrada pelo parceiro.</p>
-            )}
-
-            {available > 0 && account && store && (
-              <div className="space-y-2 rounded-lg border p-3">
-                <div className="grid gap-2 md:grid-cols-[180px_1fr]">
-                  <div>
-                    <label className="mb-1 block text-xs font-medium">Valor do PIX</label>
-                    <Input
-                      inputMode="decimal"
-                      placeholder="0,00"
-                      value={draft.amount}
-                      onChange={(e) => setDraft(storeId, { amount: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium">Referência/ID do PIX (opcional)</label>
-                    <Input
-                      placeholder="Ex.: E2E, NSU ou identificação do banco"
-                      value={draft.reference}
-                      onChange={(e) => setDraft(storeId, { reference: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <Button type="button" variant="outline" onClick={() => setDraft(storeId, { amount: available.toFixed(2).replace(".", ",") })}>
-                    Usar saldo total
-                  </Button>
-                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium hover:bg-muted">
-                    <Upload className="h-4 w-4" />
-                    {draft.receipt ? draft.receipt.name : "Anexar comprovante"}
-                    <input
-                      className="sr-only"
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,application/pdf"
-                      onChange={(e) => setDraft(storeId, { receipt: e.target.files?.[0] ?? null })}
-                    />
-                  </label>
-                  <Button disabled={busy === storeId || !draft.receipt} onClick={() => void payWallet(storeId, available)}>
-                    {busy === storeId ? "Registrando..." : "Confirmar PIX e dar baixa"}
-                  </Button>
-                </div>
-                <p className="text-[11px] text-muted-foreground">
-                  A data e a hora da baixa são registradas pelo servidor junto com o comprovante. Pagamentos parciais mantêm o saldo restante na carteira.
-                </p>
-              </div>
-            )}
-
-            {history.length > 0 && (
-              <div className="space-y-2">
-                <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Histórico de pagamentos</div>
-                {history.slice(0, 6).map((payment) => (
-                  <div key={payment.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3 text-sm">
-                    <div>
-                      <strong>{formatCurrency(Number(payment.amount))}</strong>
-                      <div className="text-xs text-muted-foreground">ID único do parceiro: <code className="select-all break-all">{payment.store_id}</code></div>
-                      <div className="text-xs text-muted-foreground">ID do pagamento: <code className="select-all break-all">{payment.id}</code></div>
-                      <div className="text-xs text-muted-foreground">
-                        {new Date(payment.paid_at).toLocaleString("pt-BR")}
-                        {payment.receipt_reference ? ` • ${payment.receipt_reference}` : ""}
-                      </div>
-                    </div>
-                    <a className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline" href={payment.receipt_url} target="_blank" rel="noreferrer">
-                      <ReceiptText className="h-4 w-4" /> Ver comprovante
-                    </a>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        );
-      })}
+              <div className="text-xs text-muted-foreground">Situação do cadastro: {wallet.status}</div>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

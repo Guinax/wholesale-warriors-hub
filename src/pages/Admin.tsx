@@ -331,7 +331,7 @@ const Admin = () => {
             <TabsTrigger value="catalog">Catálogo</TabsTrigger>
             <TabsTrigger value="expedition">Expedição</TabsTrigger>
             <TabsTrigger value="inventory">Estoque unificado</TabsTrigger>
-            <TabsTrigger value="payouts">Repasses</TabsTrigger>
+            <TabsTrigger value="payouts">Carteiras de parceiros</TabsTrigger>
             <TabsTrigger value="partners">Parceiros</TabsTrigger>
             <TabsTrigger value="couriers">Entregadores</TabsTrigger>
             <TabsTrigger value="shipping">Logística</TabsTrigger>

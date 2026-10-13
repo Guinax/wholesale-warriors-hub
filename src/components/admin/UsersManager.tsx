@@ -131,12 +131,20 @@ const UsersManager = () => {
       toast.error("Sua conta administrativa não pode ser excluída.");
       return;
     }
-    if (!window.confirm(`Excluir definitivamente o cadastro de ${p.full_name || p.email}? Esta ação não pode ser desfeita.`)) return;
+    if (!window.confirm(`Excluir manualmente o cadastro de ${p.full_name || p.email}? Os resets operacionais nunca excluem usuários.`)) return;
+    const typedEmail = window.prompt(
+      `Proteção de cadastro: digite exatamente o e-mail do usuário para confirmar a exclusão:\n\n${p.email}`
+    );
+    if (typedEmail === null) return;
+    if (typedEmail.trim().toLowerCase() !== p.email.trim().toLowerCase()) {
+      toast.error("Exclusão cancelada: o e-mail digitado não corresponde ao usuário.");
+      return;
+    }
 
     setDeletingUserId(p.user_id);
     try {
       const { data, error } = await supabase.functions.invoke("admin-delete-user", {
-        body: { user_id: p.user_id },
+        body: { user_id: p.user_id, confirm_email: typedEmail.trim(), manual_confirmation: true },
       });
       if (error || !data?.success) {
         throw new Error(data?.error || error?.message || "Não foi possível excluir o usuário.");

@@ -35,6 +35,7 @@ import PartnersManager from "@/components/admin/PartnersManager";
 import OperationReadiness from "@/components/admin/OperationReadiness";
 import CouriersManager from "@/components/admin/CouriersManager";
 import PartnerRestockOrdersManager from "@/components/admin/PartnerRestockOrdersManager";
+import OrderHistoryReports from "@/components/admin/OrderHistoryReports";
 import { trackingLabel, formatCurrency, DELIVERY_STAGES } from "@/lib/orderUtils";
 import { logAudit } from "@/lib/audit";
 
@@ -363,6 +364,7 @@ const Admin = () => {
           <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="operation">Conferência</TabsTrigger>
             <TabsTrigger value="orders">Pedidos</TabsTrigger>
+            <TabsTrigger value="reports">Histórico e relatórios</TabsTrigger>
             <TabsTrigger value="pages">Páginas</TabsTrigger>
             <TabsTrigger value="catalog">Catálogo</TabsTrigger>
             <TabsTrigger value="expedition">Expedição</TabsTrigger>
@@ -510,6 +512,9 @@ const Admin = () => {
             </Card>
           ))}
         </div>
+          </TabsContent>
+          <TabsContent value="reports" className="mt-4">
+            <OrderHistoryReports />
           </TabsContent>
           <TabsContent value="pages" className="mt-4">
             <PagesManager />

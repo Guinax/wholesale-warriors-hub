@@ -191,8 +191,10 @@ export default function PainelRevendedor() {
           return;
         }
         loadedStores = (data ?? []) as unknown as Store[];
+        // The store profile can be displayed even when the operational RPC is unavailable.
+        // Keep orders and financial data empty rather than failing the entire partner panel.
         if (loadedStores.some(store => store.status === "approved")) {
-          throw new Error("Não foi possível consultar os pedidos da loja.");
+          toast.warning("Sua loja foi carregada, mas pedidos e estoque podem estar temporariamente indisponíveis. Tente atualizar o painel.");
         }
         setStores(loadedStores);
         setOffers([]);

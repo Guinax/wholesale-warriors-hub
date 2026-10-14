@@ -32,6 +32,7 @@ import MeusPedidos from "./pages/MeusPedidos.tsx";
 import MinhaConta from "./pages/MinhaConta.tsx";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PainelRevendedor from "./pages/PainelRevendedor.tsx";
+import CadastroParceiro from "./pages/CadastroParceiro.tsx";
 import Partners from "./pages/Partners.tsx";
 import PedidoLocal from "./pages/PedidoLocal.tsx";
 import Motoqueiro from "./pages/Motoqueiro.tsx";
@@ -63,7 +64,7 @@ const App = () => (
             <Route path="/meus-pedidos" element={<ProtectedRoute><MeusPedidos /></ProtectedRoute>} />
             <Route path="/minha-conta" element={<ProtectedRoute><MinhaConta /></ProtectedRoute>} />
             <Route path="/revendedor" element={<ProtectedRoute><PainelRevendedor /></ProtectedRoute>} />
-            <Route path="/cadastro-parceiro" element={<ProtectedRoute><PainelRevendedor /></ProtectedRoute>} />
+            <Route path="/cadastro-parceiro" element={<ProtectedRoute><CadastroParceiro /></ProtectedRoute>} />
             <Route path="/parceiros" element={<Partners />} />
             <Route path="/pedido-local/:id" element={<ProtectedRoute><PedidoLocal /></ProtectedRoute>} />
             <Route path="/motoqueiro" element={<ProtectedRoute><Motoqueiro /></ProtectedRoute>} />

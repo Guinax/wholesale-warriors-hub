@@ -265,12 +265,21 @@ const Pagamento = () => {
     } as never).then(({data, error}) => {
       if (!active) return;
       const result = data as {available?:boolean;estimated_shipping?:number}|null;
+      if (!error && result?.available === false) {
+        // Sem lojas credenciadas, abertas e com conexão recente: a Central assume
+        // antes de criar o pedido ou cobrar. Recalcula frete com a regra da Central.
+        setLocalEstimate(null);
+        setLocalEstimateLoading(false);
+        toast({ title: "Adega Central assumirá o pedido", description: "Nenhum parceiro online disponível. O frete será recalculado para atendimento pela Central." });
+        navigate("/pagamento", { replace: true, state: { forceCentral: true } });
+        return;
+      }
       setLocalEstimate(!error && result?.available && result.estimated_shipping != null && Number.isFinite(Number(result.estimated_shipping))
         ? Number(result.estimated_shipping) : null);
       setLocalEstimateLoading(false);
     });
     return () => {active=false};
-  }, [isLocalRetail, addressConfirmed, deliveryCoords?.latitude, deliveryCoords?.longitude, items]);
+  }, [isLocalRetail, addressConfirmed, deliveryCoords?.latitude, deliveryCoords?.longitude, items, navigate, toast]);
 
   const freeShippingTestActive = isAdmin && testWithoutShipping;
   const effectiveShippingCost = freeShippingTestActive ? 0 : shippingCost;

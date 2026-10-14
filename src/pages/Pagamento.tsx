@@ -432,7 +432,7 @@ const Pagamento = () => {
         }
         // Fall back to the central warehouse only for an explicit no-store result.
         // Do not mask authentication, inventory or infrastructure errors.
-        const noPartnerAvailable = !routeError || /nenhuma loja parceira (disponível|com estoque|aberta)|nenhuma loja disponível/i.test(routeError.message);
+        const noPartnerAvailable = Boolean(routeError && /nenhum parceiro aberto com todo o estoque nesta região|nenhuma loja parceira (disponível|com estoque|aberta)|nenhuma loja disponível/i.test(routeError.message));
         if (!noPartnerAvailable) {
           setSubmitting(false);
           toast({ title: "Erro ao localizar loja", description: routeError.message, variant: "destructive" });

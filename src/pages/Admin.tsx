@@ -69,6 +69,7 @@ type Order = {
   address_state: string;
   address_zip: string;
   items: unknown;
+  fulfillment_store_id: string | null;
   created_at: string;
 };
 
@@ -107,6 +108,17 @@ const paymentColor: Record<string, string> = {
   cancelled: "bg-red-500/15 text-red-700 dark:text-red-300",
 };
 
+// As reposições de lojistas são registradas em partner_restock_orders, e não em orders.
+// Aqui, orders representa exclusivamente as vendas feitas aos clientes finais.
+const getOrderItems = (order: Order): OrderItem[] => Array.isArray(order.items) ? order.items as OrderItem[] : [];
+const orderItemQty = (item: OrderItem) => Number(item.qty ?? item.quantity ?? 0);
+const orderUnitCount = (order: Order) => getOrderItems(order).reduce((total, item) => total + orderItemQty(item), 0);
+const isCustomerWholesale = (order: Order) => {
+  const items = getOrderItems(order);
+  const juiceUnits = items.reduce((total, item) => total + (item.name?.startsWith("Suco Natural") ? orderItemQty(item) : 0), 0);
+  return orderUnitCount(order) >= 50 || juiceUnits >= 10 || items.some((item) => !item.name?.startsWith("Suco Natural") && orderItemQty(item) >= 6);
+};
+
 const Admin = () => {
   const [activeTab, setActiveTab] = useState(()=>new URLSearchParams(window.location.search).get("tab")||"orders");
   const navigate = useNavigate();
@@ -118,6 +130,9 @@ const Admin = () => {
   const [filterPayment, setFilterPayment] = useState<string>("all");
   const [selected, setSelected] = useState<Order | null>(null);
   const [restockUnread,setRestockUnread]=useState(0);
+  const [centralStoreIds, setCentralStoreIds] = useState<string[]>([]);
+  const [centralStoreLookupError, setCentralStoreLookupError] = useState(false);
+  const [centralStoreLookupReady, setCentralStoreLookupReady] = useState(false);
 
   useEffect(() => {
     document.title = "Painel Admin | Família Maromba";
@@ -151,6 +166,27 @@ const Admin = () => {
       .subscribe();
     return()=>{void supabase.removeChannel(channel);};
   },[isAdmin,user?.id]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    let active = true;
+    const loadCentralStoreIds = async () => {
+      const { data, error } = await supabase.from("partner_stores").select("id,name");
+      if (!active) return;
+      setCentralStoreLookupReady(true);
+      setCentralStoreLookupError(Boolean(error));
+      if (error) return;
+      // Não confundir a Adega Central com outras lojas apenas por serem aprovadas ou abertas.
+      setCentralStoreIds((data ?? [])
+        .filter((store) => store.name?.trim().toLocaleLowerCase("pt-BR") === "adega central")
+        .map((store) => store.id));
+    };
+    void loadCentralStoreIds();
+    const channel = supabase.channel("admin-central-store-ids")
+      .on("postgres_changes", { event: "*", schema: "public", table: "partner_stores" }, () => void loadCentralStoreIds())
+      .subscribe();
+    return () => { active = false; void supabase.removeChannel(channel); };
+  }, [isAdmin]);
 
   const openRestock=async()=>{
     setActiveTab("restock");
@@ -266,11 +302,11 @@ const Admin = () => {
     });
   }, [orders, search, filterDelivery, filterPayment]);
 
-  // Pedidos de atacado são atendidos pela central quando somam mais de seis unidades.
-  const wholesaleOrders = useMemo(() => orders.filter((order) => {
-    const items = Array.isArray(order.items) ? order.items as OrderItem[] : [];
-    return items.reduce((total, item) => total + Number(item.qty ?? item.quantity ?? 0), 0) > 6;
-  }), [orders]);
+  // A Central atende tanto vendas diretas (estoque central) quanto vendas atribuídas à sua loja.
+  // Vendas das demais lojas ficam exclusivamente nas respectivas filas de parceiros.
+  const centralOrders = useMemo(() => orders.filter((order) =>
+    !order.fulfillment_store_id || centralStoreIds.includes(order.fulfillment_store_id)
+  ), [orders, centralStoreIds]);
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
@@ -496,23 +532,53 @@ const Admin = () => {
           <TabsContent value="couriers" className="mt-4">
             <CouriersManager />
           </TabsContent>
-          <TabsContent value="shipping" className="mt-4 space-y-4">
+          <TabsContent value="shipping" className="mt-4 space-y-6">
+            <Card className="p-4 space-y-2">
+              <h2 className="text-lg font-bold">1. Atacado dos parceiros — reposição de estoque</h2>
+              <p className="text-sm text-muted-foreground">
+                Pedidos que os lojistas parceiros fazem para comprar produtos e reabastecer suas lojas.
+                Cada solicitação mostra nome da loja, ID único, itens, valor e andamento.
+                Não são vendas feitas aos consumidores.
+              </p>
+            </Card>
+            <PartnerRestockOrdersManager />
+
             <Card className="space-y-4 p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-bold">Pedidos do atacado — central logística</h2>
-                  <p className="text-xs text-muted-foreground">Atualização em tempo real · pedidos acima de 6 unidades · {wholesaleOrders.length} pedido(s)</p>
+                  <h2 className="text-lg font-bold">2. Pedidos dos clientes — Adega Central</h2>
+                  <p className="text-xs text-muted-foreground">
+                    Vendas diretas, pedidos de atacado ao consumidor e pedidos assumidos pela Central quando não há parceiro disponível.
+                    Somente pedidos destinados à Adega Central · {centralOrders.length} pedido(s).
+                  </p>
                 </div>
                 <Button variant="outline" size="sm" disabled={fetching} onClick={() => void loadOrders()}><RefreshCw className="mr-2 h-4 w-4" />Atualizar</Button>
               </div>
-              {wholesaleOrders.length === 0 ? <p className="rounded-lg border p-4 text-sm text-muted-foreground">Nenhum pedido de atacado registrado.</p> : (
+              {!centralStoreLookupReady && (
+                <p className="text-xs text-muted-foreground">Identificando a loja Adega Central para incluir os pedidos atribuídos a ela.</p>
+              )}
+              {centralStoreLookupError && (
+                <p role="alert" className="rounded-lg border border-destructive/40 p-3 text-sm text-destructive">
+                  Não foi possível identificar a loja Adega Central. Por enquanto, apenas os pedidos do estoque central estão visíveis nesta lista.
+                </p>
+              )}
+              {centralStoreLookupReady && !centralStoreLookupError && centralStoreIds.length === 0 && (
+                <p role="alert" className="rounded-lg border p-3 text-sm text-muted-foreground">
+                  Nenhum cadastro de loja chamado “Adega Central” foi identificado. Confira a identificação no Admin → Parceiros; os pedidos do estoque central continuam listados.
+                </p>
+              )}
+              {centralOrders.length === 0 ? <p className="rounded-lg border p-4 text-sm text-muted-foreground">Nenhum pedido destinado à Adega Central registrado.</p> : (
                 <div className="space-y-2">
-                  {wholesaleOrders.map((order) => (
+                  {centralOrders.map((order) => (
                     <div key={order.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3">
-                      <div className="min-w-0">
+                      <div className="min-w-0 space-y-1">
                         <p className="font-semibold">#{order.order_code} · {order.customer_name}</p>
                         <p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleString("pt-BR")} · {order.address_city}/{order.address_state}</p>
-                        <p className="mt-1 text-xs">{Array.isArray(order.items) ? (order.items as OrderItem[]).reduce((n, item) => n + Number(item.qty ?? item.quantity ?? 0), 0) : 0} unidades · {formatCurrency(Number(order.total_amount))}</p>
+                        <p className="text-xs">{orderUnitCount(order)} unidades · {formatCurrency(Number(order.total_amount))}</p>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant="outline">{isCustomerWholesale(order) ? "Venda de atacado ao cliente" : "Venda de varejo ao cliente"}</Badge>
+                          <Badge variant="outline">{order.fulfillment_store_id ? "Loja Adega Central" : "Estoque central / atendimento direto"}</Badge>
+                        </div>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge variant={order.payment_status === "paid" && !requiresPaymentReconciliation(order) ? "default" : "destructive"}>{requiresPaymentReconciliation(order) ? "Pagamento em conferência" : order.payment_status === "paid" ? "Pago" : "Aguardando pagamento"}</Badge>
@@ -524,7 +590,6 @@ const Admin = () => {
                 </div>
               )}
             </Card>
-            <PartnerRestockOrdersManager />
           </TabsContent>
           <TabsContent value="products" className="mt-4">
             <ProductsManager />

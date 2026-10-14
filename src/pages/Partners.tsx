@@ -51,6 +51,7 @@ export default function Partners() {
             <p className="mt-4 text-sm leading-6 text-zinc-300">Cadastre-se para receber oportunidades de entrega compatíveis com a operação da rede e sua disponibilidade.</p>
             <div className="mt-4 rounded-2xl bg-[#181c25] p-4 text-sm text-zinc-300"><p className="flex items-center gap-2"><MapPin className="h-4 w-4 text-emerald-300"/> Oportunidades próximas</p><p className="mt-2 flex items-center gap-2"><CircleDollarSign className="h-4 w-4 text-amber-300"/> Valores e rotas exibidos no fluxo de entrega</p></div>
             <button type="button" onClick={()=>navigate("/cadastro-entregador")} className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#353943] px-4 font-black text-white transition hover:bg-[#414650]"><Bike className="h-4 w-4"/> Cadastrar como entregador</button>
+            <button type="button" onClick={()=>navigate("/motoqueiro")} className="mt-2 min-h-11 w-full rounded-xl border border-white/10 bg-white/[.03] px-4 text-sm font-bold text-zinc-200">Já sou entregador · acessar painel</button>
           </article>
         </section>
 

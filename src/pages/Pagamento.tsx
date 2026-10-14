@@ -401,6 +401,20 @@ const Pagamento = () => {
           const { data: prepared, error: prepareError } = await supabase.rpc("partner_prepare_payment" as never, { p_request_id: requestId } as never);
           const preparedOrder = prepared as { order_code?: string; shipping?: number; total?: number } | null;
           if (prepareError || !preparedOrder?.order_code) {
+            // A falta de parceiros é uma condição operacional normal: transfira o
+            // checkout para a Adega Central e recalcule o frete antes de cobrar.
+            // Outros erros (estoque, autenticação, indisponibilidade do servidor)
+            // não devem ser mascarados como ausência de lojistas.
+            if (prepareError && /nenhuma loja parceira disponível para este pedido/i.test(prepareError.message)) {
+              await supabase.rpc("partner_command" as never, {
+                p_action: "cancel",
+                p_payload: { request_id: requestId },
+              } as never);
+              setSubmitting(false);
+              toast({ title: "Adega Central assumirá o pedido", description: "Nenhum lojista disponível. O frete será recalculado para atendimento pela Central." });
+              navigate("/pagamento", { replace: true, state: { forceCentral: true } });
+              return;
+            }
             setSubmitting(false);
             toast({ title: "Não foi possível preparar o pagamento", description: prepareError?.message || "Tente novamente.", variant: "destructive" });
             return;
@@ -424,7 +438,10 @@ const Pagamento = () => {
           toast({ title: "Erro ao localizar loja", description: routeError.message, variant: "destructive" });
           return;
         }
-        toast({ title: "Atendimento pela central", description: "Nenhuma loja parceira disponível. Seu pedido será encaminhado à central." });
+        setSubmitting(false);
+        toast({ title: "Adega Central assumirá o pedido", description: "Nenhum lojista disponível. Confira o frete da Central antes de pagar." });
+        navigate("/pagamento", { replace: true, state: { forceCentral: true } });
+        return;
       }
       setSubmitting(false);
       toast({ title: "Produto indisponível para entrega local", variant: "destructive" });

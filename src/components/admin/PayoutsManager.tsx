@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/orderUtils";
 import { Bike, RefreshCw, Store as StoreIcon, WalletCards } from "lucide-react";
@@ -24,6 +25,65 @@ type Wallet = {
   available: number;
   courierCode?: string;
 };
+
+function WalletGroup({ wallets, emptyLabel }: { wallets: Wallet[]; emptyLabel: string }) {
+  if (wallets.length === 0) {
+    return <Card className="p-8 text-center text-sm text-muted-foreground">{emptyLabel}</Card>;
+  }
+  const availableTotal = wallets.reduce((sum, wallet) => sum + wallet.available, 0);
+  const earnedTotal = wallets.reduce((sum, wallet) => sum + wallet.earned, 0);
+  const paidTotal = wallets.reduce((sum, wallet) => sum + wallet.paid, 0);
+  const heldTotal = wallets.reduce((sum, wallet) => sum + wallet.held, 0);
+
+  return <div className="space-y-4">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <Card className="p-3">
+        <p className="text-xs text-muted-foreground">Carteiras</p>
+        <p className="text-xl font-bold">{wallets.length}</p>
+      </Card>
+      <Card className="p-3">
+        <p className="text-xs text-muted-foreground">Saldo disponível</p>
+        <p className="text-xl font-bold">{formatCurrency(availableTotal)}</p>
+      </Card>
+      <Card className="p-3">
+        <p className="text-xs text-muted-foreground">Total já pago</p>
+        <p className="text-xl font-bold">{formatCurrency(paidTotal)}</p>
+      </Card>
+      <Card className="p-3">
+        <p className="text-xs text-muted-foreground">Total retido</p>
+        <p className="text-xl font-bold">{formatCurrency(heldTotal)}</p>
+      </Card>
+    </div>
+    <p className="text-xs text-muted-foreground">Créditos gerados neste grupo: {formatCurrency(earnedTotal)}. Valores não são misturados com a outra aba.</p>
+    <div className="grid gap-3 md:grid-cols-2">
+      {wallets.map((wallet) => (
+        <Card key={wallet.key} className="space-y-3 p-4">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 font-semibold">
+                {wallet.type === "store" ? <StoreIcon className="h-4 w-4 shrink-0" /> : <Bike className="h-4 w-4 shrink-0" />}
+                <span className="break-words">{wallet.label}</span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">{wallet.type === "store" ? "ID da loja" : "ID do entregador"}: <code className="select-all break-all">{wallet.id}</code></p>
+              {wallet.courierCode && <p className="text-xs text-muted-foreground">Código do entregador: {wallet.courierCode}</p>}
+            </div>
+            <Badge variant="outline">{wallet.type === "store" ? "Loja parceira" : "Motoqueiro"}</Badge>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">Saldo disponível</div>
+            <div className="text-2xl font-black">{formatCurrency(wallet.available)}</div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
+            <div className="rounded-md border p-2"><span className="text-muted-foreground">Total gerado</span><div className="font-semibold">{formatCurrency(wallet.earned)}</div></div>
+            <div className="rounded-md border p-2"><span className="text-muted-foreground">Total pago</span><div className="font-semibold">{formatCurrency(wallet.paid)}</div></div>
+            <div className="rounded-md border p-2"><span className="text-muted-foreground">Retido</span><div className="font-semibold">{formatCurrency(wallet.held)}</div></div>
+          </div>
+          <div className="text-xs text-muted-foreground">Situação do cadastro: {wallet.status}</div>
+        </Card>
+      ))}
+    </div>
+  </div>;
+}
 
 export default function PayoutsManager() {
   const [stores, setStores] = useState<Store[]>([]);
@@ -90,52 +150,44 @@ export default function PayoutsManager() {
     );
   }, [stores, couriers, partnerCredits, courierCredits]);
 
+  const partnerWallets = wallets.filter((wallet) => wallet.type === "store");
+  const motorcycleWallets = wallets.filter((wallet) => wallet.type === "courier");
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="flex items-center gap-2 text-xl font-bold"><WalletCards className="h-5 w-5" /> Carteiras de parceiros</h2>
-          <p className="text-sm text-muted-foreground">Carteiras individuais de lojas e motoqueiros, identificadas pelo cadastro. Consulta de saldos, sem repasses nesta página.</p>
+          <h2 className="flex items-center gap-2 text-xl font-bold"><WalletCards className="h-5 w-5" /> Carteiras</h2>
+          <p className="text-sm text-muted-foreground">Lojas parceiras e motoqueiros em áreas separadas, com saldo, nome e ID próprio. Esta é uma página de consulta; não efetua pagamentos.</p>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
           <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Atualizar
         </Button>
       </div>
-      {!error && !loading && (
-        <p className="text-sm text-muted-foreground">{stores.length} loja(s) • {couriers.length} motoqueiro(s) • {wallets.length} carteira(s)</p>
-      )}
-      {error && <Card className="p-6 text-sm text-destructive">Falha ao consultar os cadastros ou saldos. Atualize para tentar novamente; nenhum saldo foi presumido como zero.</Card>}
-      {!error && loading && <Card className="p-6 text-center text-sm text-muted-foreground">Carregando carteiras...</Card>}
-      {!error && !loading && wallets.length === 0 && <Card className="p-8 text-center text-sm text-muted-foreground">Nenhuma loja ou motoqueiro cadastrado.</Card>}
-      {!error && !loading && (
-        <div className="grid gap-3 md:grid-cols-2">
-          {wallets.map((wallet) => (
-            <Card key={wallet.key} className="space-y-3 p-4">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 font-semibold">
-                    {wallet.type === "store" ? <StoreIcon className="h-4 w-4 shrink-0" /> : <Bike className="h-4 w-4 shrink-0" />}
-                    <span className="break-words">{wallet.label}</span>
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">ID único: <code className="select-all break-all">{wallet.id}</code></p>
-                  {wallet.courierCode && <p className="text-xs text-muted-foreground">Código do entregador: {wallet.courierCode}</p>}
-                </div>
-                <Badge variant="outline">{wallet.type === "store" ? "Loja" : "Motoqueiro"}</Badge>
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground">Saldo disponível</div>
-                <div className="text-2xl font-black">{formatCurrency(wallet.available)}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
-                <div className="rounded-md border p-2"><span className="text-muted-foreground">Total gerado</span><div className="font-semibold">{formatCurrency(wallet.earned)}</div></div>
-                <div className="rounded-md border p-2"><span className="text-muted-foreground">Total pago</span><div className="font-semibold">{formatCurrency(wallet.paid)}</div></div>
-                <div className="rounded-md border p-2"><span className="text-muted-foreground">Retido</span><div className="font-semibold">{formatCurrency(wallet.held)}</div></div>
-              </div>
-              <div className="text-xs text-muted-foreground">Situação do cadastro: {wallet.status}</div>
-            </Card>
-          ))}
-        </div>
-      )}
+
+      <Tabs defaultValue="partners" className="space-y-4">
+        <TabsList className="grid h-auto w-full grid-cols-2">
+          <TabsTrigger value="partners" className="flex flex-wrap items-center justify-center gap-2 py-3 text-xs sm:text-sm">
+            <StoreIcon className="h-4 w-4 shrink-0" /> Parceiros ({stores.length})
+          </TabsTrigger>
+          <TabsTrigger value="couriers" className="flex flex-wrap items-center justify-center gap-2 py-3 text-xs sm:text-sm">
+            <Bike className="h-4 w-4 shrink-0" /> Motoqueiros ({couriers.length})
+          </TabsTrigger>
+        </TabsList>
+        {error && <Card role="alert" className="p-6 text-sm text-destructive">Falha ao consultar cadastros ou saldos. Atualize para tentar novamente; nenhum saldo foi presumido como zero.</Card>}
+        {!error && loading && <Card className="p-6 text-center text-sm text-muted-foreground">Carregando carteiras...</Card>}
+        {!error && !loading && (
+          <>
+            <TabsContent value="partners" className="mt-0">
+              <WalletGroup wallets={partnerWallets} emptyLabel="Nenhuma carteira de loja parceira cadastrada." />
+            </TabsContent>
+            <TabsContent value="couriers" className="mt-0 space-y-3">
+              <p className="text-xs text-muted-foreground">Pagamentos e saques de entregadores continuam disponíveis em Admin → Entregadores.</p>
+              <WalletGroup wallets={motorcycleWallets} emptyLabel="Nenhuma carteira de motoqueiro cadastrada." />
+            </TabsContent>
+          </>
+        )}
+      </Tabs>
     </div>
   );
 }

@@ -16,13 +16,14 @@ export default function CadastroParceiro() {
   const [checkError, setCheckError] = useState("");
   const [saving, setSaving] = useState(false);
   const [findingCep, setFindingCep] = useState(false);
+  const [needsLogin, setNeedsLogin] = useState(false);
   const update = (key: keyof Draft, value: string | boolean) => setDraft(current => ({ ...current, [key]: value }));
 
   const checkExisting = async () => {
-    setChecking(true); setCheckError("");
+    setChecking(true); setCheckError(""); setNeedsLogin(false);
     try {
       const { data: auth, error: authError } = await supabase.auth.getUser();
-      if (authError || !auth.user) { setCheckError("Sessão indisponível. Entre novamente."); return; }
+      if (authError || !auth.user) { setNeedsLogin(true); return; }
       const { data, error } = await supabase.from("partner_stores" as never).select("id,name,status").eq("owner_id", auth.user.id);
       if (!error) { setExisting((data ?? []) as StoreSummary[]); return; }
       const rpc = await supabase.rpc("partner_command" as never, { p_action: "dashboard", p_payload: {} } as never);
@@ -97,6 +98,7 @@ export default function CadastroParceiro() {
         <h1 className="text-2xl font-bold text-[#e5c66c]">Cadastrar loja parceira</h1>
         <p className="text-sm text-zinc-300">Cadastre seu comércio na Adega Maromba. Seu cadastro será analisado antes da liberação.</p>
         {checking ? <p role="status">Verificando seus cadastros...</p> : null}
+        {!checking && needsLogin ? <div className="rounded-xl border border-amber-600/40 p-5 text-sm"><p>Para cadastrar sua loja, entre na sua conta ou crie um cadastro. Depois você voltará para esta página.</p><Link className="mt-3 inline-block rounded-lg bg-amber-400 px-4 py-3 font-bold text-black" to="/auth?next=%2Fcadastro-parceiro">Entrar ou cadastrar conta</Link></div> : null}
         {checkError ? <div role="alert" className="rounded-lg border border-amber-500 p-4 text-sm">
           <p>{checkError}</p><button className="mt-3 underline" onClick={() => void checkExisting()}>Tentar novamente</button>
         </div> : null}
@@ -107,7 +109,7 @@ export default function CadastroParceiro() {
             <Link className="inline-block rounded-lg bg-amber-400 px-4 py-3 font-bold text-black" to="/revendedor">Acessar painel da loja</Link>
           </div>
         ) : null}
-        {!checking && !checkError && existing.length === 0 ? (
+        {!checking && !needsLogin && !checkError && existing.length === 0 ? (
           <form className="space-y-4 rounded-xl border border-amber-600/30 bg-zinc-950 p-5" onSubmit={e => void submit(e)}>
             {field("Nome da loja", "name", "Nome do comércio")}
             {field("CNPJ", "document", "00.000.000/0000-00")}

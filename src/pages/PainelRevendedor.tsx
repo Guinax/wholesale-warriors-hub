@@ -263,7 +263,7 @@ export default function PainelRevendedor() {
 
 
   useEffect(() => {
-    const heartbeat = () => { void supabase.rpc("partner_heartbeat" as never); };
+    const heartbeat = () => { if (document.visibilityState !== "visible") return; void supabase.rpc("partner_heartbeat" as never); };
     heartbeat();
     const timer = window.setInterval(heartbeat, 30000);
     const onVisibility = () => { if (document.visibilityState === "visible") heartbeat(); };

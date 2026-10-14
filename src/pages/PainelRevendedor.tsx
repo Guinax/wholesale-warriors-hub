@@ -181,16 +181,32 @@ export default function PainelRevendedor() {
         setRequests(d.requests ?? []);
         setInventory(d.inventory ?? []);
       } else {
-        const { data, error } = await supabase
-          .from("partner_stores" as never)
-          .select("id,name,status,is_open,lat,lng,delivery_mode,own_driver_available,delivery_base,delivery_per_km,delivery_per_kg,terms_version,accepted_terms_version")
-          .order("created_at", { ascending: false });
-        if (error) {
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+        if (authError || !authData.user) {
           setLoadFailed(true);
-          toast.error("Não foi possível consultar lojas parceiras. Verifique as permissões do cadastro.");
+          toast.error("Sua sessão expirou. Entre novamente para acessar sua loja.");
           return;
         }
-        loadedStores = (data ?? []) as unknown as Store[];
+        // Query only this user's stores. A schema mismatch in optional columns must not
+        // prevent the partner from opening the panel.
+        const detailed = await supabase
+          .from("partner_stores" as never)
+          .select("id,name,status,is_open,lat,lng,delivery_mode,own_driver_available,delivery_base,delivery_per_km,delivery_per_kg,terms_version,accepted_terms_version")
+          .eq("owner_id", authData.user.id);
+        const basic = detailed.error
+          ? await supabase.from("partner_stores" as never).select("id,name,status,is_open").eq("owner_id", authData.user.id)
+          : null;
+        if (detailed.error && basic?.error) {
+          console.error("Partner panel lookup failed", {
+            rpc: dashboardError?.message,
+            detailed: detailed.error.message,
+            basic: basic.error.message,
+          });
+          setLoadFailed(true);
+          toast.error("Não foi possível consultar sua loja. Verifique o vínculo da conta e as permissões de acesso.");
+          return;
+        }
+        loadedStores = ((detailed.error ? basic?.data : detailed.data) ?? []) as unknown as Store[];
         // The store profile can be displayed even when the operational RPC is unavailable.
         // Keep orders and financial data empty rather than failing the entire partner panel.
         if (loadedStores.some(store => store.status === "approved")) {

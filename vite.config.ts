@@ -4,6 +4,8 @@ import path from "path";
 import { execFileSync } from "node:child_process";
 
 const revision = (() => {
+  // Vercel supplies the exact deployed commit even if git is unavailable at build time.
+  if (process.env.VERCEL_GIT_COMMIT_SHA) return process.env.VERCEL_GIT_COMMIT_SHA;
   try { return execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(); }
   catch { return "unknown"; }
 })();
@@ -11,6 +13,7 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  define: { __APP_BUILD_REVISION__: JSON.stringify(revision) },
   server: {
     host: "::",
     port: 8080,

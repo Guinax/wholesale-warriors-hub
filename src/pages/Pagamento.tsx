@@ -251,6 +251,19 @@ const Pagamento = () => {
     return () => { cancelled = true; window.clearTimeout(timer); };
   }, [loadingProfile, addressConfirmed, customer.street, customer.number, customer.complement, customer.city, customer.state, customer.zip, toast]);
 
+  // An address may have no geocoordinates. Check partner connectivity before
+  // geocoding so the Central fallback is never blocked by an address lookup.
+  useEffect(() => {
+    if (!isLocalRetail || !addressConfirmed) return;
+    let active = true;
+    void supabase.rpc("has_online_delivery_partners" as never).then(({ data, error }) => {
+      if (!active || error || data !== false) return;
+      toast({ title: "Adega Central assumirá o pedido", description: "Não há parceiros conectados no momento. Confira o frete da Central antes de pagar." });
+      navigate("/pagamento", { replace: true, state: { forceCentral: true } });
+    });
+    return () => { active = false; };
+  }, [isLocalRetail, addressConfirmed, navigate, toast]);
+
   // BrasilAPI and ViaCEP may resolve the street without providing coordinates.
   // Try the full validated address before declaring local delivery unavailable.
   useEffect(() => {

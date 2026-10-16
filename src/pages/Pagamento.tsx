@@ -87,6 +87,8 @@ const Pagamento = () => {
   const [retryLocation, setRetryLocation] = useState(0);
   const [locatingAddress, setLocatingAddress] = useState(false);
   const [locationError, setLocationError] = useState(false);
+  const [centralQuote, setCentralQuote] = useState<number | null>(null);
+  const [centralQuoteLoading, setCentralQuoteLoading] = useState(false);
   const [localEstimate, setLocalEstimate] = useState<number | null>(null);
   const [localEstimateLoading, setLocalEstimateLoading] = useState(false);
   const [docType, setDocType] = useState<"cpf" | "cnpj">("cpf");
@@ -228,6 +230,35 @@ const Pagamento = () => {
   const addressConfirmed = validCep && !checkingCep && customer.state === validatedState &&
     Boolean(customer.street.trim() && customer.number.trim() && customer.city.trim());
 
+  // Central varejo uses the same server route quote later revalidated at payment.
+  useEffect(() => {
+    if (!forceCentral || isWholesaleOrder || !addressConfirmed) {
+      setCentralQuote(null);
+      setCentralQuoteLoading(false);
+      return;
+    }
+    let active = true;
+    setCentralQuote(null);
+    setCentralQuoteLoading(true);
+    const timer = window.setTimeout(async () => {
+      const address = [customer.street, customer.number, customer.city, customer.state, customer.zip, "Brasil"].join(", ");
+      const { data, error } = await supabase.functions.invoke("central-route-quote", { body: { address } });
+      if (!active) return;
+      const amount = Number(data?.shipping);
+      if (!error && data?.available === true && Number.isFinite(amount) && amount > 0) {
+        setCentralQuote(amount);
+        setShippingCost(amount);
+        setShippingEta("Entrega local · Adega Central");
+      } else {
+        setCentralQuote(null);
+        setShippingCost(0);
+        setShippingEta("");
+      }
+      setCentralQuoteLoading(false);
+    }, 600);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [forceCentral, isWholesaleOrder, addressConfirmed, customer.street, customer.number, customer.city, customer.state, customer.zip]);
+
   // Persist the complete validated delivery address automatically, including its house number.
   useEffect(() => {
     if (loadingProfile || !addressConfirmed) return;
@@ -349,7 +380,7 @@ const Pagamento = () => {
   }, [isLocalRetail, addressConfirmed, deliveryCoords?.latitude, deliveryCoords?.longitude, items, navigate, toast]);
 
   const freeShippingTestActive = isAdmin && testWithoutShipping;
-  const effectiveShippingCost = freeShippingTestActive ? 0 : shippingCost;
+  const effectiveShippingCost = freeShippingTestActive ? 0 : forceCentral && !isWholesaleOrder ? (centralQuote ?? 0) : shippingCost;
   const orderTotal = totalPrice + effectiveShippingCost;
   const shippingLoad = shippingLoadFor(items.reduce((sum, item) => sum + item.qty, 0));
 
@@ -479,6 +510,12 @@ const Pagamento = () => {
       return;
     }
 
+    if (forceCentral && !isWholesaleOrder && !freeShippingTestActive && (centralQuoteLoading || centralQuote == null)) {
+      setSubmitting(false);
+      toast({ title: "Frete por rota indisponível", description: "Confira seu endereço e aguarde o cálculo antes de pagar.", variant: "destructive" });
+      return;
+    }
+
     // Prefer a local partner when CEP geocoding is available. Any routing failure
     // intentionally falls through to the existing central checkout.
     if (isLocalRetail && !freeShippingTestActive) {
@@ -584,6 +621,7 @@ const Pagamento = () => {
           subtotal: i.priceNum * i.qty,
         })),
         total_amount: orderTotal,
+        delivery_quote: forceCentral && !isWholesaleOrder && !freeShippingTestActive ? centralQuote : null,
       });
 
       if (error) {
@@ -760,7 +798,7 @@ const Pagamento = () => {
             </div>
             <div className="border-t border-border pt-3 space-y-2">
               <div className="flex justify-between text-xs"><span className="text-muted-foreground">Produtos</span><span>{formatCurrency(totalPrice)}</span></div>
-              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{isLocalRetail && !freeShippingTestActive ? (localEstimate != null ? formatCurrency(localEstimate) : !addressConfirmed ? "Verificando endereço" : localEstimateLoading || locatingAddress ? "Calculando..." : "Indisponível") : freeShippingTestActive ? "Grátis (teste admin)" : checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{isLocalRetail && !freeShippingTestActive ? (localEstimate != null ? formatCurrency(localEstimate) : !addressConfirmed ? "Verificando endereço" : localEstimateLoading || locatingAddress ? "Calculando..." : "Indisponível") : freeShippingTestActive ? "Grátis (teste admin)" : forceCentral && !isWholesaleOrder ? (centralQuoteLoading ? "Calculando rota..." : centralQuote != null ? formatCurrency(centralQuote) : "Rota indisponível") : checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>
               {isLocalRetail && !freeShippingTestActive && <p className="text-[10px] text-muted-foreground">O frete é calculado pela distância da loja parceira até o endereço. O valor definitivo e o total serão confirmados antes do pagamento.</p>}
               {isLocalRetail && addressConfirmed && locationError && !deliveryCoords && <div className="text-xs text-muted-foreground space-y-1"><p>Não foi possível localizar as coordenadas do endereço. Confira rua, número e CEP e tente novamente.</p><button type="button" className="underline font-semibold" onClick={() => setRetryLocation(v => v + 1)}>Tentar calcular frete novamente</button></div>}
 

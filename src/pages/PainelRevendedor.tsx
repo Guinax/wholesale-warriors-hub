@@ -47,6 +47,7 @@ export default function PainelRevendedor() {
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [stores, setStores] = useState<Store[]>([]);
+  const pendingOpenChanges = useRef(new Set<string>());
   const [saving, setSaving] = useState<string | null>(null);
   const [confirmedTerms, setConfirmedTerms] = useState<Record<string, boolean>>({});
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -175,7 +176,7 @@ export default function PainelRevendedor() {
       if (!dashboardError && dashboard) {
         const d = dashboard as unknown as { stores?: Store[]; offers?: Offer[]; requests?: Request[]; inventory?: InventoryItem[] };
         loadedStores = d.stores ?? [];
-        setStores(loadedStores);
+        setStores(prev => loadedStores.map(store => pendingOpenChanges.current.has(store.id) ? {...store, is_open: prev.find(old => old.id === store.id)?.is_open ?? store.is_open} : store));
         const { data: paidOffers } = await supabase.rpc("partner_paid_offers" as never);
         setOffers(((paidOffers ?? []) as unknown as Offer[]));
         setRequests(d.requests ?? []);
@@ -212,7 +213,7 @@ export default function PainelRevendedor() {
         if (loadedStores.some(store => store.status === "approved")) {
           toast.warning("Sua loja foi carregada, mas pedidos e estoque podem estar temporariamente indisponíveis. Tente atualizar o painel.");
         }
-        setStores(loadedStores);
+        setStores(prev => loadedStores.map(store => pendingOpenChanges.current.has(store.id) ? {...store, is_open: prev.find(old => old.id === store.id)?.is_open ?? store.is_open} : store));
         setOffers([]);
         setRequests([]);
         setInventory([]);
@@ -313,6 +314,7 @@ export default function PainelRevendedor() {
     const { error } = await supabase.rpc("partner_command" as never,{p_action:"settings",p_payload:{store_id:store.id,is_open:store.is_open,delivery_base:Number(store.delivery_base),delivery_per_km:Number(store.delivery_per_km),delivery_per_kg:Number(store.delivery_per_kg)}} as never);
     setSaving(null);
     if(error) return toast.error(error.message);
+    pendingOpenChanges.current.delete(store.id);
     toast.success(store.is_open ? "Loja aberta para receber pedidos." : "Operação da loja atualizada.");
     void load();
   };
@@ -396,7 +398,6 @@ export default function PainelRevendedor() {
     setSaving(null);
     if (error) return toast.error(error.message);
     toast.success("Disponibilidade de entrega atualizada.");
-    void load();
   };
 
   const command = async (action: string, payload: Record<string, unknown>, success: string): Promise<void> => {
@@ -717,7 +718,7 @@ export default function PainelRevendedor() {
                         <h3 className="mt-2 text-xl font-bold text-white">{store.is_open ? "Loja Aberta" : "Loja Fechada"}</h3>
                         <p className="mt-1 max-w-xs text-xs text-zinc-400">Ative para receber pedidos. É necessário ter estoque disponível e condições aceitas.</p>
                       </div>
-                      <Switch aria-label="Abrir ou fechar loja" disabled={store.status!=="approved"} checked={store.is_open} onCheckedChange={(checked)=>setStores(prev=>prev.map(s=>s.id===store.id?{...s,is_open:checked}:s))}/>
+                      <Switch aria-label="Abrir ou fechar loja" disabled={store.status!=="approved"} checked={store.is_open} onCheckedChange={(checked)=>{pendingOpenChanges.current.add(store.id);setStores(prev=>prev.map(s=>s.id===store.id?{...s,is_open:checked}:s));}}/>
                     </div>
                   </section>
                   <div className="grid grid-cols-2 gap-3">

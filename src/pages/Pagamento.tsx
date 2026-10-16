@@ -318,6 +318,23 @@ const Pagamento = () => {
     return true;
   };
 
+  // Save validated checkout documents independently of placing or paying for an order.
+  useEffect(() => {
+    if (loadingProfile) return;
+    const document = docType === "cpf" ? customer.cpf : customer.cnpj;
+    const isValid = docType === "cpf" ? isValidCpf(document) : isValidCnpj(document);
+    if (!isValid) return;
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || cancelled) return;
+      const field = docType === "cpf" ? "cpf" : "cnpj";
+      const { error } = await supabase.from("profiles").update({ [field]: document }).eq("user_id", user.id);
+      if (error && !cancelled) console.error("Unable to save customer document to profile", error.message);
+    }, 800);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [loadingProfile, docType, customer.cpf, customer.cnpj]);
+
   const handleConfirm = async () => {
     if (submitting) return;
     if (!validateCustomer()) return;

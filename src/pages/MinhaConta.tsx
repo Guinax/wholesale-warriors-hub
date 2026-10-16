@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { isValidCpf, isValidCnpj } from "@/lib/brDocuments";
 
 const onlyDigits = (v: string) => v.replace(/\D/g, "");
 const maskCep = (v: string) => onlyDigits(v).slice(0, 8).replace(/(\d{5})(\d{0,3})/, (_, a, b) => b ? `${a}-${b}` : a);
@@ -25,7 +26,7 @@ const MinhaConta = () => {
     if (!user) { navigate("/auth?next=/minha-conta"); return; }
     const { data, error } = await supabase.from("profiles").select("full_name,email,phone,cpf,cnpj,address_zip,address_street,address_number,address_complement,address_city,address_state").eq("user_id", user.id).maybeSingle();
     if (error) toast({ title: "Não foi possível carregar seus dados", description: error.message, variant: "destructive" });
-    setForm({ full_name:data?.full_name??"", email:data?.email??user.email??"", phone:data?.phone??"", cpf:data?.cpf??"", cnpj:data?.cnpj??"", address_zip:data?.address_zip??"", address_street:data?.address_street??"", address_number:data?.address_number??"", address_complement:data?.address_complement??"", address_city:data?.address_city??"", address_state:data?.address_state??"" });
+    setForm({ full_name:data?.full_name??"", email:data?.email??user.email??"", phone:data?.phone??"", cpf:data?.cpf || (typeof user.user_metadata?.cpf === "string" ? maskCpf(user.user_metadata.cpf) : ""), cnpj:data?.cnpj || (typeof user.user_metadata?.cnpj === "string" ? maskCnpj(user.user_metadata.cnpj) : ""), address_zip:data?.address_zip??"", address_street:data?.address_street??"", address_number:data?.address_number??"", address_complement:data?.address_complement??"", address_city:data?.address_city??"", address_state:data?.address_state??"" });
     setLoading(false);
   })(); }, [navigate, toast]);
 
@@ -38,7 +39,10 @@ const MinhaConta = () => {
     const email = (form.email || user.email || "").trim();
     if (!email) { setSaving(false); toast({title:"E-mail obrigatório",variant:"destructive"}); return; }
 
-    const { error } = await supabase.from("profiles").upsert({
+    if (form.cpf.trim() && !isValidCpf(form.cpf)) { setSaving(false); toast({title:"CPF inválido",variant:"destructive"}); return; }
+    if (form.cnpj.trim() && !isValidCnpj(form.cnpj)) { setSaving(false); toast({title:"CNPJ inválido",variant:"destructive"}); return; }
+
+    const { data: saved, error } = await supabase.from("profiles").upsert({
       user_id: user.id,
       email,
       full_name: form.full_name.trim() || null,
@@ -51,11 +55,24 @@ const MinhaConta = () => {
       address_complement: form.address_complement.trim() || null,
       address_city: form.address_city.trim() || null,
       address_state: form.address_state.trim().toUpperCase() || null,
-    }, { onConflict: "user_id" }).select("user_id").single();
+    }, { onConflict: "user_id" }).select("user_id,cpf,cnpj").single();
 
+    if (error || !saved || onlyDigits(saved.cpf ?? "") !== onlyDigits(form.cpf) || onlyDigits(saved.cnpj ?? "") !== onlyDigits(form.cnpj)) {
+      setSaving(false);
+      toast({title:"Não foi possível confirmar os dados",description:error?.message ?? "O banco não confirmou o documento. Tente novamente.",variant:"destructive"});
+      return;
+    }
+    // Keep account metadata in sync for checkout recovery if the profile read fails.
+    // This metadata is for prefill only, never for permissions.
+    const { error: metadataError } = await supabase.auth.updateUser({
+      data: { cpf: onlyDigits(form.cpf), cnpj: onlyDigits(form.cnpj) }
+    });
     setSaving(false);
-    if(error){ toast({title:"Não foi possível salvar",description:error.message,variant:"destructive"}); return; }
-    toast({title:"Dados salvos",description:"Confirmado no banco. O checkout usará estes dados nas próximas compras."});
+    if (metadataError) {
+      toast({title:"Perfil salvo",description:"O documento foi confirmado no banco, mas a cópia de recuperação não foi atualizada.",variant:"destructive"});
+      return;
+    }
+    toast({title:"Dados salvos",description:"CPF/CNPJ confirmado no banco e disponível para as próximas compras."});
     navigate("/", { replace: true });
   };
 

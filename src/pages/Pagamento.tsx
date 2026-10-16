@@ -143,7 +143,7 @@ const Pagamento = () => {
         setCustomer(filled);
         savedAddress.current = filled;
         setDocType(filled.cnpj && !filled.cpf ? "cnpj" : "cpf");
-        const complete = filled.name && filled.email && filled.phone && filled.street && filled.number && filled.city && filled.state && filled.zip;
+        const complete = filled.name && filled.email && filled.phone && filled.street && filled.number && filled.city && filled.state && filled.zip && (isValidCpf(filled.cpf) || isValidCnpj(filled.cnpj));
         if (!complete) setEditing(true);
       } else {
         setEditing(true);
@@ -329,11 +329,16 @@ const Pagamento = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || cancelled) return;
       const field = docType === "cpf" ? "cpf" : "cnpj";
-      const { error } = await supabase.from("profiles").update({ [field]: document }).eq("user_id", user.id);
-      if (error && !cancelled) console.error("Unable to save customer document to profile", error.message);
+      const { data, error } = await supabase.from("profiles").update({ [field]: document }).eq("user_id", user.id).select(field).maybeSingle();
+      if (cancelled) return;
+      if (error || !data || String(data[field] ?? "") !== document) {
+        toast({ title: "Documento não foi salvo", description: "Não foi possível confirmar o CPF/CNPJ no seu cadastro. Tente novamente.", variant: "destructive" });
+      } else {
+        savedAddress.current = { ...(savedAddress.current ?? customer), [field]: document };
+      }
     }, 800);
     return () => { cancelled = true; window.clearTimeout(timer); };
-  }, [loadingProfile, docType, customer.cpf, customer.cnpj]);
+  }, [loadingProfile, docType, customer.cpf, customer.cnpj, toast]);
 
   const handleConfirm = async () => {
     if (submitting) return;
@@ -571,7 +576,7 @@ const Pagamento = () => {
               <h2 className="font-heading font-black text-sm tracking-wider text-foreground">DADOS DE ENTREGA</h2>
               {!loadingProfile && (
                 <button onClick={() => {
-                  if (editing && savedAddress.current) setCustomer(savedAddress.current);
+                  if (editing && savedAddress.current) setCustomer((current) => ({ ...savedAddress.current!, cpf: current.cpf, cnpj: current.cnpj }));
                   setEditing((e) => !e);
                 }} className="text-[11px] font-heading font-bold tracking-wider text-primary hover:underline">
                   {editing ? "USAR ENDEREÇO CADASTRADO" : "ALTERAR ENDEREÇO DE ENTREGA"}

@@ -84,6 +84,9 @@ const Pagamento = () => {
   const [validCep, setValidCep] = useState(false);
   const [validatedState, setValidatedState] = useState("");
   const [deliveryCoords, setDeliveryCoords] = useState<{latitude:number;longitude:number}|null>(null);
+  const [retryLocation, setRetryLocation] = useState(0);
+  const [locatingAddress, setLocatingAddress] = useState(false);
+  const [locationError, setLocationError] = useState(false);
   const [localEstimate, setLocalEstimate] = useState<number | null>(null);
   const [localEstimateLoading, setLocalEstimateLoading] = useState(false);
   const [docType, setDocType] = useState<"cpf" | "cnpj">("cpf");
@@ -247,6 +250,57 @@ const Pagamento = () => {
     }, 800);
     return () => { cancelled = true; window.clearTimeout(timer); };
   }, [loadingProfile, addressConfirmed, customer.street, customer.number, customer.complement, customer.city, customer.state, customer.zip, toast]);
+
+  // BrasilAPI and ViaCEP may resolve the street without providing coordinates.
+  // Try the full validated address before declaring local delivery unavailable.
+  useEffect(() => {
+    if (!isLocalRetail || !addressConfirmed || deliveryCoords) {
+      setLocatingAddress(false);
+      setLocationError(false);
+      return;
+    }
+    const controller = new AbortController();
+    let active = true;
+    setLocatingAddress(true);
+    setLocationError(false);
+    const timer = window.setTimeout(async () => {
+      try {
+        const query = new URLSearchParams({
+          street: `${customer.number.trim()} ${customer.street.trim()}`,
+          city: customer.city.trim(),
+          state: customer.state.trim(),
+          country: "Brasil",
+          postalcode: onlyDigits(customer.zip),
+          format: "jsonv2",
+          limit: "1",
+          countrycodes: "br",
+        });
+        const timeout = window.setTimeout(() => controller.abort(), 8000);
+        let res: Response;
+        try {
+          res = await fetch(`https://nominatim.openstreetmap.org/search?${query}`, {
+            signal: controller.signal,
+            headers: { "Accept-Language": "pt-BR" },
+          });
+        } finally {
+          window.clearTimeout(timeout);
+        }
+        if (!res.ok) throw new Error("Location lookup unavailable");
+        const results = await res.json() as Array<{ lat: string; lon: string }>;
+        const lat = Number(results?.[0]?.lat);
+        const lng = Number(results?.[0]?.lon);
+        if (!results?.length || !Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+          throw new Error("Full delivery address not found");
+        }
+        if (active) setDeliveryCoords({ latitude: lat, longitude: lng });
+      } catch {
+        if (active) setLocationError(true);
+      } finally {
+        if (active) setLocatingAddress(false);
+      }
+    }, 900);
+    return () => { active = false; window.clearTimeout(timer); controller.abort(); };
+  }, [isLocalRetail, addressConfirmed, deliveryCoords, customer.zip, customer.street, customer.number, customer.city, customer.state, retryLocation]);
 
   useEffect(() => {
     if (!isLocalRetail || !addressConfirmed || !deliveryCoords || items.some(i => !i.productId)) {
@@ -687,8 +741,10 @@ const Pagamento = () => {
             </div>
             <div className="border-t border-border pt-3 space-y-2">
               <div className="flex justify-between text-xs"><span className="text-muted-foreground">Produtos</span><span>{formatCurrency(totalPrice)}</span></div>
-              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{isLocalRetail && !freeShippingTestActive ? (localEstimate != null ? formatCurrency(localEstimate) : !addressConfirmed ? "Verificando endereço" : localEstimateLoading ? "Calculando..." : "Indisponível") : freeShippingTestActive ? "Grátis (teste admin)" : checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Frete</span><span>{isLocalRetail && !freeShippingTestActive ? (localEstimate != null ? formatCurrency(localEstimate) : !addressConfirmed ? "Verificando endereço" : localEstimateLoading || locatingAddress ? "Calculando..." : "Indisponível") : freeShippingTestActive ? "Grátis (teste admin)" : checkingCep ? "Calculando..." : shippingCost === 0 && shippingEta ? "Grátis" : formatCurrency(shippingCost)}</span></div>
               {isLocalRetail && !freeShippingTestActive && <p className="text-[10px] text-muted-foreground">O frete é calculado pela distância da loja parceira até o endereço. O valor definitivo e o total serão confirmados antes do pagamento.</p>}
+              {isLocalRetail && addressConfirmed && locationError && !deliveryCoords && <div className="text-xs text-muted-foreground space-y-1"><p>Não foi possível localizar as coordenadas do endereço. Confira rua, número e CEP e tente novamente.</p><button type="button" className="underline font-semibold" onClick={() => setRetryLocation(v => v + 1)}>Tentar calcular frete novamente</button></div>}
+
               {shippingEta && <p className="text-[10px] text-muted-foreground">Prazo estimado: {shippingEta}</p>}
               {shippingEta && <p className="text-[10px] text-muted-foreground">{shippingLoad.units} unidade{shippingLoad.units > 1 ? "s" : ""} · peso estimado {shippingLoad.estimatedWeightKg.toFixed(1).replace(".", ",")} kg</p>}
               {isAdmin && (

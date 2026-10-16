@@ -296,9 +296,30 @@ export default function PainelRevendedor() {
     if (!confirmedTerms[store.id]) return toast.error("Leia e confirme o Termo Único antes de aceitar.");
     setSaving("terms-"+store.id);
     const {error}=await supabase.rpc("partner_command" as never,{p_action:"accept_terms",p_payload:{store_id:store.id,version:store.terms_version}} as never);
-    setSaving(null); if(error) return toast.error(error.message);
+    if (error) {
+      setSaving(null);
+      toast.error("Não foi possível registrar o aceite: " + error.message);
+      return;
+    }
+    const verification = await supabase.from("partner_stores" as never)
+      .select("terms_version,accepted_terms_version")
+      .eq("id", store.id)
+      .single();
+    setSaving(null);
+    if (verification.error || !verification.data) {
+      toast.warning("Aceite enviado, mas ainda não foi possível confirmar a gravação. Atualize o painel.");
+      await load();
+      return;
+    }
+    const verified = verification.data as unknown as {terms_version:number;accepted_terms_version:number};
+    if (verified.accepted_terms_version !== verified.terms_version) {
+      toast.error("O aceite ainda não foi registrado para a versão vigente. Não é necessário repetir; informe o suporte.");
+      await load();
+      return;
+    }
     setConfirmedTerms((current)=>({...current,[store.id]:false}));
-    toast.success("Termo Único vigente aceito."); await load();
+    toast.success("Termo Único confirmado no banco.");
+    await load();
   };
 
   const saveStoreSettings = async (store: Store) => {
@@ -535,7 +556,7 @@ export default function PainelRevendedor() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="font-bold text-[#f3d97a]">Ação necessária: contrato da parceria pendente</p>
-                  <p className="mt-1 text-sm text-zinc-300">Revise e aceite o contrato vigente para manter sua loja apta a receber pedidos.</p>
+                  <p className="mt-1 text-sm text-zinc-300">Loja: {pendingContractStore.name?.trim() || "Sem nome cadastrado"} (ID: {pendingContractStore.id.slice(0,8)}). Versão vigente: {pendingContractStore.terms_version}; aceita: {pendingContractStore.accepted_terms_version ?? "nenhuma"}.</p>
                 </div>
                 <Button className="shrink-0 bg-[#d4af37] font-bold text-black hover:bg-[#e8c65a]" disabled={saving==="terms-"+pendingContractStore.id} onClick={()=>{switchTab("loja"); window.setTimeout(()=>document.getElementById("minha-loja")?.scrollIntoView({behavior:"smooth",block:"start"}),50);}}>Revisar e aceitar</Button>
               </div>
@@ -697,7 +718,7 @@ export default function PainelRevendedor() {
               {activeTab==="loja" && <>
               <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div><h2 className="text-lg font-black">{store.name}</h2><p className="text-xs text-zinc-500">Cadastro: {store.status}</p></div>
+                  <div><h2 className="text-lg font-black">{store.name?.trim() || "Loja sem nome cadastrado"}</h2><p className="text-[11px] text-zinc-500">ID: {store.id.slice(0,8)}</p><p className="text-xs text-zinc-500">Cadastro: {store.status}</p></div>
                   <Settings2 className="h-5 w-5 text-[#e5c66c]"/>
                 </div>
                 {store.status==="approved"&&store.accepted_terms_version!==store.terms_version&&<div className="mt-4 rounded-xl border border-[#d4af37]/20 bg-[#d4af37]/5 p-4">

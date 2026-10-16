@@ -214,6 +214,24 @@ Deno.serve(async (req) => {
     if (!Number.isFinite(shippingAmount) || shippingAmount < 0) {
       return json({ error: "Cotação de entrega inválida." }, 409);
     }
+  } else if (!adminFreeShipping && order.delivery_quote != null) {
+    // Central local delivery: never trust the frontend quote. Recompute the
+    // road route using the persisted order address before issuing a charge.
+    const address = [order.address_street, order.address_number, order.address_city,
+      order.address_state, order.address_zip, "Brasil"].join(", ");
+    const quoteResponse = await fetch(`${supabaseUrl}/functions/v1/central-route-quote`, {
+      method: "POST",
+      signal: AbortSignal.timeout(12000),
+      headers: { "Content-Type": "application/json", apikey: publicKey, Authorization: authorization },
+      body: JSON.stringify({ address }),
+    }).catch(() => null);
+    if (!quoteResponse?.ok) return json({ error: "Não foi possível validar o frete da Adega Central. Tente novamente." }, 409);
+    const quote = await quoteResponse.json().catch(() => ({}));
+    shippingAmount = Number(quote?.shipping);
+    if (quote?.available !== true || !Number.isFinite(shippingAmount) || shippingAmount <= 0 ||
+      Math.round(shippingAmount * 100) !== Math.round(Number(order.delivery_quote) * 100)) {
+      return json({ error: "O frete da rota mudou. Atualize seu carrinho antes de pagar." }, 409);
+    }
   } else if (!adminFreeShipping) {
     let liveQuoteApplied = false;
     const quoteItems = [...quantities.values()].flatMap((item) =>

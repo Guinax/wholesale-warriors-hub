@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { isStrongPassword, STRONG_PASSWORD_MESSAGE } from "@/lib/passwordPolicy";
 import { lookupCep } from "@/lib/shipping";
+import { isValidCpf } from "@/lib/brDocuments";
 
 const digits = (value: string) => value.replace(/\D/g, "");
 const countries = [
@@ -40,6 +41,7 @@ export default function CadastroCliente() {
   const nextPath = rawNext.startsWith("/") && !rawNext.startsWith("//") && !rawNext.includes("\\") ? rawNext : "/";
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [cpf, setCpf] = useState("");
   const [country, setCountry] = useState("BR");
   const [customDialCode, setCustomDialCode] = useState("");
   const dialCode = country === "OTHER" ? digits(customDialCode) : countries.find(([code]) => code === country)?.[2] ?? "55";
@@ -76,6 +78,7 @@ export default function CadastroCliente() {
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!name.trim()) return toast.error("Informe seu nome.");
+    if (!isValidCpf(cpf)) return toast.error("Informe um CPF válido.");
     const nationalPhone = digits(phone);
     if (!dialCode || dialCode.length > 3) return toast.error("Informe um código de país válido.");
     if (nationalPhone.length < 4 || nationalPhone.length > 14 || (dialCode + nationalPhone).length > 15) return toast.error("Informe um WhatsApp válido para o país escolhido.");
@@ -93,7 +96,7 @@ export default function CadastroCliente() {
         password: secret,
         options: {
           emailRedirectTo: `${window.location.origin}${nextPath}`,
-          data: { full_name: name.trim(), phone: internationalPhone, phone_country: country, address_zip: digits(zip), address_street: street.trim(), address_number: number.trim(), address_complement: complement.trim(), address_neighborhood: neighborhood.trim(), address_city: city.trim(), address_state: state.trim().toUpperCase() },
+          data: { full_name: name.trim(), cpf: digits(cpf), phone: internationalPhone, phone_country: country, address_zip: digits(zip), address_street: street.trim(), address_number: number.trim(), address_complement: complement.trim(), address_neighborhood: neighborhood.trim(), address_city: city.trim(), address_state: state.trim().toUpperCase() },
         },
       });
       if (error) throw error;
@@ -170,6 +173,7 @@ export default function CadastroCliente() {
 
         <form onSubmit={submit} className="space-y-4">
           <div><Label>Nome completo</Label><Input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" required /></div>
+          <div><Label htmlFor="signup-cpf">CPF *</Label><Input id="signup-cpf" value={cpf} onChange={(e) => setCpf(digits(e.target.value).slice(0, 11))} inputMode="numeric" autoComplete="off" placeholder="Somente números" maxLength={11} required /><p className="text-xs text-muted-foreground mt-1">Usado para identificação e preenchimento automático nas próximas compras.</p></div>
           <div className="space-y-2">
             <Label htmlFor="phone-country">País do WhatsApp</Label>
             <select id="phone-country" value={country} onChange={(e) => { setCountry(e.target.value); setPhone(""); }} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">

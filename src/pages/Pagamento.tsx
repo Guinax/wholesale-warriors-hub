@@ -135,7 +135,7 @@ const Pagamento = () => {
           email: data.email ?? user.email ?? "",
           phone: data.phone ?? "",
           cnpj: data.cnpj ?? "",
-          cpf: data.cpf ?? "",
+          cpf: data.cpf || (typeof user.user_metadata?.cpf === "string" ? user.user_metadata.cpf : ""),
           street: data.address_street ?? "",
           number: data.address_number ?? "",
           complement: data.address_complement ?? "",
@@ -385,11 +385,17 @@ const Pagamento = () => {
       const field = docType === "cpf" ? "cpf" : "cnpj";
       const { data, error } = await supabase.from("profiles").update({ [field]: document }).eq("user_id", user.id).select(field).maybeSingle();
       if (cancelled) return;
-      if (error || !data || String(data[field] ?? "") !== document) {
-        toast({ title: "Documento não foi salvo", description: "Não foi possível confirmar o CPF/CNPJ no seu cadastro. Tente novamente.", variant: "destructive" });
-      } else {
-        savedAddress.current = { ...(savedAddress.current ?? customer), [field]: document };
+      if (error || !data || onlyDigits(String(data[field] ?? "")) !== onlyDigits(document)) {
+        // If the profile row cannot be updated, retain the document in the
+        // authenticated account metadata for prefill on the next checkout.
+        // Metadata is never used for authorization.
+        const { error: fallbackError } = await supabase.auth.updateUser({ data: { [field]: onlyDigits(document) } });
+        if (fallbackError) {
+          toast({ title: "Documento não foi salvo", description: "Não foi possível guardar o CPF/CNPJ. Confira sua conexão e tente novamente.", variant: "destructive" });
+          return;
+        }
       }
+      savedAddress.current = { ...(savedAddress.current ?? customer), [field]: document };
     }, 800);
     return () => { cancelled = true; window.clearTimeout(timer); };
   }, [loadingProfile, docType, customer.cpf, customer.cnpj, toast]);

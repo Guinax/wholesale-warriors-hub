@@ -428,7 +428,7 @@ const Pagamento = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || cancelled) return;
       const field = docType === "cpf" ? "cpf" : "cnpj";
-      const { data, error } = await supabase.from("profiles").update({ [field]: document }).eq("user_id", user.id).select(field).maybeSingle();
+      const { data, error } = await supabase.from("profiles").update(field === "cpf" ? { cpf: document } : { cnpj: document }).eq("user_id", user.id).select("cpf,cnpj").maybeSingle();
       if (cancelled) return;
       if (error || !data || onlyDigits(String(data[field] ?? "")) !== onlyDigits(document)) {
         // If the profile row cannot be updated, retain the document in the

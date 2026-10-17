@@ -48,7 +48,7 @@ const Recibo = () => {
   const { code } = useParams<{ code: string }>();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
-  const { clearCart } = useCart();
+  const { clearCart, items: currentCartItems } = useCart();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
@@ -142,8 +142,11 @@ const Recibo = () => {
   const paymentStatus = order?.payment_status;
 
   useEffect(() => {
-    if (paymentStatus === "paid") clearCart();
-  }, [paymentStatus, clearCart]);
+    if (paymentStatus !== "paid" || !order?.order_code) return;
+    if (!shouldClearPaidOrderCart(order.order_code, currentCartItems)) return;
+    forgetCheckoutCart(order.order_code);
+    clearCart();
+  }, [paymentStatus, order?.order_code, currentCartItems, clearCart]);
   const paymentDueAt = order?.due_at;
 
   // Verificação automática enquanto o pagamento estiver pendente

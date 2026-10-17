@@ -27,11 +27,11 @@ export default function CadastroParceiro() {
       const { data, error } = await supabase.from("partner_stores" as never).select("id,name,status").eq("owner_id", auth.user.id);
       if (!error) { setExisting((data ?? []) as StoreSummary[]); return; }
       const rpc = await supabase.rpc("partner_command" as never, { p_action: "dashboard", p_payload: {} } as never);
-      if (rpc.error || !rpc.data) {
+      if (rpc.error || !(rpc as { data?: unknown }).data) {
         setCheckError("Não foi possível verificar suas lojas. Tente novamente antes de enviar um cadastro.");
         return;
       }
-      setExisting(((rpc.data as { stores?: StoreSummary[] }).stores ?? []));
+      setExisting(((((rpc as { data?: { stores?: StoreSummary[] } }).data)?.stores) ?? []));
     } catch { setCheckError("Falha ao verificar cadastro. Confira sua conexão."); }
     finally { setChecking(false); }
   };

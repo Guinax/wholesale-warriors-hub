@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { computeDueAt, formatCurrency, generateOrderCode } from "@/lib/orderUtils";
 import { logAudit } from "@/lib/audit";
 import { createPaymentLink } from "@/lib/payments";
+import { rememberCheckoutCart } from "@/lib/checkoutCart";
 import { lookupCep, shippingCostFor, shippingEtaFor, shippingLoadFor } from "@/lib/shipping";
 import { getLiveShippingQuote } from "@/lib/liveShipping";
 import { isValidCnpj, isValidCpf } from "@/lib/brDocuments";
@@ -427,7 +428,7 @@ const Pagamento = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || cancelled) return;
       const field = docType === "cpf" ? "cpf" : "cnpj";
-      const { data, error } = await supabase.from("profiles").update({ [field]: document }).eq("user_id", user.id).select(field).maybeSingle();
+      const { data, error } = await supabase.from("profiles").update(field === "cpf" ? { cpf: document } : { cnpj: document }).eq("user_id", user.id).select("cpf,cnpj").maybeSingle();
       if (cancelled) return;
       if (error || !data || onlyDigits(String(data[field] ?? "")) !== onlyDigits(document)) {
         // If the profile row cannot be updated, retain the document in the
@@ -562,6 +563,7 @@ const Pagamento = () => {
           }
           try {
             const checkoutUrl = await createPaymentLink(preparedOrder.order_code, `${window.location.origin}/recibo/${preparedOrder.order_code}`);
+            rememberCheckoutCart(preparedOrder.order_code, items);
             toast({ title: "Frete calculado", description: `Entrega ${formatCurrency(Number(preparedOrder.shipping || 0))}. Finalize o pagamento para liberar o pedido à loja.` });
             window.location.href = checkoutUrl;
             return;
@@ -654,6 +656,7 @@ const Pagamento = () => {
 
     try {
       const checkoutUrl = await createPaymentLink(orderCode, `${window.location.origin}/recibo/${orderCode}`);
+      rememberCheckoutCart(orderCode, items);
       window.location.href = checkoutUrl;
     } catch (error) {
       toast({

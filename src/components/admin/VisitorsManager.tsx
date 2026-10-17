@@ -12,6 +12,9 @@ type Visit = {
   referrer_host: string | null;
   campaign_source: string | null;
   device_type: string;
+  city: string | null;
+  region: string | null;
+  country: string | null;
 };
 
 export default function VisitorsManager() {
@@ -21,7 +24,7 @@ export default function VisitorsManager() {
   const load = useCallback(async () => {
     setLoading(true);
     const result = await supabase.from("site_visit_events" as never)
-      .select("id,visited_at,visitor_session,path,referrer_host,campaign_source,device_type")
+      .select("id,visited_at,visitor_session,path,referrer_host,campaign_source,device_type,city,region,country")
       .order("visited_at", { ascending: false }).limit(500);
     setLoading(false);
     if (result.error) {
@@ -49,15 +52,16 @@ export default function VisitorsManager() {
         <Card className="p-3"><p className="text-xs text-muted-foreground">Sessões</p><p className="text-2xl font-bold">{unique}</p></Card>
         <Card className="p-3"><p className="text-xs text-muted-foreground">Hoje</p><p className="text-2xl font-bold">{today}</p></Card>
       </div>
-      <p className="text-xs text-muted-foreground">Uma sessão não identifica uma pessoa. Cidade e GPS não são coletados nesta versão.</p>
+      <p className="text-xs text-muted-foreground">Uma sessão não identifica uma pessoa. Cidade/estado são estimativas da rede; não representam GPS.</p>
       <div className="overflow-x-auto rounded-md border">
         <table className="w-full text-sm">
-          <thead><tr className="border-b text-left"><th className="p-3">Data e hora</th><th className="p-3">Página</th><th className="p-3">Origem</th><th className="p-3">Dispositivo</th></tr></thead>
+          <thead><tr className="border-b text-left"><th className="p-3">Data e hora</th><th className="p-3">Página</th><th className="p-3">Origem</th><th className="p-3">Dispositivo</th><th className="p-3">Localização aproximada</th></tr></thead>
           <tbody>{visits.map(v => <tr key={v.id} className="border-b last:border-0">
             <td className="p-3 whitespace-nowrap">{new Date(v.visited_at).toLocaleString("pt-BR")}</td>
             <td className="p-3">{v.path}</td>
             <td className="p-3">{v.campaign_source || v.referrer_host || "Direto / desconhecido"}</td>
             <td className="p-3">{v.device_type}</td>
+            <td className="p-3">{[v.city, v.region, v.country].filter(Boolean).join(" / ") || "Indisponível"}</td>
           </tr>)}</tbody>
         </table>
         {!loading && !visits.length && !error && <p className="p-4 text-sm text-muted-foreground">Nenhuma visita registrada ainda.</p>}

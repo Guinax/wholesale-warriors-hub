@@ -36,6 +36,7 @@ import OperationReadiness from "@/components/admin/OperationReadiness";
 import CouriersManager from "@/components/admin/CouriersManager";
 import PartnerRestockOrdersManager from "@/components/admin/PartnerRestockOrdersManager";
 import OrderHistoryReports from "@/components/admin/OrderHistoryReports";
+import VisitorsManager from "@/components/admin/VisitorsManager";
 import { trackingLabel, formatCurrency, DELIVERY_STAGES } from "@/lib/orderUtils";
 import { logAudit } from "@/lib/audit";
 
@@ -365,6 +366,7 @@ const Admin = () => {
             <TabsTrigger value="operation">Conferência</TabsTrigger>
             <TabsTrigger value="orders">Pedidos</TabsTrigger>
             <TabsTrigger value="reports">Histórico e relatórios</TabsTrigger>
+            <TabsTrigger value="visitors">Visitantes</TabsTrigger>
             <TabsTrigger value="pages">Páginas</TabsTrigger>
             <TabsTrigger value="catalog">Catálogo</TabsTrigger>
             <TabsTrigger value="expedition">Expedição</TabsTrigger>
@@ -379,6 +381,7 @@ const Admin = () => {
             <TabsTrigger value="videos">Vídeos</TabsTrigger>
           </TabsList>
           <TabsContent value="operation" className="mt-4"><OperationReadiness onNavigate={setActiveTab} /></TabsContent>
+          <TabsContent value="visitors" className="mt-4"><VisitorsManager /></TabsContent>
           <TabsContent value="orders" className="space-y-4 mt-4">
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <Card className="p-3">

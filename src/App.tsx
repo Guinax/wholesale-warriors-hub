@@ -39,6 +39,7 @@ import Motoqueiro from "./pages/Motoqueiro.tsx";
 import Entregadores from "./pages/Entregadores.tsx";
 import Termos from "./pages/Termos.tsx";
 import GlobalBackButton from "./components/GlobalBackButton";
+import VisitTracker from "./components/VisitTracker";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ const App = () => (
           <CartDrawer />
           <CommandCenterLauncher />
           <GlobalBackButton />
+          <VisitTracker />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/cadastro" element={<Navigate to="/revendedor" replace />} />

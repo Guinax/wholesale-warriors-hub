@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
+import { forgetCheckoutCart, shouldClearPaidOrderCart } from "@/lib/checkoutCart";
 import { CheckCircle2, Download, Package, Truck, MapPin, Home, MessageCircle, RefreshCw } from "lucide-react";
 import jsPDF from "jspdf";
 import PageHeader from "@/components/PageHeader";

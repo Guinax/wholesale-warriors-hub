@@ -61,11 +61,13 @@ describe("Partner delivery and payout lifecycle contracts", () => {
     expect(sql).toContain("Pagamento tardio exige reconciliacao manual");
   });
 
-  it("keeps admin payout actions explicit in the UI", () => {
+  it("keeps wallet overview read-only with identified, separated balances", () => {
     const source = read("src/components/admin/PayoutsManager.tsx");
-    expect(source).toContain('"admin_partner_wallet_pay"');
-    expect(source).toContain("p_receipt_url");
-    expect(source).toContain("p_receipt_reference");
-    expect(source).toContain("available + 0.001");
+    expect(source).toContain("Esta é uma página de consulta; não efetua pagamentos.");
+    expect(source).toContain("ID da loja");
+    expect(source).toContain("ID do entregador");
+    expect(source).toContain('TabsContent value="partners"');
+    expect(source).toContain('TabsContent value="couriers"');
+    expect(source).not.toContain('supabase.rpc("admin_partner_wallet_pay"');
   });
 });

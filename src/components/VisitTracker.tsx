@@ -25,13 +25,19 @@ export default function VisitTracker() {
     const params = new URLSearchParams(search);
     const campaign = params.get("utm_source")?.slice(0, 120) || null;
     // Excludes query strings (possible tokens / emails) and user identifiers.
-    void supabase.from("site_visit_events" as never).insert({
+    void fetch("/api/visitor-location", { cache: "no-store" })
+      .then(response => response.ok ? response.json() as Promise<{city?: string | null; region?: string | null; country?: string | null}> : Promise.resolve({city: null, region: null, country: null}))
+      .catch(() => ({city: null, region: null, country: null}))
+      .then(geo => supabase.from("site_visit_events" as never).insert({
+      city: geo.city || null,
+      region: geo.region || null,
+      country: geo.country || null,
       visitor_session: visitorSession,
       path: pathname.slice(0, 300),
       referrer_host: referrerHost,
       campaign_source: campaign,
       device_type: device,
-    } as never).then(({ error }) => {
+    } as never)).then(({ error }) => {
       if (error && import.meta.env.DEV) console.warn("Falha no registro de visita", error.message);
     });
   }, [pathname, search]);

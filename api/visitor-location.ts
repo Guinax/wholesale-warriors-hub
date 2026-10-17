@@ -1,4 +1,5 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+type VercelRequest = { method?: string; headers: Record<string, string | string[] | undefined> };
+type VercelResponse = { setHeader: (key: string, value: string) => void; status: (code: number) => { json: (body: unknown) => void } };
 
 // Regional metadata supplied by Vercel's trusted proxy, not visitor GPS.
 // Neither IP address nor precise coordinates are returned or stored.

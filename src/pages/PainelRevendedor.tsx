@@ -306,12 +306,12 @@ export default function PainelRevendedor() {
       .eq("id", store.id)
       .single();
     setSaving(null);
-    if (verification.error || !verification.data) {
+    if (verification.error || !(verification as { data?: unknown }).data) {
       toast.warning("Aceite enviado, mas ainda não foi possível confirmar a gravação. Atualize o painel.");
       await load();
       return;
     }
-    const verified = verification.data as unknown as {terms_version:number;accepted_terms_version:number};
+    const verified = (verification as { data: {terms_version:number;accepted_terms_version:number} }).data;
     if (verified.accepted_terms_version !== verified.terms_version) {
       toast.error("O aceite ainda não foi registrado para a versão vigente. Não é necessário repetir; informe o suporte.");
       await load();

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Menu, ShoppingCart, LogOut, Store as StoreIcon, User as UserIcon, Bike, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-const logo = "https://d3t3ozftmdmh3i.cloudfront.net/production/podcast_uploaded_nologo/14492488/14492488-1618463986716-52d9103563f9e.jpg";
+import logo from "@/assets/logo.png";
 import { useCart } from "@/contexts/CartContext";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { toast } from "sonner";

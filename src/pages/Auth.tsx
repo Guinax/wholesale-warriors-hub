@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Mail, ArrowLeft, MessageCircle, Eye, EyeOff } from "lucide-react";
 import { contactWhatsApp } from "@/lib/whatsapp";
 import { logAudit } from "@/lib/audit";
-const logo = "https://d3t3ozftmdmh3i.cloudfront.net/production/podcast_uploaded_nologo/14492488/14492488-1618463986716-52d9103563f9e.jpg";
+import logo from "@/assets/logo.png";
 
 const getAuthError = (err: unknown) => {
   if (err && typeof err === "object") {

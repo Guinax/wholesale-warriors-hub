@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Copy, Download, Share2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
-import logo from "@/assets/logo.png";
+const logo = "https://d3t3ozftmdmh3i.cloudfront.net/production/podcast_uploaded_nologo/14492488/14492488-1618463986716-52d9103563f9e.jpg";
 
 const Compartilhar = () => {
   const navigate = useNavigate();

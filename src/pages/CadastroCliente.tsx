@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import logo from "@/assets/logo.png";
+const logo = "https://d3t3ozftmdmh3i.cloudfront.net/production/podcast_uploaded_nologo/14492488/14492488-1618463986716-52d9103563f9e.jpg";
 import { isStrongPassword, STRONG_PASSWORD_MESSAGE } from "@/lib/passwordPolicy";
 import { lookupCep } from "@/lib/shipping";
 import { isValidCpf } from "@/lib/brDocuments";
